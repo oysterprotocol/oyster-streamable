@@ -4,5 +4,8 @@
   "description": "Arbitrary size interface for the Oyster network",
   "main": "index.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "readable-stream": "^2.3.6"
+  }
 }
