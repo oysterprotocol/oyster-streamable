@@ -6,6 +6,8 @@
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
   "dependencies": {
+    "iota.lib.js": "^0.4.7",
+    "node-forge": "^0.7.5",
     "readable-stream": "^2.3.6"
   }
 }
