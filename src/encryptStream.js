@@ -7,22 +7,21 @@ const DEFAULT_OPTIONS = Object.freeze({
   })
 
 export default class EncryptStream extends Transform {
-  constructor(handle, options) {
+  constructor (handle, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options)
 
     super(opts)
-
-    this.handle = handle
     this.options = opts
     this.key = bytesFromHandle(handle)
   }
   _transform (data, encoding, callback) {
-    const buffer = data.buffer
-    const chunkByteSize = this.options.chunkByteSize
-    const length = buffer.byteLength
-    const handle = this.handle
     const key = this.key
+    const chunkByteSize = this.options.chunkByteSize
+    const buffer = data.buffer
+    const length = buffer.byteLength
 
+    // TODO: Buffer remainders instead of creating small chunks
+    // Currently avoided by reading the file in multiples of chunkByteSize
     for(let offset = 0; offset < length; offset += chunkByteSize) {
       const limit = Math.min(length - offset, chunkByteSize)
       const bytes = new Uint8Array(buffer, offset, limit)

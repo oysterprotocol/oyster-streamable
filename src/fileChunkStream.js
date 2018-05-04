@@ -1,12 +1,12 @@
 import { Readable } from 'readable-stream'
 
 const DEFAULT_OPTIONS = Object.freeze({
-  highWaterMark: 1024 * 64,
-  readSize: 1024 * 16
+  highWaterMark: 1000 * 64,
+  readSize: 1000 * 16
 })
 
 export default class FileChunkStream extends Readable {
-  constructor(file, options) {
+  constructor (file, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options)
 
     super(opts)
