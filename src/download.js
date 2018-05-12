@@ -33,7 +33,13 @@ export default class Download extends EventEmitter {
   }
   getMetadata () {
     return Util.queryGeneratedSignatures(iotaA, this.genesisHash, 1).then(data => {
-      const trytes = Util.parseMessage(data[0])
+      const signature = data[0]
+
+      if(signature === null) {
+        throw 'File does not exist'
+      }
+
+      const trytes = Util.parseMessage(signature)
       const metadata = JSON.parse(Util.decryptString(this.key, trytes))
       this.emit('metadata', metadata)
       this.metadata = metadata

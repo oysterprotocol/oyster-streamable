@@ -55,10 +55,10 @@ export default class Upload extends EventEmitter {
     this.fileChunkStream
       .pipe(this.encryptStream)
       .pipe(this.uploadStream)
-      .on('finish', (event) => {
+      .on('finish', () => {
         this.emit('finish', {
           target: this,
-          handle: this.hande,
+          handle: this.handle,
           metadata: this.metadata
         })
       })
