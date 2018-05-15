@@ -20,41 +20,44 @@ export default class DownloadStream extends Readable {
     this.chunkBuffer = []
     this.isDownloading = false
     this.isDownloadFinished = false
+    this.pushChunk = false
+
+    this._download()
   }
   _read () {
-    const bufferLength = this.chunkBuffer.length
-    // Avoid read chain-reaction. Not nice. Better solution?
-    const pushChunk = bufferLength === 0
+    this.pushChunk = true
 
-    // One download at a time for now
     if (!this.isDownloading && !this.isDownloadFinished) {
-      this._download(pushChunk)
+      this._download()
     }
 
-    if(bufferLength) {
-      this.push(this.chunkBuffer.shift())
+    this._pushChunk()
+  }
+  _pushChunk () {
+    if (!this.pushChunk) {
+      return
+    }
+
+    if (this.chunkBuffer.length) {
+      this.pushChunk = this.push(this.chunkBuffer.shift())
+      this._pushChunk()
     } else if(this.isDownloadFinished) {
       this.push(null)
     }
   }
-  _download (pushChunk) {
+  _download () {
     const hash = this.hash
     const limit = Math.min(
                     this.numChunks - this.chunkOffset,
                     this.options.chunksPerBatch)
 
-    this.isDownloading = true
-
     if(limit === 0) {
       this.isDownloadFinished = true
-
-      if(pushChunk) {
-        this.push(null)
-      }
-
+      this._pushChunk()
       return
     }
 
+    this.isDownloading = true
     this.chunkOffset += limit
     this.hash = Util.offsetHash(hash, limit)
 
@@ -62,10 +65,7 @@ export default class DownloadStream extends Readable {
       this.isDownloading = false
       if(data && data.length === limit) {
         this.chunkBuffer = this.chunkBuffer.concat(data)
-
-        if(pushChunk) {
-          this.push(this.chunkBuffer.shift())
-        }
+        this._pushChunk()
       } else {
         this.emit('error', 'Download incomplete')
       }
