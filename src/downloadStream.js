@@ -5,8 +5,12 @@ const DEFAULT_OPTIONS = Object.freeze({
     chunksPerBatch: 50,
     // WIP. Must be passed for now
     iota: null,
-    objectMode: true
+    objectMode: false
   })
+
+function notNull (item) {
+  return item !== null
+}
 
 export default class DownloadStream extends Readable {
   constructor (genesisHash, metadata, options) {
@@ -61,16 +65,40 @@ export default class DownloadStream extends Readable {
     this.chunkOffset += limit
     this.hash = Util.offsetHash(hash, limit)
 
-    Util.queryGeneratedSignatures(this.options.iota, hash, limit).then(data => {
+    const iota = this.options.iota
+    const binaryMode = !this.options.objectMode
+    Util.queryGeneratedSignatures(iota, hash, limit, binaryMode).then(result => {
       this.isDownloading = false
-      if(data && data.length === limit) {
-        this.chunkBuffer = this.chunkBuffer.concat(data)
-        this._pushChunk()
+
+      if(result.isBinary) {
+        this._processBinaryChunk(result.data)
       } else {
-        this.emit('error', 'Download incomplete')
+        const signatures = result.data.filter(notNull)
+        if(signatures && signatures.length === limit) {
+          this.chunkBuffer = this.chunkBuffer.concat(signatures)
+        } else {
+          this.emit('error', 'Download incomplete')
+        }
       }
+
+      this._pushChunk()
     }).catch(error => {
       this.emit('error', error)
     })
+  }
+  _processBinaryChunk (buffer) {
+    const bytes = new Uint8Array(buffer)
+    const maxOffset = bytes.length - 2
+
+    let i = 0
+    let offset = 0
+    let length
+    let chunk
+    while(offset < maxOffset) {
+      length = (bytes[offset] << 8) | bytes[offset+1]
+      chunk = new Uint8Array(buffer, offset + 2, length)
+      offset += 2 + length
+      this.chunkBuffer.push(chunk)
+    }
   }
 }

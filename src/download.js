@@ -1,5 +1,6 @@
 import IOTA from 'iota.lib.js'
 import { EventEmitter } from 'events'
+import Forge from 'node-forge'
 import DecryptStream from './decryptStream'
 import DownloadStream from './downloadStream'
 import FilePreviewStream from './filePreviewStream'
@@ -27,20 +28,21 @@ export default class Download extends EventEmitter {
     this.genesisHash = genesisHash(handle)
     this.key = Util.bytesFromHandle(handle)
 
-    this.getMetadata().then(this.startDownload).catch(error => {
-      console.info('Error', error)
-    })
+    this.getMetadata().then(this.startDownload)
   }
   getMetadata () {
-    return Util.queryGeneratedSignatures(iotaA, this.genesisHash, 1).then(data => {
-      const signature = data[0]
+    return Util.queryGeneratedSignatures(iotaA, this.genesisHash, 1).then(result => {
+      const signature = result.data[0]
 
       if(signature === null) {
         throw 'File does not exist'
       }
 
       const trytes = Util.parseMessage(signature)
-      const metadata = JSON.parse(Util.decryptString(this.key, trytes))
+      const byteStr = Util.iota.utils.fromTrytes(trytes)
+      const byteBuffer = Forge.util.createBuffer(byteStr, 'binary')
+      const metadata = JSON.parse(Util.decryptString(this.key, byteBuffer))
+
       this.emit('metadata', metadata)
       this.metadata = metadata
       return Promise.resolve(metadata)
@@ -49,7 +51,7 @@ export default class Download extends EventEmitter {
   startDownload (metadata) {
     this.downloadStream = new DownloadStream(this.genesisHash, metadata, {iota: iotaA})
     this.decryptStream = new DecryptStream(this.key)
-    // this could be anything in the future, but for now grab the whole file
+
     this.filePreviewStream = new FilePreviewStream(metadata)
 
     this.downloadStream

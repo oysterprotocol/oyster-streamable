@@ -1,8 +1,10 @@
+import Forge from 'node-forge'
 import { Transform } from 'readable-stream'
-import { bytesFromHandle, decryptBytes, parseMessage } from './util'
+import { iota, bytesFromHandle, decryptBytes, parseMessage } from './util'
 
+const ByteBuffer = Forge.util.ByteBuffer
 const DEFAULT_OPTIONS = Object.freeze({
-    objectMode: true
+    objectMode: false
   })
 
 export default class DecryptStream extends Transform {
@@ -13,8 +15,18 @@ export default class DecryptStream extends Transform {
     this.options = opts
     this.key = key
   }
-  _transform (trytes, encoding, callback) {
-    const decrypted = decryptBytes(this.key, parseMessage(trytes))
+  _transform (chunk, encoding, callback) {
+    let byteBuffer
+
+    if(!this.objectMode) {
+      byteBuffer = new ByteBuffer(chunk, 'raw')
+    } else {
+      const trytes = parseMessage(chunk)
+      const bytes = iota.utils.fromTrytes(trytes)
+      byteBuffer = new ByteBuffer(bytes, 'binary')
+    }
+
+    const decrypted = decryptBytes(this.key, byteBuffer)
     callback(null, decrypted)
   }
 }

@@ -1,9 +1,12 @@
 import IOTA from 'iota.lib.js'
 import Forge from 'node-forge'
 import { genesisHash, hashChain } from './utils/encryption'
+import axios from 'axios'
 
 const IV_TRYTE_LENGTH = 32
-const iota = new IOTA()
+const IV_BYTE_LENGTH = 16
+
+export let iota = new IOTA();
 
 export function bytesFromHandle (handle) {
   return Forge.md.sha256.create().update(handle).digest()
@@ -31,31 +34,40 @@ export function parseMessage (message) {
 
   const evenChars =
     choppedMessage.length % 2 === 0 ? choppedMessage : choppedMessage + "9";
-
   return evenChars;
 }
 
-// Query transactions signatures with IXI Oyster.findGeneratedSignatures
-export function queryGeneratedSignatures (iotaProvider, hash, count) {
+export function queryGeneratedSignatures (iotaProvider, hash, count, binary = false) {
   return new Promise((resolve, reject) => {
     const data = {
       command: 'Oyster.findGeneratedSignatures',
-      hash: hash,
-      count: count
+      hash,
+      count,
+      binary
     }
 
-    iotaProvider.api.sendCommand(data, (error, result) => {
-      if(error) {
-        return reject(error)
+    const opts = {
+      timeout: 5000,
+      responseType: binary ? 'arraybuffer' : 'json',
+      headers: {'X-IOTA-API-Version': '1'}
+    }
+
+    axios.post(iotaProvider.provider, data, opts).then(response => {
+      if(response.status !== 200) {
+        throw(`Request failed (${response.status}) ${response.statusText}`)
       }
 
-      const signatures = result.ixi.signatures || []
-
-      if(count !== signatures.length) {
-        return reject("Input and output mismatch")
+      if (response.headers['content-type'] === 'application/octet-stream') {
+        resolve({
+          isBinary: true,
+          data: response.data
+        })
+      } else {
+        resolve({
+          isBinary: false,
+          data: response.data.ixi.signatures || []
+        })
       }
-
-      resolve(signatures)
     })
   })
 }
@@ -63,7 +75,7 @@ export function queryGeneratedSignatures (iotaProvider, hash, count) {
 // Encryption to trytes
 export function encrypt(key, binaryString) {
   key.read = 0
-  const iv = Forge.random.getBytesSync(16)
+  const iv = Forge.random.getBytesSync(IV_BYTE_LENGTH)
   const cipher = Forge.cipher.createCipher('AES-GCM', key)
 
   cipher.start({
@@ -90,28 +102,29 @@ export function encryptBytes (key, bytes) {
 }
 
 // Decryption from trytes
-export function decrypt (key, trytes) {
+export function decrypt (key, byteBuffer) {
   key.read = 0
-  const iv = iota.utils.fromTrytes(trytes.substr(-IV_TRYTE_LENGTH))
-  const end = trytes.length - IV_TRYTE_LENGTH
-  const msg = trytes.substr(0, end)
-  const encrypted = iota.utils.fromTrytes(msg)
+  const byteStr = byteBuffer.bytes()
+  const iv = byteStr.substr(-IV_BYTE_LENGTH)
+  const end = byteStr.length - IV_BYTE_LENGTH
+  const msg = byteStr.substr(0, end)
   const decipher = Forge.cipher.createDecipher('AES-GCM', key)
+
   decipher.start({
     iv: iv,
     additionalData: 'binary-encoded string',
     tagLength: 0
   })
-  decipher.update(Forge.util.createBuffer(encrypted), 'binary')
+  decipher.update(new Forge.util.ByteBuffer(msg, 'binary'))
   const pass = decipher.finish()
 
   return decipher.output
 }
 
-export function decryptBytes (key, trytes) {
-  return Forge.util.binary.raw.decode(decrypt(key, trytes).getBytes())
+export function decryptBytes (key, byteBuffer) {
+  return Forge.util.binary.raw.decode(decrypt(key, byteBuffer).bytes())
 }
 
-export function decryptString (key, trytes, encoding) {
-  return decrypt(key, trytes).toString(encoding || 'utf8')
+export function decryptString (key, byteBuffer, encoding) {
+  return decrypt(key, byteBuffer).toString(encoding || 'utf8')
 }
