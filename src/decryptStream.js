@@ -27,6 +27,11 @@ export default class DecryptStream extends Transform {
     }
 
     const decrypted = decryptBytes(this.key, byteBuffer)
-    callback(null, decrypted)
+    if (decrypted) {
+      callback(null, decrypted)
+    } else {
+      console.info('skipped invalid chunk (treasure?)')
+      callback()
+    }
   }
 }

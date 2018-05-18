@@ -3,8 +3,11 @@ import Forge from 'node-forge'
 import { genesisHash, hashChain } from './utils/encryption'
 import axios from 'axios'
 
+const STOPPER_TRYTE = 'A'
 const IV_TRYTE_LENGTH = 32
 const IV_BYTE_LENGTH = 16
+const TAG_BYTE_LENGTH = 16
+const TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8
 
 export let iota = new IOTA();
 
@@ -25,16 +28,12 @@ export function offsetHash (hash, offset) {
   return hash
 }
 
-export function parseMessage (message) {
-  const characters = message.split("");
-  const notNineIndex = _.findLastIndex(characters, c => c !== "9");
+export function addStopperTryte (trytes) {
+  return trytes + STOPPER_TRYTE
+}
 
-  const choppedArray = characters.slice(0, notNineIndex + 1);
-  const choppedMessage = choppedArray.join("");
-
-  const evenChars =
-    choppedMessage.length % 2 === 0 ? choppedMessage : choppedMessage + "9";
-  return evenChars;
+export function parseMessage (trytes) {
+  return trytes.substring(0, trytes.lastIndexOf(STOPPER_TRYTE))
 }
 
 export function queryGeneratedSignatures (iotaProvider, hash, count, binary = false) {
@@ -81,16 +80,17 @@ export function encrypt(key, binaryString) {
   cipher.start({
     iv: iv,
     additionalData: 'binary-encoded string',
-    tagLength: 128
+    tagLength: TAG_BIT_LENGTH
   })
 
   cipher.update(binaryString)
   cipher.finish()
 
   const ivTrytes = iota.utils.toTrytes(iv)
-  const trytes = iota.utils.toTrytes(cipher.output.getBytes())
+  const tagTrytes = iota.utils.toTrytes(cipher.mode.tag.bytes())
+  const trytes = iota.utils.toTrytes(cipher.output.bytes())
 
-  return trytes + ivTrytes
+  return trytes + tagTrytes + ivTrytes
 }
 
 export function encryptString(key, string, encoding) {
@@ -105,26 +105,41 @@ export function encryptBytes (key, bytes) {
 export function decrypt (key, byteBuffer) {
   key.read = 0
   const byteStr = byteBuffer.bytes()
+  const tag = byteStr.substr(-TAG_BYTE_LENGTH - IV_BYTE_LENGTH, TAG_BYTE_LENGTH)
   const iv = byteStr.substr(-IV_BYTE_LENGTH)
-  const end = byteStr.length - IV_BYTE_LENGTH
+  const end = byteStr.length - TAG_BYTE_LENGTH - IV_BYTE_LENGTH
   const msg = byteStr.substr(0, end)
   const decipher = Forge.cipher.createDecipher('AES-GCM', key)
 
   decipher.start({
     iv: iv,
     additionalData: 'binary-encoded string',
-    tagLength: 0
+    tagLength: TAG_BIT_LENGTH,
+    tag
   })
   decipher.update(new Forge.util.ByteBuffer(msg, 'binary'))
-  const pass = decipher.finish()
 
-  return decipher.output
+  if(decipher.finish()) {
+    return decipher.output
+  } else {
+    return false
+  }
 }
 
 export function decryptBytes (key, byteBuffer) {
-  return Forge.util.binary.raw.decode(decrypt(key, byteBuffer).bytes())
+  const output = decrypt(key, byteBuffer)
+  if(output) {
+    return Forge.util.binary.raw.decode(output.bytes())
+  } else {
+    return false
+  }
 }
 
 export function decryptString (key, byteBuffer, encoding) {
-  return decrypt(key, byteBuffer).toString(encoding || 'utf8')
+  const output = decrypt(key, byteBuffer)
+  if(output) {
+    return output.toString(encoding || 'utf8')
+  } else {
+    return false
+  }
 }

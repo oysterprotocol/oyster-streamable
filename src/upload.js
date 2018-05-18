@@ -6,9 +6,9 @@ import UploadStream from './uploadStream'
 import { createHandle, genesisHash } from './utils/encryption'
 import { createUploadSession } from './utils/backend'
 import { createMetaData } from './utils/file-processor'
-import { bytesFromHandle, encryptString } from './util'
+import { bytesFromHandle, encryptString, addStopperTryte } from './util'
 
-const CHUNK_BYTE_SIZE = 1000
+const CHUNK_BYTE_SIZE = 1024
 const DEFAULT_OPTIONS = Object.freeze({
   epochs: 999,
   encryptStream: {
@@ -35,13 +35,13 @@ export default class Upload extends EventEmitter {
 
     this.uploadSession = createUploadSession(file.size, this.genesisHash, totalChunks, epochs)
       .then(this.startUpload)
-
   }
+
   startUpload (session) {
     const sessIdA = session.alphaSessionId
     const sessIdB = session.betaSessionId
     const invoice = session.invoice || false
-    const metaChunk = encryptString(this.key, this.metadata)
+    const metaChunk = addStopperTryte(encryptString(this.key, this.metadata))
 
     this.emit('invoice', invoice)
 

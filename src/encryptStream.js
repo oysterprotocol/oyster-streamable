@@ -1,9 +1,9 @@
 import { Transform } from 'readable-stream'
-import { bytesFromHandle, encryptBytes } from './util'
+import { bytesFromHandle, encryptBytes, addStopperTryte } from './util'
 
 const DEFAULT_OPTIONS = Object.freeze({
     objectMode: true,
-    chunkByteSize: 1000
+    chunkByteSize: 1024
   })
 
 export default class EncryptStream extends Transform {
@@ -25,8 +25,7 @@ export default class EncryptStream extends Transform {
     for(let offset = 0; offset < length; offset += chunkByteSize) {
       const limit = Math.min(length - offset, chunkByteSize)
       const bytes = new Uint8Array(buffer, offset, limit)
-      const encryptedBytes = encryptBytes(key, bytes)
-
+      const encryptedBytes = addStopperTryte(encryptBytes(key, bytes))
       this.push(encryptedBytes)
     }
 
