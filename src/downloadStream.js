@@ -62,8 +62,9 @@ export default class DownloadStream extends Readable {
     }
 
     this.isDownloading = true
+    this.hash = Util.offsetHash(hash, limit - 1)
     this.chunkOffset += limit
-    this.hash = Util.offsetHash(hash, limit)
+
 
     const iota = this.options.iota
     const binaryMode = !this.options.objectMode
