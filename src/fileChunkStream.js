@@ -1,8 +1,8 @@
 import { Readable } from 'readable-stream'
 
 const DEFAULT_OPTIONS = Object.freeze({
-  highWaterMark: 1000 * 64,
-  readSize: 1000 * 16
+  highWaterMark: 1024 * 64,
+  readSize: 1024 * 16
 })
 
 export default class FileChunkStream extends Readable {
@@ -28,6 +28,11 @@ export default class FileChunkStream extends Readable {
     const size = this.readSize
     const limit = Math.min(offset + size, file.size)
 
+    // Reader busy
+    if(this.reader.readyState === FileReader.LOADING) {
+      return
+    }
+
     // End stream when file is read in
     if(offset >= file.size) {
       return this.push(null)
@@ -42,11 +47,8 @@ export default class FileChunkStream extends Readable {
     const data = new Uint8Array(event.target.result)
 
     // Keep going until stream queue is full
-    // Only useful in paused mode (???)
     if(this.push(data) !== false) {
-      if(this.reader.readyState !== FileReader.LOADING) {
-        this._readChunksFromFile()
-      }
+      this._readChunksFromFile()
     }
   }
 }
