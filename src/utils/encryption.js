@@ -1,9 +1,9 @@
 import Forge from 'node-forge'
 
-// `length` should be a multiple of 8
+// `length` should be a multiple of 2
 export function getSalt (length) {
-  const bytes = Forge.random.getBytesSync(Math.ceil(length / 8 * 6))
-  return Forge.util.encode64(bytes)
+  const bytes = Forge.random.getBytesSync(Math.ceil(length / 2))
+  return Forge.util.binary.hex.encode(bytes)
 }
 
 export function getPrimordialHash () {
