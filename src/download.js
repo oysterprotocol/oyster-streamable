@@ -9,6 +9,7 @@ import { genesisHash } from './utils/encryption'
 import { createUploadSession } from './utils/backend'
 import { createMetaData } from './utils/file-processor'
 import { IOTA_API } from "./config";
+import { queryGeneratedSignatures } from './utils/backend'
 import * as Util from './util'
 
 const iotaA = new IOTA({ provider: IOTA_API.PROVIDER_A })
@@ -31,7 +32,7 @@ export default class Download extends EventEmitter {
     this.getMetadata().then(this.startDownload)
   }
   getMetadata () {
-    return Util.queryGeneratedSignatures(iotaA, this.genesisHash, 1).then(result => {
+    return queryGeneratedSignatures(iotaA, this.genesisHash, 1).then(result => {
       const signature = result.data[0]
 
       if(signature === null) {

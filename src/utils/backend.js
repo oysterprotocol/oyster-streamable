@@ -9,6 +9,41 @@ const axiosInstance = axios.create({
   timeout: 200000
 })
 
+export function queryGeneratedSignatures (iotaProvider, hash, count, binary = false) {
+  return new Promise((resolve, reject) => {
+    const data = {
+      command: 'Oyster.findGeneratedSignatures',
+      hash,
+      count,
+      binary
+    }
+
+    const opts = {
+      timeout: 5000,
+      responseType: binary ? 'arraybuffer' : 'json',
+      headers: {'X-IOTA-API-Version': '1'}
+    }
+
+    axiosInstance.post(iotaProvider.provider, data, opts).then(response => {
+      if(response.status !== 200) {
+        throw(`Request failed (${response.status}) ${response.statusText}`)
+      }
+
+      if (response.headers['content-type'] === 'application/octet-stream') {
+        resolve({
+          isBinary: true,
+          data: response.data
+        })
+      } else {
+        resolve({
+          isBinary: false,
+          data: response.data.ixi.signatures || []
+        })
+      }
+    })
+  })
+}
+
 export function createUploadSession (
   filesize,
   genesisHash,
@@ -41,6 +76,14 @@ export function sendToBrokers (sessIdA, sessIdB, chunks) {
     sendToBroker(API.BROKER_NODE_A, sessIdA, chunks),
     sendToBroker(API.BROKER_NODE_B, sessIdB, [...chunks].reverse())
   ])
+}
+
+export function sendToBrokerA (sessId, chunks) {
+  return sendToBroker(API.BROKER_NODE_A, sessId, chunks)
+}
+
+export function sendToBrokerB (sessId, chunks) {
+  return sendToBroker(API.BROKER_NODE_B, sessId, chunks)
 }
 
 export function sendToBroker (broker, sessId, chunks) {
