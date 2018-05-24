@@ -67,13 +67,10 @@ export default class FileChunkStream extends Readable {
   _readChunksFromFile () {
     // End stream when file is read in
     if(this.lowIdx === this.numChunks && this.highIdx < 0) {
-      console.log('read finish')
       return this.push(null)
     } else if (this.lowIdx === this.numChunks) {
-      console.log('low end finished')
       this.readNextHigh = true
     } else if (this.highIdx < 0) {
-      console.log('high end finished')
       this.readNextHigh = false
     }
 
@@ -106,14 +103,17 @@ export default class FileChunkStream extends Readable {
   }
   _onLowRead (event) {
     const result = event.target.result
+    const chunkCount = Math.ceil(result.byteLength / BYTES_PER_CHUNK)
     let i = 0
-    let limit = 0
+    let limit
     let offset
+    let data
+    let idx
 
-    while (limit < result.byteLength) {
+    while (i < chunkCount) {
       offset = i++ * BYTES_PER_CHUNK
       limit = Math.min(offset + BYTES_PER_CHUNK, result.byteLength)
-      const data = new Uint8Array(result, offset, limit - offset)
+      data = new Uint8Array(result, offset, limit - offset)
       this.chunkBuffer.push({
         order: CHUNK_ORDER_ASC,
         idx: this.options.chunkIdOffset + this.lowIdx++,
@@ -126,22 +126,24 @@ export default class FileChunkStream extends Readable {
   _onHighRead (event) {
     const result = event.target.result
     const chunkCount = Math.ceil(result.byteLength / BYTES_PER_CHUNK)
-    let i = 0
-    let limit = 0
+    let i = chunkCount
+    let limit
     let offset
+    let data
+    let idx
 
-    while (limit < result.byteLength) {
-      offset = i++ * BYTES_PER_CHUNK
+    while (i > 0) {
+      offset = --i * BYTES_PER_CHUNK
       limit = Math.min(offset + BYTES_PER_CHUNK, result.byteLength)
-      const data = new Uint8Array(result, offset, limit - offset)
+      data = new Uint8Array(result, offset, limit - offset)
+      idx = this.options.chunkIdOffset + this.highIdx--
       this.chunkBuffer.push({
         order: CHUNK_ORDER_DESC,
-        idx: this.options.chunkIdOffset + this.highIdx - chunkCount + i,
+        idx,
         data
       })
     }
 
-    this.highIdx -= chunkCount
     this._pushChunk()
   }
 }

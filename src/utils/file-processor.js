@@ -7,5 +7,5 @@ export function createMetaData (fileName, numberOfChunks) {
     numberOfChunks
   }
 
-  return JSON.stringify(meta)
+  return meta
 }

@@ -1,9 +1,9 @@
 import { Transform } from 'readable-stream'
 import { bytesFromHandle, encryptBytes, addStopperTryte } from './util'
+import { genesisHash, deriveNonce } from './utils/encryption'
 
 const DEFAULT_OPTIONS = Object.freeze({
-    objectMode: true,
-    chunkByteSize: 1024
+    objectMode: true
   })
 
 export default class EncryptStream extends Transform {
@@ -13,22 +13,14 @@ export default class EncryptStream extends Transform {
     super(opts)
     this.options = opts
     this.key = bytesFromHandle(handle)
+    this.genesisHash = genesisHash(handle)
   }
-  _transform (data, encoding, callback) {
+  _transform (chunk, encoding, callback) {
     const key = this.key
-    const chunkByteSize = this.options.chunkByteSize
-    const buffer = data.buffer
-    const length = buffer.byteLength
+    const iv = deriveNonce(this.genesisHash, chunk.idx)
 
-    // TODO: Buffer remainders instead of creating small chunks
-    // Currently avoided by reading the file in multiples of chunkByteSize
-    for(let offset = 0; offset < length; offset += chunkByteSize) {
-      const limit = Math.min(length - offset, chunkByteSize)
-      const bytes = new Uint8Array(buffer, offset, limit)
-      const encryptedBytes = addStopperTryte(encryptBytes(key, bytes))
-      this.push(encryptedBytes)
-    }
+    chunk.data = addStopperTryte(encryptBytes(key, iv, chunk.data))
 
-    callback()
+    callback(null, chunk)
   }
 }

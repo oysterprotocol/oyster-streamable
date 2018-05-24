@@ -1,5 +1,7 @@
 import Forge from 'node-forge'
 
+const IV_BYTE_LENGTH = 16
+
 // `length` should be a multiple of 2
 export function getSalt (length) {
   const bytes = Forge.random.getBytesSync(Math.ceil(length / 2))
@@ -9,6 +11,16 @@ export function getSalt (length) {
 export function getPrimordialHash () {
   const bytes = Forge.random.getBytesSync(16)
   return Forge.md.sha256.create().update(bytes).digest().toHex()
+}
+
+export function deriveNonce (genesisHash, idx) {
+  const input = genesisHash + idx.toString(16)
+  const bytes = Forge.util.binary.hex.decode(input)
+  return Forge.md.sha384
+          .create()
+          .update(bytes)
+          .digest()
+          .getBytes(IV_BYTE_LENGTH)
 }
 
 // Returns [obfuscatedHash, nextHash]

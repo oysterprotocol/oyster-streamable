@@ -6,7 +6,7 @@ import UploadStream from './uploadStream'
 import { createHandle, genesisHash } from './utils/encryption'
 import { createUploadSession } from './utils/backend'
 import { createMetaData } from './utils/file-processor'
-import { bytesFromHandle, encryptString, addStopperTryte } from './util'
+import { bytesFromHandle, encryptMetadata } from './util'
 
 const CHUNK_BYTE_SIZE = 1024
 const DEFAULT_OPTIONS = Object.freeze({
@@ -32,6 +32,7 @@ export default class Upload extends EventEmitter {
     this.metadata = createMetaData(file.name, chunkCount)
     this.genesisHash = genesisHash(this.handle)
     this.key = bytesFromHandle(this.handle)
+    this.numberOfChunks = totalChunks
 
     this.uploadSession = createUploadSession(file.size, this.genesisHash, totalChunks, epochs)
       .then(this.startUpload)
@@ -40,17 +41,14 @@ export default class Upload extends EventEmitter {
   startUpload (session) {
     const sessIdA = session.alphaSessionId
     const sessIdB = session.betaSessionId
-    const invoice = session.invoice || false
-    const metaChunk = addStopperTryte(encryptString(this.key, this.metadata))
+    const invoice = session.invoice || null
+    const metadata = encryptMetadata(this.metadata, this.key, this.genesisHash)
 
     this.emit('invoice', invoice)
 
     this.fileChunkStream = new FileChunkStream(this.file, this.options.encryptStream || {})
     this.encryptStream = new EncryptStream(this.handle)
-    this.uploadStream = new UploadStream(this.genesisHash, sessIdA, sessIdB)
-
-    // TODO: Length check metachunk?
-    this.uploadStream.write(metaChunk)
+    this.uploadStream = new UploadStream(metadata, this.genesisHash, sessIdA, sessIdB)
 
     this.fileChunkStream
       .pipe(this.encryptStream)
@@ -59,6 +57,7 @@ export default class Upload extends EventEmitter {
         this.emit('finish', {
           target: this,
           handle: this.handle,
+          numberOfChunks: this.numberOfChunks,
           metadata: this.metadata
         })
       })

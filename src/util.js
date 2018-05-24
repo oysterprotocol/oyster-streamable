@@ -1,6 +1,6 @@
 import IOTA from 'iota.lib.js'
 import Forge from 'node-forge'
-import { genesisHash, hashChain } from './utils/encryption'
+import { deriveNonce, genesisHash, hashChain } from './utils/encryption'
 import axios from 'axios'
 
 const STOPPER_TRYTE = 'A'
@@ -37,9 +37,8 @@ export function parseMessage (trytes) {
 }
 
 // Encryption to trytes
-export function encrypt(key, binaryString) {
+export function encrypt(key, iv, binaryString) {
   key.read = 0
-  const iv = Forge.random.getBytesSync(IV_BYTE_LENGTH)
   const cipher = Forge.cipher.createCipher('AES-GCM', key)
 
   cipher.start({
@@ -58,12 +57,18 @@ export function encrypt(key, binaryString) {
   return trytes + tagTrytes + ivTrytes
 }
 
-export function encryptString(key, string, encoding) {
-  return encrypt(key, Forge.util.createBuffer(string, encoding || 'utf8'))
+export function encryptString(key, iv, string, encoding) {
+  return encrypt(key, iv, Forge.util.createBuffer(string, encoding || 'utf8'))
 }
 
-export function encryptBytes (key, bytes) {
-  return encrypt(key, Forge.util.createBuffer(bytes))
+export function encryptBytes (key, iv, bytes) {
+  return encrypt(key, iv, Forge.util.createBuffer(bytes))
+}
+
+export function encryptMetadata (metadata, key, genesisHash) {
+  const iv = deriveNonce(genesisHash, 0)
+  const trytes = encryptString(key, iv, JSON.stringify(metadata), 'utf8')
+  return addStopperTryte(trytes)
 }
 
 // Decryption from trytes
