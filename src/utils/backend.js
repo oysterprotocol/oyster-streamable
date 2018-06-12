@@ -3,6 +3,7 @@ import FileProcessor from "./file-processor"
 import Encryption from "./encryption"
 import { API, IOTA_API } from "../config"
 
+const CURRENT_VERSION = 1
 const SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH
 
 const axiosInstance = axios.create({
@@ -13,6 +14,7 @@ export function queryGeneratedSignatures (iotaProvider, hash, count, binary = fa
   return new Promise((resolve, reject) => {
     const data = {
       command: 'Oyster.findGeneratedSignatures',
+      version: CURRENT_VERSION,
       hash,
       count,
       binary
@@ -40,6 +42,8 @@ export function queryGeneratedSignatures (iotaProvider, hash, count, binary = fa
           data: response.data.ixi.signatures || []
         })
       }
+    }).catch(error => {
+      reject(error)
     })
   })
 }
@@ -74,7 +78,7 @@ export function createUploadSession (
 export function sendToBrokers (sessIdA, sessIdB, chunks) {
   return Promise.all([
     sendToBroker(API.BROKER_NODE_A, sessIdA, chunks),
-    sendToBroker(API.BROKER_NODE_B, sessIdB, [...chunks].reverse())
+    sendToBroker(API.BROKER_NODE_B, sessIdB, chunks.slice().reverse())
   ])
 }
 

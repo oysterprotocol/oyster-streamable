@@ -4,7 +4,8 @@ import { iota, bytesFromHandle, decryptBytes, parseMessage } from './util'
 
 const ByteBuffer = Forge.util.ByteBuffer
 const DEFAULT_OPTIONS = Object.freeze({
-    objectMode: false
+    binaryMode: false,
+    objectMode: true
   })
 
 export default class DecryptStream extends Transform {
@@ -18,11 +19,16 @@ export default class DecryptStream extends Transform {
   _transform (chunk, encoding, callback) {
     let byteBuffer
 
-    if(!this.objectMode) {
+    if(this.options.binaryMode) {
       byteBuffer = new ByteBuffer(chunk, 'raw')
     } else {
       const trytes = parseMessage(chunk)
       const bytes = iota.utils.fromTrytes(trytes)
+
+      // odd tryte count. assume treasure and continue
+      if (!bytes) {
+        return callback()
+      }
       byteBuffer = new ByteBuffer(bytes, 'binary')
     }
 
@@ -30,7 +36,7 @@ export default class DecryptStream extends Transform {
     if (decrypted) {
       callback(null, decrypted)
     } else {
-      console.info('skipped invalid chunk (treasure?)')
+      // could not decrypt. assume treasure and continue
       callback()
     }
   }

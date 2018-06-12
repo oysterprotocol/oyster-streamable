@@ -1,13 +1,15 @@
 import { Readable } from 'readable-stream'
 import { queryGeneratedSignatures } from './utils/backend'
 import { offsetHash } from './util'
+import { INCLUDE_TREASURE_OFFSETS, FILE } from './config'
 
 const DEFAULT_OPTIONS = Object.freeze({
     maxParallelDownloads: 4,
     chunksPerBatch: 500,
+    binaryMode: false,
     // WIP. Must be passed for now
     iota: null,
-    objectMode: false
+    objectMode: true
   })
 
 function notNull (item) {
@@ -31,11 +33,11 @@ export default class DownloadStream extends Readable {
     this.pushChunk = false
     this.ongoingDownloads = 0
 
-    if(this.numChunks === 0) {
-      this.push(null)
-    } else {
-      this._download()
+    if(INCLUDE_TREASURE_OFFSETS) {
+      this.numChunks += Math.ceil(this.numChunks / (FILE.CHUNKS_PER_SECTOR - 1))
     }
+
+    this._download()
   }
   _read () {
     this.pushChunk = true
@@ -68,7 +70,8 @@ export default class DownloadStream extends Readable {
     }
 
     if (this.chunkBuffer.length) {
-      this.pushChunk = this.push(this.chunkBuffer.shift())
+      const chunk = this.chunkBuffer.shift()
+      this.pushChunk = this.push(chunk)
       this._pushChunk()
     }
   }
@@ -88,7 +91,7 @@ export default class DownloadStream extends Readable {
 
     const batchId = this.batchId++
     const iota = this.options.iota
-    const binaryMode = !this.options.objectMode
+    const binaryMode = this.options.binaryMode
     queryGeneratedSignatures(iota, hash, limit, binaryMode).then(result => {
       this.ongoingDownloads--
 
@@ -113,7 +116,7 @@ export default class DownloadStream extends Readable {
     }).catch(error => {
       this.ongoingDownloads--
       this.emit('error', error)
-    })
+    }).catch(error => {})
   }
   _processBinaryChunk (buffer, batchId) {
     const batch = []

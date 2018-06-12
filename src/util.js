@@ -3,29 +3,31 @@ import Forge from 'node-forge'
 import { deriveNonce, genesisHash, hashChain } from './utils/encryption'
 import axios from 'axios'
 
+const CURRENT_VERSION = 1
 const STOPPER_TRYTE = 'A'
-const IV_TRYTE_LENGTH = 32
 const IV_BYTE_LENGTH = 16
 const TAG_BYTE_LENGTH = 16
 const TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8
 
 export let iota = new IOTA();
 
+
 export function bytesFromHandle (handle) {
-  return Forge.md.sha256.create().update(handle).digest()
+  return Forge.md.sha256.create().update(handle, 'utf8').digest()
 }
 
 // Offset hashes for IXI Oyster.findGeneratedSignatures
 // Pass genesisHash, absolute offset (0 = first file chunk)
 // Alternatively pass last hash, relative offset, to save cycles
-export function offsetHash (hash, offset) {
+export function offsetHash (hashStr, offset) {
   let obfuscatedHash
+  let hash = Forge.util.createBuffer(Forge.util.binary.hex.decode(hashStr)).bytes()
 
   do {
     [obfuscatedHash, hash] = hashChain(hash)
   } while(offset-- > 0)
 
-  return hash
+  return Forge.util.binary.hex.encode(hash)
 }
 
 export function addStopperTryte (trytes) {
@@ -58,17 +60,18 @@ export function encrypt(key, iv, binaryString) {
 }
 
 export function encryptString(key, iv, string, encoding) {
-  return encrypt(key, iv, Forge.util.createBuffer(string, encoding || 'utf8'))
+  const buf = Forge.util.createBuffer(string, encoding || 'utf8')
+  return encrypt(key, iv, buf)
 }
 
 export function encryptBytes (key, iv, bytes) {
   return encrypt(key, iv, Forge.util.createBuffer(bytes))
 }
 
-export function encryptMetadata (metadata, key, genesisHash) {
-  const iv = deriveNonce(genesisHash, 0)
+export function encryptMetadata (metadata, key) {
+  const iv = deriveNonce(key, 0)
   const trytes = encryptString(key, iv, JSON.stringify(metadata), 'utf8')
-  return addStopperTryte(trytes)
+  return addStopperTryte(versionTrytes() + trytes)
 }
 
 // Decryption from trytes
@@ -112,4 +115,26 @@ export function decryptString (key, byteBuffer, encoding) {
   } else {
     return false
   }
+}
+
+export function decryptMetadata (key, signature) {
+  const trytes = parseMessage(signature)
+  const byteStr = iota.utils.fromTrytes(trytes)
+  const byteBuffer = Forge.util.createBuffer(byteStr, 'binary')
+  const version = getVersion(byteBuffer)
+  const metadata = JSON.parse(decryptString(key, byteBuffer.compact()))
+
+  return { version, metadata }
+}
+
+export function getVersion (byteBuffer) {
+  const bytes = Forge.util.binary.raw.decode(byteBuffer.getBytes(4))
+  return (new DataView(bytes.buffer)).getUint32(0)
+}
+
+export function versionTrytes () {
+  const typedVersion = new DataView(new ArrayBuffer(4))
+  typedVersion.setUint32(0, CURRENT_VERSION)
+  const buf = new Forge.util.ByteBuffer(typedVersion.buffer)
+  return iota.utils.toTrytes(buf.bytes())
 }

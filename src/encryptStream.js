@@ -17,7 +17,7 @@ export default class EncryptStream extends Transform {
   }
   _transform (chunk, encoding, callback) {
     const key = this.key
-    const iv = deriveNonce(this.genesisHash, chunk.idx)
+    const iv = deriveNonce(this.key, chunk.idx)
 
     chunk.data = addStopperTryte(encryptBytes(key, iv, chunk.data))
 
