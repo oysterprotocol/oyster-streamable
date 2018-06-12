@@ -20,7 +20,7 @@ export default class FilePreviewStream extends Writable {
   }
   _final (callback) {
     const type = Mime.getType(this.metadata.ext)
-    this.file = new Blob(this.fileChunks, { type })
+    this.result = new Blob(this.fileChunks, { type })
     callback()
   }
 }

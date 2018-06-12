@@ -1,5 +1,5 @@
 import { Writable } from 'readable-stream'
-import { sendToBrokerA, sendToBrokerB } from './utils/backend'
+import { sendToBrokerA, sendToBrokerB } from '../utils/backend'
 
 const CHUNK_ORDER_ASC = 1
 const CHUNK_ORDER_DESC = 2

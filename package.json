@@ -2,11 +2,17 @@
   "name": "oyster-streamable",
   "version": "0.0.1",
   "description": "Arbitrary size interface for the Oyster network",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "browser": "dist/index.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
+  "scripts": {
+    "build": "babel src -d dist"
+  },
   "dependencies": {
     "axios": "^0.18.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-node8": "^1.2.0",
     "iota.lib.js": "^0.4.7",
     "mime": "^2.3.1",
     "node-forge": "^0.7.5",

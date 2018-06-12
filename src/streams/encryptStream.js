@@ -1,6 +1,6 @@
 import { Transform } from 'readable-stream'
-import { bytesFromHandle, encryptBytes, addStopperTryte } from './util'
-import { genesisHash, deriveNonce } from './utils/encryption'
+import { bytesFromHandle, encryptBytes, addStopperTryte } from '../util'
+import { genesisHash, deriveNonce } from '../utils/encryption'
 
 const DEFAULT_OPTIONS = Object.freeze({
     objectMode: true

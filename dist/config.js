@@ -1,4 +1,9 @@
-export const API = Object.freeze({
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+const API = exports.API = Object.freeze({
   // HOST: "http://localhost:8000",
   // BROKER_NODE_A: "http://localhost:8000",
   // BROKER_NODE_B: "http://localhost:8000",
@@ -10,27 +15,27 @@ export const API = Object.freeze({
   CHUNKS_PER_REQUEST: 10
 });
 
-export const IOTA_API = Object.freeze({
+const IOTA_API = exports.IOTA_API = Object.freeze({
   PROVIDER: "https://download.oysternodes.com:14265/",
   ADDRESS_LENGTH: 81,
   MESSAGE_LENGTH: 2187,
   BUNDLE_SIZE: 30
 });
 
-export const UPLOAD_STATUSES = Object.freeze({
+const UPLOAD_STATUSES = exports.UPLOAD_STATUSES = Object.freeze({
   PENDING: "PENDING",
   SENT: "SENT",
   FAILED: "FAILED"
 });
 
-export const DOWNLOAD_STATUSES = Object.freeze({
+const DOWNLOAD_STATUSES = exports.DOWNLOAD_STATUSES = Object.freeze({
   STANDBY: "STANDBY",
   PENDING: "PENDING",
   RECEIVED: "RECEIVED",
   FAILED: "FAILED"
 });
 
-export const FILE = Object.freeze({
+const FILE = exports.FILE = Object.freeze({
   CHUNKS_PER_SECTOR: 1000000,
   MAX_FILE_SIZE: 5 * 1024 * 1024,
   CHUNK_TYPES: {
@@ -39,4 +44,4 @@ export const FILE = Object.freeze({
   }
 });
 
-export const INCLUDE_TREASURE_OFFSETS = true
+const INCLUDE_TREASURE_OFFSETS = exports.INCLUDE_TREASURE_OFFSETS = true;

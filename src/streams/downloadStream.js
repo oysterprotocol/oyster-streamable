@@ -1,7 +1,7 @@
 import { Readable } from 'readable-stream'
-import { queryGeneratedSignatures } from './utils/backend'
-import { offsetHash } from './util'
-import { INCLUDE_TREASURE_OFFSETS, FILE } from './config'
+import { offsetHash } from '../util'
+import { queryGeneratedSignatures } from '../utils/backend'
+import { INCLUDE_TREASURE_OFFSETS, FILE } from '../config'
 
 const DEFAULT_OPTIONS = Object.freeze({
     maxParallelDownloads: 4,

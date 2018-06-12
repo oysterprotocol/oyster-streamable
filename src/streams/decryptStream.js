@@ -1,6 +1,6 @@
 import Forge from 'node-forge'
 import { Transform } from 'readable-stream'
-import { iota, bytesFromHandle, decryptBytes, parseMessage } from './util'
+import { iota, bytesFromHandle, decryptBytes, parseMessage } from '../util'
 
 const ByteBuffer = Forge.util.ByteBuffer
 const DEFAULT_OPTIONS = Object.freeze({
