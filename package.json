@@ -3,13 +3,20 @@
   "version": "0.0.1",
   "description": "Arbitrary size interface for the Oyster network",
   "main": "dist/index.js",
-  "files": ["dist/index.js"],
+  "files": [
+    "dist/index.js"
+  ],
   "browser": "dist/index.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
   "scripts": {
     "build": "babel src --presets babel-preset-env --out-dir dist",
     "prepublish": "yarn build"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn build"
+    }
   },
   "dependencies": {
     "axios": "^0.18.0",
@@ -20,6 +27,7 @@
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
-    "babel-preset-env": "^1.7.0"
+    "babel-preset-env": "^1.7.0",
+    "husky": "^1.0.0-rc.8"
   }
 }
