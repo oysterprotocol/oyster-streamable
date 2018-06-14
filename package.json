@@ -3,19 +3,25 @@
   "version": "0.0.1",
   "description": "Arbitrary size interface for the Oyster network",
   "main": "dist/index.js",
+  "files": [
+    "dist/index.js"
+  ],
   "browser": "dist/index.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
   "scripts": {
-    "build": "babel src -d dist"
+    "build": "babel src --presets babel-preset-env --out-dir dist",
+    "prepublish": "yarn build"
   },
   "dependencies": {
     "axios": "^0.18.0",
-    "babel-cli": "^6.26.0",
-    "babel-preset-node8": "^1.2.0",
     "iota.lib.js": "^0.4.7",
     "mime": "^2.3.1",
     "node-forge": "^0.7.5",
     "readable-stream": "^2.3.6"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0"
   }
 }

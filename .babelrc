@@ -1,4 +1,6 @@
 {
-  "presets": ["node8"],
-  "ignore": false
+  "presets": ["env"],
+  "ignore": [
+    "**/*.test.js"
+  ]
 }

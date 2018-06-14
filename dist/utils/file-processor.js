@@ -5,12 +5,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.createMetaData = createMetaData;
 function createMetaData(fileName, numberOfChunks) {
-  const fileExtension = fileName.split(".").pop();
+  var fileExtension = fileName.split(".").pop();
 
-  const meta = {
+  var meta = {
     fileName: fileName.substr(0, 500),
     ext: fileExtension,
-    numberOfChunks
+    numberOfChunks: numberOfChunks
   };
 
   return meta;

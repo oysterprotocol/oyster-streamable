@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.queryGeneratedSignatures = queryGeneratedSignatures;
-exports.queryTransactionStatus = queryTransactionStatus;
 exports.createUploadSession = createUploadSession;
 exports.sendToBrokers = sendToBrokers;
 exports.sendToBrokerA = sendToBrokerA;
@@ -28,32 +27,34 @@ var _config = require("../config");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const CURRENT_VERSION = 1;
-const SESSIONS_PATH = _config.API.V2_UPLOAD_SESSIONS_PATH;
+var CURRENT_VERSION = 1;
+var SESSIONS_PATH = _config.API.V2_UPLOAD_SESSIONS_PATH;
 
-const axiosInstance = _axios2.default.create({
+var axiosInstance = _axios2.default.create({
   timeout: 200000
 });
 
-function queryGeneratedSignatures(iotaProvider, hash, count, binary = false) {
-  return new Promise((resolve, reject) => {
-    const data = {
+function queryGeneratedSignatures(iotaProvider, hash, count) {
+  var binary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+  return new Promise(function (resolve, reject) {
+    var data = {
       command: 'Oyster.findGeneratedSignatures',
       version: CURRENT_VERSION,
-      hash,
-      count,
-      binary
+      hash: hash,
+      count: count,
+      binary: binary
     };
 
-    const opts = {
+    var opts = {
       timeout: 5000,
       responseType: binary ? 'arraybuffer' : 'json',
       headers: { 'X-IOTA-API-Version': '1' }
     };
 
-    axiosInstance.post(iotaProvider.provider, data, opts).then(response => {
+    axiosInstance.post(iotaProvider.provider, data, opts).then(function (response) {
       if (response.status !== 200) {
-        throw `Request failed (${response.status}) ${response.statusText}`;
+        throw "Request failed (" + response.status + ") " + response.statusText;
       }
 
       if (response.headers['content-type'] === 'application/octet-stream') {
@@ -67,48 +68,28 @@ function queryGeneratedSignatures(iotaProvider, hash, count, binary = false) {
           data: response.data.ixi.signatures || []
         });
       }
-    }).catch(error => {
+    }).catch(function (error) {
       reject(error);
     });
   });
 }
 
-function queryTransactionStatus(iotaProvider, addresses) {
-  return new Promise((resolve, reject) => {
-    const data = {
-      command: 'Oyster.transactionStatus',
-      addresses
-    };
-
-    const opts = {
-      timeout: 5000,
-      responseType: 'json',
-      headers: { 'X-IOTA-API-Version': '1' }
-    };
-
-    axiosInstance.post(iotaProvider.provider, data, opts).then(response => {
-      if (response.status !== 200) {
-        throw `Request failed (${response.status}) ${response.statusText}`;
-      }
-
-      resolve(response.data);
-    });
-  });
-}
-
 function createUploadSession(filesize, genesisHash, numChunks, epochs) {
-  return new Promise((resolve, reject) => {
-    axiosInstance.post(`${_config.API.BROKER_NODE_A}${_config.API.V2_UPLOAD_SESSIONS_PATH}`, {
+  return new Promise(function (resolve, reject) {
+    axiosInstance.post("" + _config.API.BROKER_NODE_A + _config.API.V2_UPLOAD_SESSIONS_PATH, {
       fileSizeBytes: filesize,
-      numChunks,
-      genesisHash,
+      numChunks: numChunks,
+      genesisHash: genesisHash,
       betaIp: _config.API.BROKER_NODE_B,
       storageLengthInYears: epochs
-    }).then(({ data }) => {
-      const { id: alphaSessionId, betaSessionId } = data;
-      const { invoice: invoice } = data;
-      resolve({ alphaSessionId, betaSessionId, invoice });
-    }).catch(error => {
+    }).then(function (_ref) {
+      var data = _ref.data;
+      var alphaSessionId = data.id,
+          betaSessionId = data.betaSessionId;
+      var invoice = data.invoice;
+
+      resolve({ alphaSessionId: alphaSessionId, betaSessionId: betaSessionId, invoice: invoice });
+    }).catch(function (error) {
       console.log("UPLOAD SESSION ERROR: ", error);
       reject(error);
     });
@@ -128,15 +109,15 @@ function sendToBrokerB(sessId, chunks) {
 }
 
 function sendToBroker(broker, sessId, chunks) {
-  const endpoint = `${broker}${SESSIONS_PATH}/${sessId}`;
+  var endpoint = "" + broker + SESSIONS_PATH + "/" + sessId;
   return sendChunksToBroker(endpoint, chunks);
 }
 
 function sendChunksToBroker(brokerUrl, chunks) {
-  return new Promise((resolve, reject) => {
-    axiosInstance.put(brokerUrl, { chunks }).then(response => {
+  return new Promise(function (resolve, reject) {
+    axiosInstance.put(brokerUrl, { chunks: chunks }).then(function (response) {
       resolve(response);
-    }).catch(error => {
+    }).catch(function (error) {
       console.log("ERROR SENDING CHUNK TO BROKER:", error);
       reject(error);
     });

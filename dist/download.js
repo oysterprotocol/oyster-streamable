@@ -4,6 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 var _iotaLib = require('iota.lib.js');
 
 var _iotaLib2 = _interopRequireDefault(_iotaLib);
@@ -44,78 +46,116 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const iota = new _iotaLib2.default({ provider: _config.IOTA_API.PROVIDER });
-const DEFAULT_OPTIONS = Object.freeze({});
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-class Download extends _events.EventEmitter {
-  constructor(handle, options) {
-    const opts = Object.assign({}, DEFAULT_OPTIONS, options);
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-    super();
-    this.startDownload = this.startDownload.bind(this);
-    this.propagateError = this.propagateError.bind(this);
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-    this.options = opts;
-    this.handle = handle;
-    this.genesisHash = (0, _encryption.genesisHash)(handle);
-    this.key = Util.bytesFromHandle(handle);
+var iota = new _iotaLib2.default({ provider: _config.IOTA_API.PROVIDER });
+var DEFAULT_OPTIONS = Object.freeze({});
 
-    this.getMetadata().then(this.startDownload).catch(this.propagateError);
+var Download = function (_EventEmitter) {
+  _inherits(Download, _EventEmitter);
+
+  function Download(handle, options) {
+    _classCallCheck(this, Download);
+
+    var opts = Object.assign({}, DEFAULT_OPTIONS, options);
+
+    var _this = _possibleConstructorReturn(this, (Download.__proto__ || Object.getPrototypeOf(Download)).call(this));
+
+    _this.startDownload = _this.startDownload.bind(_this);
+    _this.propagateError = _this.propagateError.bind(_this);
+
+    _this.options = opts;
+    _this.handle = handle;
+    _this.genesisHash = (0, _encryption.genesisHash)(handle);
+    _this.key = Util.bytesFromHandle(handle);
+
+    _this.getMetadata().then(_this.startDownload).catch(_this.propagateError);
+    return _this;
   }
 
-  static toBuffer(handle, options = {}) {
-    const target = {
-      targetStream: _bufferTargetStream2.default
-    };
+  _createClass(Download, [{
+    key: 'getMetadata',
+    value: function getMetadata() {
+      var _this2 = this;
 
-    return new Download(handle, Object.assign(options, target));
-  }
+      return (0, _backend.queryGeneratedSignatures)(iota, this.genesisHash, 1).then(function (result) {
+        var signature = result.data[0];
 
-  static toBlob(handle, options = {}) {
-    const target = {
-      targetStream: _filePreviewStream2.default
-    };
+        if (signature === null) {
+          throw new Error('File does not exist.');
+        }
 
-    return new Download(handle, Object.assign(options, target));
-  }
+        var _Util$decryptMetadata = Util.decryptMetadata(_this2.key, signature),
+            version = _Util$decryptMetadata.version,
+            metadata = _Util$decryptMetadata.metadata;
 
-  getMetadata() {
-    return (0, _backend.queryGeneratedSignatures)(iota, this.genesisHash, 1).then(result => {
-      const signature = result.data[0];
-
-      if (signature === null) {
-        throw new Error('File does not exist.');
-      }
-
-      const { version, metadata } = Util.decryptMetadata(this.key, signature);
-      this.emit('metadata', metadata);
-      this.metadata = metadata;
-      return Promise.resolve(metadata);
-    }).catch(error => {
-      throw error;
-    });
-  }
-  startDownload(metadata) {
-    const { targetStream, targetOptions } = this.options;
-
-    this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, { iota });
-    this.decryptStream = new _decryptStream2.default(this.key);
-    this.targetStream = new targetStream(metadata, targetOptions || {});
-
-    this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on('finish', () => {
-      this.emit('finish', {
-        target: this,
-        metadata: this.metadata,
-        result: this.targetStream.result
+        _this2.emit('metadata', metadata);
+        _this2.metadata = metadata;
+        return Promise.resolve(metadata);
+      }).catch(function (error) {
+        throw error;
       });
-    });
+    }
+  }, {
+    key: 'startDownload',
+    value: function startDownload(metadata) {
+      var _this3 = this;
 
-    this.downloadStream.on('error', this.propagateError);
-    this.decryptStream.on('error', this.propagateError);
-    this.targetStream.on('error', this.propagateError);
-  }
-  propagateError(error) {
-    this.emit('error', error);
-  }
-}
+      var _options = this.options,
+          targetStream = _options.targetStream,
+          targetOptions = _options.targetOptions;
+
+
+      this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, { iota: iota });
+      this.decryptStream = new _decryptStream2.default(this.key);
+      this.targetStream = new targetStream(metadata, targetOptions || {});
+
+      this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on('finish', function () {
+        _this3.emit('finish', {
+          target: _this3,
+          metadata: _this3.metadata,
+          result: _this3.targetStream.result
+        });
+      });
+
+      this.downloadStream.on('error', this.propagateError);
+      this.decryptStream.on('error', this.propagateError);
+      this.targetStream.on('error', this.propagateError);
+    }
+  }, {
+    key: 'propagateError',
+    value: function propagateError(error) {
+      this.emit('error', error);
+    }
+  }], [{
+    key: 'toBuffer',
+    value: function toBuffer(handle) {
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+      var target = {
+        targetStream: _bufferTargetStream2.default
+      };
+
+      return new Download(handle, Object.assign(options, target));
+    }
+  }, {
+    key: 'toBlob',
+    value: function toBlob(handle) {
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+      var target = {
+        targetStream: _filePreviewStream2.default
+      };
+
+      return new Download(handle, Object.assign(options, target));
+    }
+  }]);
+
+  return Download;
+}(_events.EventEmitter);
+
 exports.default = Download;
