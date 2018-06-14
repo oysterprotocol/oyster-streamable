@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+
 import FileChunkStream from "./streams/fileChunkStream";
 import BufferSourceStream from "./streams/bufferSourceStream";
 import EncryptStream from "./streams/encryptStream";
@@ -13,9 +14,13 @@ const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
   filename: "",
   epochs: 1,
-  encryptStream: {
-    chunkByteSize: CHUNK_BYTE_SIZE
-  }
+  encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
+});
+
+const EVENTS = Object.freeze({
+  INVOICE: "invoice",
+  FINISH: "finish",
+  ERROR: "error"
 });
 
 export default class Upload extends EventEmitter {
@@ -46,20 +51,14 @@ export default class Upload extends EventEmitter {
 
   // File object (browser)
   static fromFile(file, options = {}) {
-    const source = {
-      sourceData: file,
-      sourceStream: FileChunkStream
-    };
+    const source = { sourceData: file, sourceStream: FileChunkStream };
 
     return new Upload(file.name, file.size, Object.assign(options, source));
   }
 
   // Uint8Array or node buffer
   static fromData(buffer, filename, options = {}) {
-    const source = {
-      sourceData: buffer,
-      sourceStream: BufferSourceStream
-    };
+    const source = { sourceData: buffer, sourceStream: BufferSourceStream };
 
     return new Upload(filename, buffer.length, Object.assign(options, source));
   }
@@ -71,7 +70,7 @@ export default class Upload extends EventEmitter {
     const metadata = encryptMetadata(this.metadata, this.key);
     const { sourceStream, sourceData, sourceOptions } = this.options;
 
-    this.emit("invoice", invoice);
+    this.emit(EVENTS.INVOICE, invoice);
 
     this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
     this.encryptStream = new EncryptStream(this.handle);
@@ -86,7 +85,7 @@ export default class Upload extends EventEmitter {
       .pipe(this.encryptStream)
       .pipe(this.uploadStream)
       .on("finish", () => {
-        this.emit("finish", {
+        this.emit(EVENTS.FINISH, {
           target: this,
           handle: this.handle,
           numberOfChunks: this.numberOfChunks,
@@ -97,8 +96,10 @@ export default class Upload extends EventEmitter {
     this.sourceStream.on("error", this.propagateError);
     this.encryptStream.on("error", this.propagateError);
     this.uploadStream.on("error", this.propagateError);
+
+    return this; // returns self for fluent chainable API.
   }
   propagateError(error) {
-    this.emit("error", error);
+    this.emit(EVENTS.ERROR, error);
   }
 }
