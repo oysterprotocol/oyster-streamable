@@ -19,6 +19,8 @@ const DEFAULT_OPTIONS = Object.freeze({
 
 const EVENTS = Object.freeze({
   INVOICE: "invoice",
+  PAYMENT_CONFIRMED: "payment-confirmed",
+  UPLOAD_PROGRESS: "upload-progress",
   FINISH: "finish",
   ERROR: "error"
 });
@@ -80,6 +82,8 @@ export default class Upload extends EventEmitter {
       sessIdA,
       sessIdB
     );
+
+    // TODO: Emit PAYMENT_CONFIRMED and UPLOAD_PROGRESS events.
 
     this.sourceStream
       .pipe(this.encryptStream)
