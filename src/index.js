@@ -1,4 +1,4 @@
-import Upload from './upload'
-import Download from './download'
+import Upload from "./upload";
+import Download from "./download";
 
-export default { Upload, Download }
+export default { Upload, Download };

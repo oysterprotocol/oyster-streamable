@@ -13,6 +13,14 @@
     "build": "babel src --presets babel-preset-env --out-dir dist",
     "prepublish": "yarn build"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn pretty"
+    }
+  },
+  "scripts": {
+    "pretty": "./node_modules/prettier/bin-prettier.js --write \"src/**/*.js\""
+  },
   "dependencies": {
     "axios": "^0.18.0",
     "iota.lib.js": "^0.4.7",
@@ -22,6 +30,8 @@
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
-    "babel-preset-env": "^1.7.0"
+    "babel-preset-env": "^1.7.0",
+    "husky": "^1.0.0-rc.9",
+    "prettier": "^1.13.5"
   }
 }
