@@ -39,4 +39,4 @@ export const FILE = Object.freeze({
   }
 });
 
-export const INCLUDE_TREASURE_OFFSETS = true
+export const INCLUDE_TREASURE_OFFSETS = true;

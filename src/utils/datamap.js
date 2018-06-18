@@ -1,8 +1,8 @@
-import { hashChain, genesisHash} from "./encryption"
-import { iota } from "../util"
+import { hashChain, genesisHash } from "./encryption";
+import { iota } from "../util";
 import { FILE } from "./config";
 
-export function generate (handle, size, opts = {}) {
+export function generate(handle, size, opts = {}) {
   let offsets = 1; // Meta chunk
 
   if (opts.includeTreasureOffsets) {
@@ -22,14 +22,14 @@ export function generate (handle, size, opts = {}) {
     [{}, genesisHash(handle)]
   );
   return dataMap;
-};
+}
 
-export function offsetHash (hash, offset) {
-  let nextHash = hash
+export function offsetHash(hash, offset) {
+  let nextHash = hash;
 
   do {
-    const [obfuscatedHash, nextHash] = hashChain(nextHash)
-  } while(--offset > 0)
+    const [obfuscatedHash, nextHash] = hashChain(nextHash);
+  } while (--offset > 0);
 
-  return iota.utils.toTrytes(obfuscatedHash).substr(0, 81)
+  return iota.utils.toTrytes(obfuscatedHash).substr(0, 81);
 }
