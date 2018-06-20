@@ -11,15 +11,15 @@
   "license": "MIT",
   "scripts": {
     "build": "babel src --presets babel-preset-env --out-dir dist",
-    "prepublish": "yarn build"
+    "prepublish": "yarn build",
+    "pretty": "prettier --write \"src/**/*.js\"",
+    "test": "jest",
+    "test:watch": "jest --watch --colors"
   },
   "husky": {
     "hooks": {
       "pre-commit": "yarn pretty"
     }
-  },
-  "scripts": {
-    "pretty": "./node_modules/prettier/bin-prettier.js --write \"src/**/*.js\""
   },
   "dependencies": {
     "axios": "^0.18.0",
@@ -29,9 +29,13 @@
     "readable-stream": "^2.3.6"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
+    "babel-jest": "^23.0.1",
     "babel-preset-env": "^1.7.0",
     "husky": "^1.0.0-rc.9",
-    "prettier": "^1.13.5"
+    "jest": "^23.1.0",
+    "prettier": "^1.13.5",
+    "regenerator-runtime": "^0.11.1"
   }
 }
