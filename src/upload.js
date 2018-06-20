@@ -66,6 +66,12 @@ export default class Upload extends EventEmitter {
   }
 
   startUpload(session) {
+    console.log("TESTING", this.options.testEnv);
+    if (!!this.options.testEnv) {
+      this.emit("done");
+      return this;
+    }
+
     const sessIdA = session.alphaSessionId;
     const sessIdB = session.betaSessionId;
     const invoice = session.invoice || null;
