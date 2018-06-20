@@ -13,7 +13,7 @@ const readTestFile = () =>
     });
   });
 
-test("first test", done => {
+test("Upload emits the expected events", done => {
   readTestFile().then(file => {
     const u = Upload.fromFile(file, { testEnv: true });
     expect.assertions(4);
