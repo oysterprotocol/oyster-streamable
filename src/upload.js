@@ -17,7 +17,7 @@ const DEFAULT_OPTIONS = Object.freeze({
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
-const EVENTS = Object.freeze({
+export const EVENTS = Object.freeze({
   INVOICE: "invoice",
   PAYMENT_CONFIRMED: "payment-confirmed",
   UPLOAD_PROGRESS: "upload-progress",
@@ -37,6 +37,7 @@ export default class Upload extends EventEmitter {
     this.propagateError = this.propagateError.bind(this);
 
     this.options = opts;
+    this.filename = filename;
     this.handle = createHandle(filename);
     this.metadata = createMetaData(filename, chunkCount);
     this.genesisHash = genesisHash(this.handle);
@@ -66,10 +67,24 @@ export default class Upload extends EventEmitter {
   }
 
   startUpload(session) {
-    console.log("TESTING", this.options.testEnv);
     if (!!this.options.testEnv) {
-      this.emit("done");
-      return this;
+      // TODO: Actually implement these.
+      // Stubbing for now to work on integration.
+
+      this.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
+
+      // This is currently what the client expects, not sure if this
+      // payload makes sense to be emitted here...
+      this.emit(EVENTS.PAYMENT_CONFIRMED, {
+        filename: this.filename,
+        handle: this.handle,
+        numberOfChunks: this.numberOfChunks
+      });
+
+      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
+
+      this.emit(EVENTS.FINISH);
+      return;
     }
 
     const sessIdA = session.alphaSessionId;
@@ -106,8 +121,6 @@ export default class Upload extends EventEmitter {
     this.sourceStream.on("error", this.propagateError);
     this.encryptStream.on("error", this.propagateError);
     this.uploadStream.on("error", this.propagateError);
-
-    return this; // returns self for fluent chainable API.
   }
   propagateError(error) {
     this.emit(EVENTS.ERROR, error);

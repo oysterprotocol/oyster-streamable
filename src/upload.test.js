@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import Upload from "./upload";
+import Upload, { EVENTS } from "./upload";
 
 const testFilePath = `${__dirname}/../test-files/ditto.png`;
 
@@ -15,10 +15,26 @@ const readTestFile = () =>
 
 test("first test", done => {
   readTestFile().then(file => {
-    const upload = Upload.fromFile(file, { testEnv: true });
-    console.log(file);
+    const u = Upload.fromFile(file, { testEnv: true });
+    expect.assertions(4);
 
-    upload.on("done", done);
+    u.on(EVENTS.INVOICE, invoice => {
+      expect(invoice).toEqual({ cost: 123, ethAddress: "testAddr" });
+    });
+
+    u.on(EVENTS.PAYMENT_CONFIRMED, paymentConfirmation => {
+      expect(paymentConfirmation).toMatchObject({
+        filename: "ditto.png",
+        numberOfChunks: 17
+      });
+      expect(paymentConfirmation).toHaveProperty("handle"); // This is has randomness
+    });
+
+    u.on(EVENTS.UPLOAD_PROGRESS, progress => {
+      expect(progress).toEqual({ progress: 0.123 });
+    });
+
+    u.on(EVENTS.ERROR, done.fail);
+    u.on(EVENTS.FINISH, done);
   });
-  expect(true).toBe(true);
 });
