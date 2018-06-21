@@ -67,6 +67,8 @@ export default class Upload extends EventEmitter {
   }
 
   startUpload(session) {
+    const self = this; // JS + OOP :(
+
     if (!!this.options.testEnv) {
       // TODO: Actually implement these.
       // Stubbing for now to work on integration.
@@ -111,8 +113,12 @@ export default class Upload extends EventEmitter {
         this.uploadStream = new UploadStream(
           metadata,
           this.genesisHash,
+          this.metadata.numberOfChunks,
           sessIdA,
-          sessIdB
+          sessIdB,
+          prog => {
+            self.emit(EVENT.UPLOAD_PROGRESS, { progress: prog });
+          }
         );
 
         this.sourceStream

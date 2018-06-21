@@ -27,7 +27,7 @@ test("Upload emits the expected events", done => {
         filename: "ditto.png",
         numberOfChunks: 17
       });
-      expect(paymentConfirmation).toHaveProperty("handle"); // This is has randomness
+      expect(paymentConfirmation).toHaveProperty("handle"); // This has randomness
     });
 
     u.on(EVENTS.UPLOAD_PROGRESS, progress => {
