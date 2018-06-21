@@ -6,7 +6,7 @@ import EncryptStream from "./streams/encryptStream";
 import UploadStream from "./streams/uploadStream";
 
 import { createHandle, genesisHash } from "./utils/encryption";
-import { createUploadSession } from "./utils/backend";
+import { createUploadSession, confirmPaidPoll } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
 import { bytesFromHandle, encryptMetadata } from "./util";
 
@@ -75,6 +75,7 @@ export default class Upload extends EventEmitter {
 
       // This is currently what the client expects, not sure if this
       // payload makes sense to be emitted here...
+      // TODO: Better stubs and mocks.
       this.emit(EVENTS.PAYMENT_CONFIRMED, {
         filename: this.filename,
         handle: this.handle,
@@ -90,37 +91,47 @@ export default class Upload extends EventEmitter {
     const sessIdA = session.alphaSessionId;
     const sessIdB = session.betaSessionId;
     const invoice = session.invoice || null;
+    const host = session.host;
     const metadata = encryptMetadata(this.metadata, this.key);
     const { sourceStream, sourceData, sourceOptions } = this.options;
 
     this.emit(EVENTS.INVOICE, invoice);
 
-    this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
-    this.encryptStream = new EncryptStream(this.handle);
-    this.uploadStream = new UploadStream(
-      metadata,
-      this.genesisHash,
-      sessIdA,
-      sessIdB
-    );
-
-    // TODO: Emit PAYMENT_CONFIRMED and UPLOAD_PROGRESS events.
-
-    this.sourceStream
-      .pipe(this.encryptStream)
-      .pipe(this.uploadStream)
-      .on("finish", () => {
-        this.emit(EVENTS.FINISH, {
-          target: this,
+    // Wait for payment.
+    confirmPaidPoll(host, sessIdA)
+      .then(() => {
+        this.emit(EVENTS.PAYMENT_CONFIRMED, {
+          filename: this.filename,
           handle: this.handle,
-          numberOfChunks: this.numberOfChunks,
-          metadata: this.metadata
+          numberOfChunks: this.numberOfChunks
         });
-      });
 
-    this.sourceStream.on("error", this.propagateError);
-    this.encryptStream.on("error", this.propagateError);
-    this.uploadStream.on("error", this.propagateError);
+        this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
+        this.encryptStream = new EncryptStream(this.handle);
+        this.uploadStream = new UploadStream(
+          metadata,
+          this.genesisHash,
+          sessIdA,
+          sessIdB
+        );
+
+        this.sourceStream
+          .pipe(this.encryptStream)
+          .pipe(this.uploadStream)
+          .on("finish", () => {
+            this.emit(EVENTS.FINISH, {
+              target: this,
+              handle: this.handle,
+              numberOfChunks: this.numberOfChunks,
+              metadata: this.metadata
+            });
+          });
+
+        this.sourceStream.on("error", this.propagateError);
+        this.encryptStream.on("error", this.propagateError);
+        this.uploadStream.on("error", this.propagateError);
+      })
+      .catch(this.propagateError.bind(this));
   }
   propagateError(error) {
     this.emit(EVENTS.ERROR, error);
