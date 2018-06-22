@@ -46,7 +46,6 @@ function queryGeneratedSignatures(iotaProvider, hash, count, binary = false) {
     };
 
     const opts = {
-      timeout: 5000,
       responseType: binary ? 'arraybuffer' : 'json',
       headers: { 'X-IOTA-API-Version': '1' }
     };

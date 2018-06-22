@@ -21,7 +21,6 @@ export function queryGeneratedSignatures (iotaProvider, hash, count, binary = fa
     }
 
     const opts = {
-      timeout: 5000,
       responseType: binary ? 'arraybuffer' : 'json',
       headers: {'X-IOTA-API-Version': '1'}
     }
@@ -44,6 +43,29 @@ export function queryGeneratedSignatures (iotaProvider, hash, count, binary = fa
       }
     }).catch(error => {
       reject(error)
+    })
+  })
+}
+
+export function queryTransactionStatus (iotaProvider, addresses) {
+  return new Promise((resolve, reject) => {
+    const data = {
+      command: 'Oyster.transactionStatus',
+      addresses
+    }
+
+    const opts = {
+      timeout: 5000,
+      responseType: 'json',
+      headers: {'X-IOTA-API-Version': '1'}
+    }
+
+    axiosInstance.post(iotaProvider.provider, data, opts).then(response => {
+      if(response.status !== 200) {
+        throw(`Request failed (${response.status}) ${response.statusText}`)
+      }
+
+      resolve(response.data)
     })
   })
 }
