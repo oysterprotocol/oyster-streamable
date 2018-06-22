@@ -13,6 +13,7 @@ import * as Util from './util'
 
 const iota = new IOTA({ provider: IOTA_API.PROVIDER })
 const DEFAULT_OPTIONS = Object.freeze({
+  autoStart: true
 })
 
 export default class Download extends EventEmitter {
@@ -27,8 +28,13 @@ export default class Download extends EventEmitter {
     this.handle = handle
     this.genesisHash = genesisHash(handle)
     this.key = Util.bytesFromHandle(handle)
+    this.started = false
 
-    this.getMetadata().then(this.startDownload).catch(this.propagateError)
+    this.getMetadata().then(() => {
+      if (opts.targetStream && opts.autoStart) {
+        this.startDownload()
+      }
+    }).catch(this.propagateError)
   }
 
   static toBuffer (handle, options = {}) {
@@ -56,19 +62,29 @@ export default class Download extends EventEmitter {
       }
 
       const {version, metadata} = Util.decryptMetadata(this.key, signature)
-      this.emit('metadata', metadata)
       this.metadata = metadata
-      return Promise.resolve(metadata)
+      this.emit('metadata', metadata)
     }).catch(error => {
       throw error
     })
   }
-  startDownload (metadata) {
-    const { targetStream, targetOptions } = this.options
 
+  startDownload (target) {
+    const metadata = this.metadata
+    let { targetStream, targetOptions } = this.options
+
+    if (this.started) {
+      return true
+    }
+
+    this.started = true
     this.downloadStream = new DownloadStream(this.genesisHash, metadata, { iota })
     this.decryptStream = new DecryptStream(this.key)
-    this.targetStream = new targetStream(metadata, targetOptions || {})
+    if (target) {
+      this.targetStream = target
+    } else {
+      this.targetStream = new targetStream(metadata, targetOptions || {})
+    }
 
     this.downloadStream
       .pipe(this.decryptStream)
@@ -81,10 +97,16 @@ export default class Download extends EventEmitter {
         })
       })
 
+    this.downloadStream
+      .on('progress', progress => {
+        this.emit('progress.download', progress)
+      })
+
     this.downloadStream.on('error', this.propagateError)
     this.decryptStream.on('error', this.propagateError)
     this.targetStream.on('error', this.propagateError)
   }
+
   propagateError (error) {
     this.emit('error', error)
   }

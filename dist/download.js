@@ -45,7 +45,9 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const iota = new _iotaLib2.default({ provider: _config.IOTA_API.PROVIDER });
-const DEFAULT_OPTIONS = Object.freeze({});
+const DEFAULT_OPTIONS = Object.freeze({
+  autoStart: true
+});
 
 class Download extends _events.EventEmitter {
   constructor(handle, options) {
@@ -59,8 +61,13 @@ class Download extends _events.EventEmitter {
     this.handle = handle;
     this.genesisHash = (0, _encryption.genesisHash)(handle);
     this.key = Util.bytesFromHandle(handle);
+    this.started = false;
 
-    this.getMetadata().then(this.startDownload).catch(this.propagateError);
+    this.getMetadata().then(() => {
+      if (opts.targetStream && opts.autoStart) {
+        this.startDownload();
+      }
+    }).catch(this.propagateError);
   }
 
   static toBuffer(handle, options = {}) {
@@ -88,19 +95,29 @@ class Download extends _events.EventEmitter {
       }
 
       const { version, metadata } = Util.decryptMetadata(this.key, signature);
-      this.emit('metadata', metadata);
       this.metadata = metadata;
-      return Promise.resolve(metadata);
+      this.emit('metadata', metadata);
     }).catch(error => {
       throw error;
     });
   }
-  startDownload(metadata) {
-    const { targetStream, targetOptions } = this.options;
 
+  startDownload(target) {
+    const metadata = this.metadata;
+    let { targetStream, targetOptions } = this.options;
+
+    if (this.started) {
+      return true;
+    }
+
+    this.started = true;
     this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, { iota });
     this.decryptStream = new _decryptStream2.default(this.key);
-    this.targetStream = new targetStream(metadata, targetOptions || {});
+    if (target) {
+      this.targetStream = target;
+    } else {
+      this.targetStream = new targetStream(metadata, targetOptions || {});
+    }
 
     this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on('finish', () => {
       this.emit('finish', {
@@ -110,10 +127,15 @@ class Download extends _events.EventEmitter {
       });
     });
 
+    this.downloadStream.on('progress', progress => {
+      this.emit('progress.download', progress);
+    });
+
     this.downloadStream.on('error', this.propagateError);
     this.decryptStream.on('error', this.propagateError);
     this.targetStream.on('error', this.propagateError);
   }
+
   propagateError(error) {
     this.emit('error', error);
   }

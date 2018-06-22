@@ -32,6 +32,7 @@ class DownloadStream extends _readableStream.Readable {
     super(opts);
     this.options = opts;
     this.numChunks = metadata.numberOfChunks;
+    this.downloadedChunks = 0;
     this.hash = (0, _util.offsetHash)(genesisHash, 0);
     this.chunkOffset = 0;
     this.chunkBuffer = [];
@@ -99,6 +100,7 @@ class DownloadStream extends _readableStream.Readable {
     const batchId = this.batchId++;
     const iota = this.options.iota;
     const binaryMode = this.options.binaryMode;
+
     (0, _backend.queryGeneratedSignatures)(iota, hash, limit, binaryMode).then(result => {
       this.ongoingDownloads--;
 
@@ -109,6 +111,7 @@ class DownloadStream extends _readableStream.Readable {
         const signatures = result.data.filter(notNull);
         if (signatures && signatures.length === limit) {
           this.batches[batchId] = signatures;
+          this.downloadedChunks += signatures.length;
         } else {
           this.emit('error', 'Download incomplete');
         }
@@ -119,6 +122,7 @@ class DownloadStream extends _readableStream.Readable {
         this.isDownloadFinished = true;
       }
 
+      this.emit('progress', this.downloadedChunks / this.numChunks);
       this._pushChunk();
     }).catch(error => {
       this.ongoingDownloads--;
@@ -142,6 +146,7 @@ class DownloadStream extends _readableStream.Readable {
     }
 
     this.batches[batchId] = batch;
+    this.downloadedChunks += batch.length;
   }
 }
 exports.default = DownloadStream;
