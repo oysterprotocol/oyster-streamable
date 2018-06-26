@@ -72,27 +72,25 @@ export default class Upload extends EventEmitter {
   }
 
   startUpload(session) {
-    const self = this; // JS + OOP :(
-
-    if (!!self.options.testEnv) {
+    if (!!this.options.testEnv) {
       // TODO: Actually implement these.
       // Stubbing for now to work on integration.
 
-      self.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
-      self.emit(EVENTS.PAYMENT_PENDING);
+      this.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
+      this.emit(EVENTS.PAYMENT_PENDING);
 
       // This is currently what the client expects, not sure if this
       // payload makes sense to be emitted here...
       // TODO: Better stubs and mocks.
-      self.emit(EVENTS.PAYMENT_CONFIRMED, {
-        filename: self.filename,
-        handle: self.handle,
-        numberOfChunks: self.numberOfChunks
+      this.emit(EVENTS.PAYMENT_CONFIRMED, {
+        filename: this.filename,
+        handle: this.handle,
+        numberOfChunks: this.numberOfChunks
       });
 
-      self.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
+      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
 
-      self.emit(EVENTS.FINISH);
+      this.emit(EVENTS.FINISH);
       return;
     }
 
@@ -100,52 +98,52 @@ export default class Upload extends EventEmitter {
     const sessIdB = session.betaSessionId;
     const invoice = session.invoice || null;
     const host = session.host;
-    const metadata = encryptMetadata(self.metadata, self.key);
-    const { sourceStream, sourceData, sourceOptions } = self.options;
+    const metadata = encryptMetadata(this.metadata, this.key);
+    const { sourceStream, sourceData, sourceOptions } = this.options;
 
-    self.emit(EVENTS.INVOICE, invoice);
+    this.emit(EVENTS.INVOICE, invoice);
 
     // Wait for payment.
     confirmPendingPoll(host, sessIdA)
       .then(() => {
-        self.emit(EVENTS.PAYMENT_PENDING);
+        this.emit(EVENTS.PAYMENT_PENDING);
         return confirmPaidPoll(host, sessIdA);
       })
       .then(() => {
-        self.emit(EVENTS.PAYMENT_CONFIRMED, {
-          filename: self.filename,
-          handle: self.handle,
-          numberOfChunks: self.numberOfChunks
+        this.emit(EVENTS.PAYMENT_CONFIRMED, {
+          filename: this.filename,
+          handle: this.handle,
+          numberOfChunks: this.numberOfChunks
         });
 
-        self.sourceStream = new sourceStream(sourceData, sourceOptions || {});
-        self.encryptStream = new EncryptStream(self.handle);
-        self.uploadStream = new UploadStream(
+        this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
+        this.encryptStream = new EncryptStream(this.handle);
+        this.uploadStream = new UploadStream(
           metadata,
-          self.genesisHash,
-          self.metadata.numberOfChunks,
+          this.genesisHash,
+          this.metadata.numberOfChunks,
           sessIdA,
           sessIdB,
           prog => {
-            self.emit(EVENT.UPLOAD_PROGRESS, { progress: prog });
+            this.emit(EVENT.UPLOAD_PROGRESS, { progress: prog });
           }
         );
 
-        self.sourceStream
-          .pipe(self.encryptStream)
-          .pipe(self.uploadStream)
+        this.sourceStream
+          .pipe(this.encryptStream)
+          .pipe(this.uploadStream)
           .on("finish", () => {
-            self.emit(EVENTS.FINISH, {
+            this.emit(EVENTS.FINISH, {
               target: this,
-              handle: self.handle,
-              numberOfChunks: self.numberOfChunks,
-              metadata: self.metadata
+              handle: this.handle,
+              numberOfChunks: this.numberOfChunks,
+              metadata: this.metadata
             });
           });
 
-        self.sourceStream.on("error", self.propagateError);
-        self.encryptStream.on("error", self.propagateError);
-        self.uploadStream.on("error", self.propagateError);
+        this.sourceStream.on("error", this.propagateError);
+        this.encryptStream.on("error", this.propagateError);
+        this.uploadStream.on("error", this.propagateError);
       })
       .catch(this.propagateError.bind(this));
   }
