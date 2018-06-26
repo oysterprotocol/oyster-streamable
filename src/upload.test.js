@@ -16,10 +16,14 @@ const readTestFile = () =>
 test("Upload emits the expected events", done => {
   readTestFile().then(file => {
     const u = Upload.fromFile(file, { testEnv: true });
-    expect.assertions(4);
+    expect.assertions(5);
 
     u.on(EVENTS.INVOICE, invoice => {
       expect(invoice).toEqual({ cost: 123, ethAddress: "testAddr" });
+    });
+
+    u.on(EVENTS.PAYMENT_PENDING, () => {
+      expect(true).toEqual(true); // Just testing if this event is emitted.
     });
 
     u.on(EVENTS.PAYMENT_CONFIRMED, paymentConfirmation => {

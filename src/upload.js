@@ -6,7 +6,11 @@ import EncryptStream from "./streams/encryptStream";
 import UploadStream from "./streams/uploadStream";
 
 import { createHandle, genesisHash } from "./utils/encryption";
-import { createUploadSession, confirmPaidPoll } from "./utils/backend";
+import {
+  createUploadSession,
+  confirmPendingPoll,
+  confirmPaidPoll
+} from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
 import { bytesFromHandle, encryptMetadata } from "./util";
 
@@ -19,6 +23,7 @@ const DEFAULT_OPTIONS = Object.freeze({
 
 export const EVENTS = Object.freeze({
   INVOICE: "invoice",
+  PAYMENT_PENDING: "payment-pending",
   PAYMENT_CONFIRMED: "payment-confirmed",
   UPLOAD_PROGRESS: "upload-progress",
   FINISH: "finish",
@@ -74,6 +79,7 @@ export default class Upload extends EventEmitter {
       // Stubbing for now to work on integration.
 
       this.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
+      self.emit(EVENTS.PAYMENT_PENDING);
 
       // This is currently what the client expects, not sure if this
       // payload makes sense to be emitted here...
@@ -100,7 +106,12 @@ export default class Upload extends EventEmitter {
     this.emit(EVENTS.INVOICE, invoice);
 
     // Wait for payment.
-    confirmPaidPoll(host, sessIdA)
+    confirmPendingPoll(host, sessIdA)
+      .then(() => {
+        self.emit(EVENTS.PAYMENT_PENDING);
+
+        return confirmPaidPoll(host, sessIdA);
+      })
       .then(() => {
         this.emit(EVENTS.PAYMENT_CONFIRMED, {
           filename: this.filename,

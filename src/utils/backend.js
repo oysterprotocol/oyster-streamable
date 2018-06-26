@@ -121,16 +121,31 @@ const PAYMENT_STATUS = Object.freeze({
   CONFIRMED: "confirmed"
 });
 
-export const confirmPaidPoll = (host, sessId) => {
+const pollPaymentStatus = (host, sessId, statusFoundFn) => {
   return new Promise((resolve, reject) => {
     setInterval(() => {
       axiosInstance
         .get(`${host}${API.V2_UPLOAD_SESSIONS_PATH}/${sessid}`)
         .then(response => {
           const status = response.data.paymentStatus;
-          if (status === PAYMENT_STATUS.CONFIRMED) return resolve();
+          if (statusFoundFn(status)) return resolve();
         })
         .catch(reject);
     }, POLL_INTERVAL);
   });
 };
+
+export const confirmPendingPoll = (host, sessId) =>
+  pollPaymentStatus(
+    host,
+    sessId,
+    status =>
+      status === PAYMENT_STATUS.PENDING || status === PAYMENT_STATUS.CONFIRMED
+  );
+
+export const confirmPaidPoll = (host, sessId) =>
+  pollPaymentStatus(
+    host,
+    sessId,
+    status => status === PAYMENT_STATUS.CONFIRMED
+  );
