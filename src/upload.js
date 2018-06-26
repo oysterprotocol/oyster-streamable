@@ -74,25 +74,25 @@ export default class Upload extends EventEmitter {
   startUpload(session) {
     const self = this; // JS + OOP :(
 
-    if (!!this.options.testEnv) {
+    if (!!self.options.testEnv) {
       // TODO: Actually implement these.
       // Stubbing for now to work on integration.
 
-      this.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
+      self.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
       self.emit(EVENTS.PAYMENT_PENDING);
 
       // This is currently what the client expects, not sure if this
       // payload makes sense to be emitted here...
       // TODO: Better stubs and mocks.
-      this.emit(EVENTS.PAYMENT_CONFIRMED, {
-        filename: this.filename,
-        handle: this.handle,
-        numberOfChunks: this.numberOfChunks
+      self.emit(EVENTS.PAYMENT_CONFIRMED, {
+        filename: self.filename,
+        handle: self.handle,
+        numberOfChunks: self.numberOfChunks
       });
 
-      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
+      self.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
 
-      this.emit(EVENTS.FINISH);
+      self.emit(EVENTS.FINISH);
       return;
     }
 
@@ -100,31 +100,30 @@ export default class Upload extends EventEmitter {
     const sessIdB = session.betaSessionId;
     const invoice = session.invoice || null;
     const host = session.host;
-    const metadata = encryptMetadata(this.metadata, this.key);
-    const { sourceStream, sourceData, sourceOptions } = this.options;
+    const metadata = encryptMetadata(self.metadata, self.key);
+    const { sourceStream, sourceData, sourceOptions } = self.options;
 
-    this.emit(EVENTS.INVOICE, invoice);
+    self.emit(EVENTS.INVOICE, invoice);
 
     // Wait for payment.
     confirmPendingPoll(host, sessIdA)
       .then(() => {
         self.emit(EVENTS.PAYMENT_PENDING);
-
         return confirmPaidPoll(host, sessIdA);
       })
       .then(() => {
-        this.emit(EVENTS.PAYMENT_CONFIRMED, {
-          filename: this.filename,
-          handle: this.handle,
-          numberOfChunks: this.numberOfChunks
+        self.emit(EVENTS.PAYMENT_CONFIRMED, {
+          filename: self.filename,
+          handle: self.handle,
+          numberOfChunks: self.numberOfChunks
         });
 
-        this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
-        this.encryptStream = new EncryptStream(this.handle);
-        this.uploadStream = new UploadStream(
+        self.sourceStream = new sourceStream(sourceData, sourceOptions || {});
+        self.encryptStream = new EncryptStream(self.handle);
+        self.uploadStream = new UploadStream(
           metadata,
-          this.genesisHash,
-          this.metadata.numberOfChunks,
+          self.genesisHash,
+          self.metadata.numberOfChunks,
           sessIdA,
           sessIdB,
           prog => {
@@ -132,21 +131,21 @@ export default class Upload extends EventEmitter {
           }
         );
 
-        this.sourceStream
-          .pipe(this.encryptStream)
-          .pipe(this.uploadStream)
+        self.sourceStream
+          .pipe(self.encryptStream)
+          .pipe(self.uploadStream)
           .on("finish", () => {
-            this.emit(EVENTS.FINISH, {
+            self.emit(EVENTS.FINISH, {
               target: this,
-              handle: this.handle,
-              numberOfChunks: this.numberOfChunks,
-              metadata: this.metadata
+              handle: self.handle,
+              numberOfChunks: self.numberOfChunks,
+              metadata: self.metadata
             });
           });
 
-        this.sourceStream.on("error", this.propagateError);
-        this.encryptStream.on("error", this.propagateError);
-        this.uploadStream.on("error", this.propagateError);
+        self.sourceStream.on("error", self.propagateError);
+        self.encryptStream.on("error", self.propagateError);
+        self.uploadStream.on("error", self.propagateError);
       })
       .catch(this.propagateError.bind(this));
   }
