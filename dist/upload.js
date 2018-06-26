@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,31 +6,31 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _events = require('events');
+var _events = require("events");
 
-var _fileChunkStream = require('./streams/fileChunkStream');
+var _fileChunkStream = require("./streams/fileChunkStream");
 
 var _fileChunkStream2 = _interopRequireDefault(_fileChunkStream);
 
-var _bufferSourceStream = require('./streams/bufferSourceStream');
+var _bufferSourceStream = require("./streams/bufferSourceStream");
 
 var _bufferSourceStream2 = _interopRequireDefault(_bufferSourceStream);
 
-var _encryptStream = require('./streams/encryptStream');
+var _encryptStream = require("./streams/encryptStream");
 
 var _encryptStream2 = _interopRequireDefault(_encryptStream);
 
-var _uploadStream = require('./streams/uploadStream');
+var _uploadStream = require("./streams/uploadStream");
 
 var _uploadStream2 = _interopRequireDefault(_uploadStream);
 
-var _encryption = require('./utils/encryption');
+var _encryption = require("./utils/encryption");
 
-var _backend = require('./utils/backend');
+var _backend = require("./utils/backend");
 
-var _fileProcessor = require('./utils/file-processor');
+var _fileProcessor = require("./utils/file-processor");
 
-var _util = require('./util');
+var _util = require("./util");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -42,11 +42,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var CHUNK_BYTE_SIZE = 1024;
 var DEFAULT_OPTIONS = Object.freeze({
-  filename: '',
+  filename: "",
   epochs: 1,
-  encryptStream: {
-    chunkByteSize: CHUNK_BYTE_SIZE
-  }
+  encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
+});
+
+var EVENTS = Object.freeze({
+  INVOICE: "invoice",
+  FINISH: "finish",
+  ERROR: "error"
 });
 
 var Upload = function (_EventEmitter) {
@@ -80,7 +84,7 @@ var Upload = function (_EventEmitter) {
 
 
   _createClass(Upload, [{
-    key: 'startUpload',
+    key: "startUpload",
     value: function startUpload(session) {
       var _this2 = this;
 
@@ -94,14 +98,14 @@ var Upload = function (_EventEmitter) {
           sourceOptions = _options.sourceOptions;
 
 
-      this.emit('invoice', invoice);
+      this.emit(EVENTS.INVOICE, invoice);
 
       this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
       this.encryptStream = new _encryptStream2.default(this.handle);
       this.uploadStream = new _uploadStream2.default(metadata, this.genesisHash, sessIdA, sessIdB);
 
-      this.sourceStream.pipe(this.encryptStream).pipe(this.uploadStream).on('finish', function () {
-        _this2.emit('finish', {
+      this.sourceStream.pipe(this.encryptStream).pipe(this.uploadStream).on("finish", function () {
+        _this2.emit(EVENTS.FINISH, {
           target: _this2,
           handle: _this2.handle,
           numberOfChunks: _this2.numberOfChunks,
@@ -109,24 +113,23 @@ var Upload = function (_EventEmitter) {
         });
       });
 
-      this.sourceStream.on('error', this.propagateError);
-      this.encryptStream.on('error', this.propagateError);
-      this.uploadStream.on('error', this.propagateError);
+      this.sourceStream.on("error", this.propagateError);
+      this.encryptStream.on("error", this.propagateError);
+      this.uploadStream.on("error", this.propagateError);
+
+      return this; // returns self for fluent chainable API.
     }
   }, {
-    key: 'propagateError',
+    key: "propagateError",
     value: function propagateError(error) {
-      this.emit('error', error);
+      this.emit(EVENTS.ERROR, error);
     }
   }], [{
-    key: 'fromFile',
+    key: "fromFile",
     value: function fromFile(file) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-      var source = {
-        sourceData: file,
-        sourceStream: _fileChunkStream2.default
-      };
+      var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
 
       return new Upload(file.name, file.size, Object.assign(options, source));
     }
@@ -134,14 +137,11 @@ var Upload = function (_EventEmitter) {
     // Uint8Array or node buffer
 
   }, {
-    key: 'fromData',
+    key: "fromData",
     value: function fromData(buffer, filename) {
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var source = {
-        sourceData: buffer,
-        sourceStream: _bufferSourceStream2.default
-      };
+      var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
 
       return new Upload(filename, buffer.length, Object.assign(options, source));
     }

@@ -58,8 +58,9 @@ export function queryGeneratedSignatures(
 
 export function createUploadSession(filesize, genesisHash, numChunks, epochs) {
   return new Promise((resolve, reject) => {
+    const host = API.BROKER_NODE_A;
     axiosInstance
-      .post(`${API.BROKER_NODE_A}${API.V2_UPLOAD_SESSIONS_PATH}`, {
+      .post(`${host}${API.V2_UPLOAD_SESSIONS_PATH}`, {
         fileSizeBytes: filesize,
         numChunks,
         genesisHash,
@@ -69,7 +70,7 @@ export function createUploadSession(filesize, genesisHash, numChunks, epochs) {
       .then(({ data }) => {
         const { id: alphaSessionId, betaSessionId } = data;
         const { invoice: invoice } = data;
-        resolve({ alphaSessionId, betaSessionId, invoice });
+        resolve({ alphaSessionId, betaSessionId, invoice, host });
       })
       .catch(error => {
         console.log("UPLOAD SESSION ERROR: ", error);
@@ -111,3 +112,40 @@ export function sendChunksToBroker(brokerUrl, chunks) {
       });
   });
 }
+
+// TODO: Make these configurable?
+const POLL_INTERVAL = 4000;
+const PAYMENT_STATUS = Object.freeze({
+  INVOICED: "invoiced",
+  PENDING: "pending",
+  CONFIRMED: "confirmed"
+});
+
+const pollPaymentStatus = (host, sessId, statusFoundFn) => {
+  return new Promise((resolve, reject) => {
+    setInterval(() => {
+      axiosInstance
+        .get(`${host}${API.V2_UPLOAD_SESSIONS_PATH}/${sessid}`)
+        .then(response => {
+          const status = response.data.paymentStatus;
+          if (statusFoundFn(status)) return resolve();
+        })
+        .catch(reject);
+    }, POLL_INTERVAL);
+  });
+};
+
+export const confirmPendingPoll = (host, sessId) =>
+  pollPaymentStatus(
+    host,
+    sessId,
+    status =>
+      status === PAYMENT_STATUS.PENDING || status === PAYMENT_STATUS.CONFIRMED
+  );
+
+export const confirmPaidPoll = (host, sessId) =>
+  pollPaymentStatus(
+    host,
+    sessId,
+    status => status === PAYMENT_STATUS.CONFIRMED
+  );

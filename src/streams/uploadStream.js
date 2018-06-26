@@ -12,22 +12,34 @@ const DEFAULT_OPTIONS = Object.freeze({
 });
 
 export default class UploadStream extends Writable {
-  constructor(metadataTrytes, genesisHash, sessIdA, sessIdB, options) {
+  constructor(
+    metadataTrytes,
+    genesisHash,
+    numChunks,
+    sessIdA,
+    sessIdB,
+    progressCb,
+    options
+  ) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
     const metachunk = { idx: 0, data: metadataTrytes, hash: genesisHash };
 
     super(opts);
     this.options = opts;
     this.genesisHash = genesisHash;
+    this.numChunks = numChunks;
     this.sessIdA = sessIdA;
     this.sessIdB = sessIdB;
     this.chunkBufferLow = [metachunk];
     this.chunkBufferHigh = [];
     this.batchBuffer = [];
     this.ongoingUploads = 0;
+    this.chunksProcessed = 0;
     this.retries = 0;
+    this.progressCb = progressCb;
     this.finishCallback = null;
   }
+
   _write(data, encoding, callback) {
     const chunk = {
       idx: data.idx,
@@ -59,6 +71,7 @@ export default class UploadStream extends Writable {
 
     callback();
   }
+
   _final(callback) {
     this.finishCallback = callback;
 
@@ -82,6 +95,7 @@ export default class UploadStream extends Writable {
       callback();
     }
   }
+
   _attemptUpload() {
     if (this.ongoingUploads >= this.options.maxParallelUploads) {
       return;
@@ -90,6 +104,7 @@ export default class UploadStream extends Writable {
     const batch = this.batchBuffer.shift();
     this._upload(batch);
   }
+
   _upload(batch) {
     this.ongoingUploads++;
 
@@ -113,8 +128,16 @@ export default class UploadStream extends Writable {
         this._uploadError(error, batch);
       });
   }
+
   _afterUpload() {
     this.ongoingUploads--;
+    this.chunksProcessed++;
+
+    // Progress Callback.
+    if (this.progressCb) {
+      const prog = this.chunksProcessed / this.numChunks;
+      this.progressCb(this._clamp(prog, 0.0, 1.0));
+    }
 
     // Upload until done
     if (this.batchBuffer.length > 0) {
@@ -131,6 +154,7 @@ export default class UploadStream extends Writable {
       process.nextTick(() => this.uncork());
     }
   }
+
   _uploadError(error, batch) {
     this.ongoingUploads--;
 
@@ -149,5 +173,10 @@ export default class UploadStream extends Writable {
       this.emit("error", error);
       this.close();
     }
+  }
+
+  // This should be in utils somewhere else.
+  _clamp(num, min, max) {
+    return Math.min(Math.max(num, min), max);
   }
 }
