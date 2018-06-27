@@ -13,14 +13,30 @@ const readTestFile = () =>
     });
   });
 
+const invoiceStub = { cost: 123, ethAddress: "testAddr" };
+const createUploadSessionStub = () =>
+  new Promise((resolve, reject) =>
+    resolve({
+      alphaSessionId: "alphaId",
+      betaSessionId: "betaId",
+      invoice: invoiceStub
+    })
+  );
+
 test("Upload emits the expected events", done => {
   readTestFile().then(file => {
-    const opts = { alpha: "alpha", beta: "beta", epochs: 1 };
-    const u = Upload.fromFile(file, { ...opts, testEnv: true });
+    const opts = {
+      alpha: "alpha",
+      beta: "beta",
+      epochs: 1,
+      testEnv: true,
+      createUploadSession: createUploadSessionStub
+    };
+    const u = Upload.fromFile(file, opts);
     expect.assertions(5);
 
     u.on(EVENTS.INVOICE, invoice => {
-      expect(invoice).toEqual({ cost: 123, ethAddress: "testAddr" });
+      expect(invoice).toEqual(invoiceStub);
     });
 
     u.on(EVENTS.PAYMENT_PENDING, () => {

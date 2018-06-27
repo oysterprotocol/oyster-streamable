@@ -55,14 +55,20 @@ export default class Upload extends EventEmitter {
     this.key = bytesFromHandle(this.handle);
     this.numberOfChunks = totalChunks;
 
-    this.uploadSession = createUploadSession(
+    // hack to stub brokers for testing.
+    const createUploadSessionFn =
+      this.options.createUploadSession || createUploadSession;
+
+    this.uploadSession = createUploadSessionFn(
       size,
       this.genesisHash,
       totalChunks,
       this.alpha,
       this.beta,
       this.epochs
-    ).then(this.startUpload);
+    )
+      .then(this.startUpload.bind(this))
+      .catch(this.propagateError.bind(this));
   }
 
   static validateOptions(opts, keys) {
@@ -97,7 +103,7 @@ export default class Upload extends EventEmitter {
       // TODO: Actually implement these.
       // Stubbing for now to work on integration.
 
-      this.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
+      this.emit(EVENTS.INVOICE, session.invoice);
       this.emit(EVENTS.PAYMENT_PENDING);
 
       // This is currently what the client expects, not sure if this
