@@ -17,7 +17,6 @@ import { bytesFromHandle, encryptMetadata } from "./util";
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
   filename: "",
-  epochs: 1,
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
@@ -38,7 +37,6 @@ export const EVENTS = Object.freeze({
 export default class Upload extends EventEmitter {
   constructor(filename, size, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
-    const epochs = opts.epochs;
     const chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
     const totalChunks = chunkCount + 1;
 
@@ -46,6 +44,9 @@ export default class Upload extends EventEmitter {
     this.startUpload = this.startUpload.bind(this);
     this.propagateError = this.propagateError.bind(this);
 
+    this.alpha = opts.alpha;
+    this.beta = opts.beta;
+    this.epochs = opts.epochs;
     this.options = opts;
     this.filename = filename;
     this.handle = createHandle(filename);
@@ -58,7 +59,9 @@ export default class Upload extends EventEmitter {
       size,
       this.genesisHash,
       totalChunks,
-      epochs
+      this.alpha,
+      this.beta,
+      this.epochs
     ).then(this.startUpload);
   }
 
@@ -115,7 +118,7 @@ export default class Upload extends EventEmitter {
     const sessIdA = session.alphaSessionId;
     const sessIdB = session.betaSessionId;
     const invoice = session.invoice || null;
-    const host = session.host;
+    const host = this.alpha;
     const metadata = encryptMetadata(this.metadata, this.key);
     const { sourceStream, sourceData, sourceOptions } = this.options;
 
@@ -140,6 +143,8 @@ export default class Upload extends EventEmitter {
           metadata,
           this.genesisHash,
           this.metadata.numberOfChunks,
+          this.alpha,
+          this.beta,
           sessIdA,
           sessIdB,
           prog => {

@@ -1,5 +1,5 @@
 import { Writable } from "readable-stream";
-import { sendToBrokerA, sendToBrokerB } from "../utils/backend";
+import { sendToBroker } from "../utils/backend";
 
 const CHUNK_ORDER_ASC = 1;
 const CHUNK_ORDER_DESC = 2;
@@ -16,6 +16,8 @@ export default class UploadStream extends Writable {
     metadataTrytes,
     genesisHash,
     numChunks,
+    alpha,
+    beta,
     sessIdA,
     sessIdB,
     progressCb,
@@ -115,9 +117,9 @@ export default class UploadStream extends Writable {
 
     let upload;
     if (batch.order === CHUNK_ORDER_ASC) {
-      upload = sendToBrokerA(this.sessIdA, batch.chunks);
+      upload = sendToBroker(this.alpha, this.sessIdA, batch.chunks);
     } else {
-      upload = sendToBrokerB(this.sessIdB, batch.chunks);
+      upload = sendToBroker(this.beta, this.sessIdB, batch.chunks);
     }
 
     upload
