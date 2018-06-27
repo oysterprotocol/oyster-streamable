@@ -30,6 +30,8 @@ export default class UploadStream extends Writable {
     this.options = opts;
     this.genesisHash = genesisHash;
     this.numChunks = numChunks;
+    this.alpha = alpha;
+    this.beta = beta;
     this.sessIdA = sessIdA;
     this.sessIdB = sessIdB;
     this.chunkBufferLow = [metachunk];
