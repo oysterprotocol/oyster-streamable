@@ -21,6 +21,8 @@ const DEFAULT_OPTIONS = Object.freeze({
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
+const REQUIRED_OPTS = ["alpha", "beta", "epochs"];
+
 export const EVENTS = Object.freeze({
   INVOICE: "invoice",
   PAYMENT_PENDING: "payment-pending",
@@ -29,6 +31,9 @@ export const EVENTS = Object.freeze({
   FINISH: "finish",
   ERROR: "error"
 });
+
+// TODO: Figure out which ivars are actually needed vs. just locally scoped.
+// Then convert all ivars to local consts
 
 export default class Upload extends EventEmitter {
   constructor(filename, size, options) {
@@ -57,18 +62,31 @@ export default class Upload extends EventEmitter {
     ).then(this.startUpload);
   }
 
+  static validateOptions(opts, keys) {
+    // TODO: Smarter validation.
+    const invalidKeys = keys.filter(key => !opts.hasOwnProperty(key));
+
+    if (invalidKeys.length > 0) {
+      throw `Missing required keys: ${invalidKeys.join(",")}`;
+    }
+  }
+
   // File object (browser)
   static fromFile(file, options = {}) {
     const source = { sourceData: file, sourceStream: FileChunkStream };
+    const opts = Object.assign(options, source);
+    Upload.validateOptions(opts, REQUIRED_OPTS);
 
-    return new Upload(file.name, file.size, Object.assign(options, source));
+    return new Upload(file.name, file.size, opts);
   }
 
   // Uint8Array or node buffer
   static fromData(buffer, filename, options = {}) {
     const source = { sourceData: buffer, sourceStream: BufferSourceStream };
+    const opts = Object.assign(options, source);
+    Upload.validateOptions(opts, REQUIRED_OPTS);
 
-    return new Upload(filename, buffer.length, Object.assign(options, source));
+    return new Upload(filename, buffer.length, opts);
   }
 
   startUpload(session) {
