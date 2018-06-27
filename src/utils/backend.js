@@ -85,7 +85,6 @@ export function createUploadSession(
   });
 }
 
-// TODO: Delete helpers above.
 export function sendToBroker(broker, sessId, chunks) {
   const endpoint = `${broker}${SESSIONS_PATH}/${sessId}`;
   return sendChunksToBroker(endpoint, chunks);
