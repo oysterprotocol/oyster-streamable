@@ -15,7 +15,8 @@ const readTestFile = () =>
 
 test("Upload emits the expected events", done => {
   readTestFile().then(file => {
-    const u = Upload.fromFile(file, { testEnv: true });
+    const opts = { alpha: "alpha", beta: "beta", epochs: 1 };
+    const u = Upload.fromFile(file, { ...opts, testEnv: true });
     expect.assertions(5);
 
     u.on(EVENTS.INVOICE, invoice => {
