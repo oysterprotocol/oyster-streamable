@@ -56,42 +56,33 @@ export function queryGeneratedSignatures(
   });
 }
 
-export function createUploadSession(filesize, genesisHash, numChunks, epochs) {
+export function createUploadSession(
+  filesize,
+  genesisHash,
+  numChunks,
+  alpha,
+  beta,
+  epochs
+) {
   return new Promise((resolve, reject) => {
-    const host = API.BROKER_NODE_A;
     axiosInstance
-      .post(`${host}${API.V2_UPLOAD_SESSIONS_PATH}`, {
+      .post(`${alpha}${API.V2_UPLOAD_SESSIONS_PATH}`, {
         fileSizeBytes: filesize,
         numChunks,
         genesisHash,
-        betaIp: API.BROKER_NODE_B,
+        betaIp: beta,
         storageLengthInYears: epochs
       })
       .then(({ data }) => {
         const { id: alphaSessionId, betaSessionId } = data;
         const { invoice: invoice } = data;
-        resolve({ alphaSessionId, betaSessionId, invoice, host });
+        resolve({ alphaSessionId, betaSessionId, invoice });
       })
       .catch(error => {
         console.log("UPLOAD SESSION ERROR: ", error);
         reject(error);
       });
   });
-}
-
-export function sendToBrokers(sessIdA, sessIdB, chunks) {
-  return Promise.all([
-    sendToBroker(API.BROKER_NODE_A, sessIdA, chunks),
-    sendToBroker(API.BROKER_NODE_B, sessIdB, chunks.slice().reverse())
-  ]);
-}
-
-export function sendToBrokerA(sessId, chunks) {
-  return sendToBroker(API.BROKER_NODE_A, sessId, chunks);
-}
-
-export function sendToBrokerB(sessId, chunks) {
-  return sendToBroker(API.BROKER_NODE_B, sessId, chunks);
 }
 
 export function sendToBroker(broker, sessId, chunks) {

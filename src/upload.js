@@ -17,9 +17,10 @@ import { bytesFromHandle, encryptMetadata } from "./util";
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
   filename: "",
-  epochs: 1,
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
+
+const REQUIRED_OPTS = ["alpha", "beta", "epochs"];
 
 export const EVENTS = Object.freeze({
   INVOICE: "invoice",
@@ -30,10 +31,12 @@ export const EVENTS = Object.freeze({
   ERROR: "error"
 });
 
+// TODO: Figure out which ivars are actually needed vs. just locally scoped.
+// Then convert all ivars to local consts
+
 export default class Upload extends EventEmitter {
   constructor(filename, size, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
-    const epochs = opts.epochs;
     const chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
     const totalChunks = chunkCount + 1;
 
@@ -41,6 +44,9 @@ export default class Upload extends EventEmitter {
     this.startUpload = this.startUpload.bind(this);
     this.propagateError = this.propagateError.bind(this);
 
+    this.alpha = opts.alpha;
+    this.beta = opts.beta;
+    this.epochs = opts.epochs;
     this.options = opts;
     this.filename = filename;
     this.handle = createHandle(filename);
@@ -49,26 +55,47 @@ export default class Upload extends EventEmitter {
     this.key = bytesFromHandle(this.handle);
     this.numberOfChunks = totalChunks;
 
-    this.uploadSession = createUploadSession(
+    // hack to stub brokers for testing.
+    const createUploadSessionFn =
+      this.options.createUploadSession || createUploadSession;
+
+    this.uploadSession = createUploadSessionFn(
       size,
       this.genesisHash,
       totalChunks,
-      epochs
-    ).then(this.startUpload);
+      this.alpha,
+      this.beta,
+      this.epochs
+    )
+      .then(this.startUpload.bind(this))
+      .catch(this.propagateError.bind(this));
+  }
+
+  static validateOptions(opts, keys) {
+    // TODO: Smarter validation.
+    const invalidKeys = keys.filter(key => !opts.hasOwnProperty(key));
+
+    if (invalidKeys.length > 0) {
+      throw `Missing required keys: ${invalidKeys.join(",")}`;
+    }
   }
 
   // File object (browser)
   static fromFile(file, options = {}) {
     const source = { sourceData: file, sourceStream: FileChunkStream };
+    const opts = Object.assign(options, source);
+    Upload.validateOptions(opts, REQUIRED_OPTS);
 
-    return new Upload(file.name, file.size, Object.assign(options, source));
+    return new Upload(file.name, file.size, opts);
   }
 
   // Uint8Array or node buffer
   static fromData(buffer, filename, options = {}) {
     const source = { sourceData: buffer, sourceStream: BufferSourceStream };
+    const opts = Object.assign(options, source);
+    Upload.validateOptions(opts, REQUIRED_OPTS);
 
-    return new Upload(filename, buffer.length, Object.assign(options, source));
+    return new Upload(filename, buffer.length, opts);
   }
 
   startUpload(session) {
@@ -76,7 +103,7 @@ export default class Upload extends EventEmitter {
       // TODO: Actually implement these.
       // Stubbing for now to work on integration.
 
-      this.emit(EVENTS.INVOICE, { cost: 123, ethAddress: "testAddr" });
+      this.emit(EVENTS.INVOICE, session.invoice);
       this.emit(EVENTS.PAYMENT_PENDING);
 
       // This is currently what the client expects, not sure if this
@@ -97,7 +124,7 @@ export default class Upload extends EventEmitter {
     const sessIdA = session.alphaSessionId;
     const sessIdB = session.betaSessionId;
     const invoice = session.invoice || null;
-    const host = session.host;
+    const host = this.alpha;
     const metadata = encryptMetadata(this.metadata, this.key);
     const { sourceStream, sourceData, sourceOptions } = this.options;
 
@@ -122,6 +149,8 @@ export default class Upload extends EventEmitter {
           metadata,
           this.genesisHash,
           this.metadata.numberOfChunks,
+          this.alpha,
+          this.beta,
           sessIdA,
           sessIdB,
           prog => {
