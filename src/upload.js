@@ -154,7 +154,7 @@ export default class Upload extends EventEmitter {
           sessIdA,
           sessIdB,
           prog => {
-            this.emit(EVENT.UPLOAD_PROGRESS, { progress: prog });
+            this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
           }
         );
 
