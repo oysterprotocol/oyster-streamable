@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,13 +6,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _readableStream = require('readable-stream');
+var _readableStream = require("readable-stream");
 
-var _util = require('../util');
+var _util = require("../util");
 
-var _backend = require('../utils/backend');
+var _backend = require("../utils/backend");
 
-var _config = require('../config');
+var _config = require("../config");
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -64,7 +64,7 @@ var DownloadStream = function (_Readable) {
   }
 
   _createClass(DownloadStream, [{
-    key: '_read',
+    key: "_read",
     value: function _read() {
       this.pushChunk = true;
 
@@ -76,7 +76,7 @@ var DownloadStream = function (_Readable) {
       this._pushChunk();
     }
   }, {
-    key: '_pushChunk',
+    key: "_pushChunk",
     value: function _pushChunk() {
       if (!this.pushChunk) {
         return;
@@ -104,7 +104,7 @@ var DownloadStream = function (_Readable) {
       }
     }
   }, {
-    key: '_download',
+    key: "_download",
     value: function _download() {
       var _this2 = this;
 
@@ -133,7 +133,7 @@ var DownloadStream = function (_Readable) {
           if (signatures && signatures.length === limit) {
             _this2.batches[batchId] = signatures;
           } else {
-            _this2.emit('error', 'Download incomplete');
+            _this2.emit("error", "Download incomplete");
           }
         }
 
@@ -145,11 +145,11 @@ var DownloadStream = function (_Readable) {
         _this2._pushChunk();
       }).catch(function (error) {
         _this2.ongoingDownloads--;
-        _this2.emit('error', error);
+        _this2.emit("error", error);
       }).catch(function (error) {});
     }
   }, {
-    key: '_processBinaryChunk',
+    key: "_processBinaryChunk",
     value: function _processBinaryChunk(buffer, batchId) {
       var batch = [];
       var bytes = new Uint8Array(buffer);

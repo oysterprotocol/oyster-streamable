@@ -1,14 +1,14 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _upload = require('./upload');
+var _upload = require("./upload");
 
 var _upload2 = _interopRequireDefault(_upload);
 
-var _download = require('./download');
+var _download = require("./download");
 
 var _download2 = _interopRequireDefault(_download);
 

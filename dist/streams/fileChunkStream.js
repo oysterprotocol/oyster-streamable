@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _readableStream = require('readable-stream');
+var _readableStream = require("readable-stream");
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -59,23 +59,23 @@ var FileChunkStream = function (_Readable) {
     _this._onLowRead = _this._onLowRead.bind(_this);
     _this._onHighRead = _this._onHighRead.bind(_this);
 
-    _this.on('setUpperBound', function (val) {
+    _this.on("setUpperBound", function (val) {
       _this.readUpperBound = val * BYTES_PER_CHUNK - 1;
     });
-    _this.on('setLowerBound', function (val) {
+    _this.on("setLowerBound", function (val) {
       _this.readLowerBound = val * BYTES_PER_CHUNK;
     });
     return _this;
   }
 
   _createClass(FileChunkStream, [{
-    key: '_read',
+    key: "_read",
     value: function _read() {
       this.pushChunk = true;
       this._pushChunk();
     }
   }, {
-    key: '_pushChunk',
+    key: "_pushChunk",
     value: function _pushChunk() {
       if (!this.pushChunk) {
         return;
@@ -89,7 +89,7 @@ var FileChunkStream = function (_Readable) {
       }
     }
   }, {
-    key: '_readChunksFromFile',
+    key: "_readChunksFromFile",
     value: function _readChunksFromFile() {
       // End stream when file is read in
       if (this.lowIdx === this.numChunks && this.highIdx < 0) {
@@ -109,30 +109,30 @@ var FileChunkStream = function (_Readable) {
       this.readNextHigh = !this.readNextHigh;
     }
   }, {
-    key: '_readLowChunks',
+    key: "_readLowChunks",
     value: function _readLowChunks() {
       var offset = this.lowIdx * BYTES_PER_CHUNK;
       var size = this.options.readSize;
       var limit = Math.min(offset + size, this.readUpperBound);
-      var chunk = this.file.slice(offset, limit, 'application/octet-stream');
+      var chunk = this.file.slice(offset, limit, "application/octet-stream");
 
       this.reader.onload = this._onLowRead;
       this.reader.readAsArrayBuffer(chunk);
     }
   }, {
-    key: '_readHighChunks',
+    key: "_readHighChunks",
     value: function _readHighChunks() {
       var fullLimit = (this.highIdx + 1) * BYTES_PER_CHUNK;
       var size = this.options.readSize;
       var limit = Math.min(fullLimit, this.file.size);
       var offset = Math.max(fullLimit - size, this.readLowerBound);
-      var chunk = this.file.slice(offset, limit, 'application/octet-stream');
+      var chunk = this.file.slice(offset, limit, "application/octet-stream");
 
       this.reader.onload = this._onHighRead;
       this.reader.readAsArrayBuffer(chunk);
     }
   }, {
-    key: '_onLowRead',
+    key: "_onLowRead",
     value: function _onLowRead(event) {
       var result = event.target.result;
       var chunkCount = Math.ceil(result.byteLength / BYTES_PER_CHUNK);
@@ -156,7 +156,7 @@ var FileChunkStream = function (_Readable) {
       this._pushChunk();
     }
   }, {
-    key: '_onHighRead',
+    key: "_onHighRead",
     value: function _onHighRead(event) {
       var result = event.target.result;
       var chunkCount = Math.ceil(result.byteLength / BYTES_PER_CHUNK);

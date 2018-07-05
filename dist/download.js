@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,39 +6,39 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _iotaLib = require('iota.lib.js');
+var _iotaLib = require("iota.lib.js");
 
 var _iotaLib2 = _interopRequireDefault(_iotaLib);
 
-var _events = require('events');
+var _events = require("events");
 
-var _nodeForge = require('node-forge');
+var _nodeForge = require("node-forge");
 
 var _nodeForge2 = _interopRequireDefault(_nodeForge);
 
-var _decryptStream = require('./streams/decryptStream');
+var _decryptStream = require("./streams/decryptStream");
 
 var _decryptStream2 = _interopRequireDefault(_decryptStream);
 
-var _downloadStream = require('./streams/downloadStream');
+var _downloadStream = require("./streams/downloadStream");
 
 var _downloadStream2 = _interopRequireDefault(_downloadStream);
 
-var _filePreviewStream = require('./streams/filePreviewStream');
+var _filePreviewStream = require("./streams/filePreviewStream");
 
 var _filePreviewStream2 = _interopRequireDefault(_filePreviewStream);
 
-var _bufferTargetStream = require('./streams/bufferTargetStream');
+var _bufferTargetStream = require("./streams/bufferTargetStream");
 
 var _bufferTargetStream2 = _interopRequireDefault(_bufferTargetStream);
 
-var _encryption = require('./utils/encryption');
+var _encryption = require("./utils/encryption");
 
-var _backend = require('./utils/backend');
+var _backend = require("./utils/backend");
 
-var _config = require('./config');
+var _config = require("./config");
 
-var _util = require('./util');
+var _util = require("./util");
 
 var Util = _interopRequireWildcard(_util);
 
@@ -78,7 +78,7 @@ var Download = function (_EventEmitter) {
   }
 
   _createClass(Download, [{
-    key: 'getMetadata',
+    key: "getMetadata",
     value: function getMetadata() {
       var _this2 = this;
 
@@ -86,14 +86,14 @@ var Download = function (_EventEmitter) {
         var signature = result.data[0];
 
         if (signature === null) {
-          throw new Error('File does not exist.');
+          throw new Error("File does not exist.");
         }
 
         var _Util$decryptMetadata = Util.decryptMetadata(_this2.key, signature),
             version = _Util$decryptMetadata.version,
             metadata = _Util$decryptMetadata.metadata;
 
-        _this2.emit('metadata', metadata);
+        _this2.emit("metadata", metadata);
         _this2.metadata = metadata;
         return Promise.resolve(metadata);
       }).catch(function (error) {
@@ -101,7 +101,7 @@ var Download = function (_EventEmitter) {
       });
     }
   }, {
-    key: 'startDownload',
+    key: "startDownload",
     value: function startDownload(metadata) {
       var _this3 = this;
 
@@ -110,29 +110,31 @@ var Download = function (_EventEmitter) {
           targetOptions = _options.targetOptions;
 
 
-      this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, { iota: iota });
+      this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, {
+        iota: iota
+      });
       this.decryptStream = new _decryptStream2.default(this.key);
       this.targetStream = new targetStream(metadata, targetOptions || {});
 
-      this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on('finish', function () {
-        _this3.emit('finish', {
+      this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on("finish", function () {
+        _this3.emit("finish", {
           target: _this3,
           metadata: _this3.metadata,
           result: _this3.targetStream.result
         });
       });
 
-      this.downloadStream.on('error', this.propagateError);
-      this.decryptStream.on('error', this.propagateError);
-      this.targetStream.on('error', this.propagateError);
+      this.downloadStream.on("error", this.propagateError);
+      this.decryptStream.on("error", this.propagateError);
+      this.targetStream.on("error", this.propagateError);
     }
   }, {
-    key: 'propagateError',
+    key: "propagateError",
     value: function propagateError(error) {
-      this.emit('error', error);
+      this.emit("error", error);
     }
   }], [{
-    key: 'toBuffer',
+    key: "toBuffer",
     value: function toBuffer(handle) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -143,7 +145,7 @@ var Download = function (_EventEmitter) {
       return new Download(handle, Object.assign(options, target));
     }
   }, {
-    key: 'toBlob',
+    key: "toBlob",
     value: function toBlob(handle) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 

@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _readableStream = require('readable-stream');
+var _readableStream = require("readable-stream");
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -52,17 +52,17 @@ var BufferSourceStream = function (_Readable) {
     _this.highIdx = _this.numChunks - 1;
     _this.readLowerBound = 0;
 
-    _this.on('setUpperBound', function (val) {
+    _this.on("setUpperBound", function (val) {
       _this.readUpperBound = val * BYTES_PER_CHUNK - 1;
     });
-    _this.on('setLowerBound', function (val) {
+    _this.on("setLowerBound", function (val) {
       _this.readLowerBound = val * BYTES_PER_CHUNK;
     });
     return _this;
   }
 
   _createClass(BufferSourceStream, [{
-    key: '_read',
+    key: "_read",
     value: function _read() {
       var chunk = void 0;
 
@@ -71,7 +71,7 @@ var BufferSourceStream = function (_Readable) {
       } while (this.push(chunk));
     }
   }, {
-    key: '_readChunkFromBuffer',
+    key: "_readChunkFromBuffer",
     value: function _readChunkFromBuffer() {
       var chunk = void 0;
 
@@ -94,7 +94,7 @@ var BufferSourceStream = function (_Readable) {
       return chunk;
     }
   }, {
-    key: '_readLowChunks',
+    key: "_readLowChunks",
     value: function _readLowChunks() {
       var offset = this.lowIdx * BYTES_PER_CHUNK;
       var limit = Math.min(offset + BYTES_PER_CHUNK, this.readUpperBound);
@@ -106,7 +106,7 @@ var BufferSourceStream = function (_Readable) {
       };
     }
   }, {
-    key: '_readHighChunks',
+    key: "_readHighChunks",
     value: function _readHighChunks() {
       var offset = Math.max(this.highIdx * BYTES_PER_CHUNK, this.readLowerBound);
       var limit = Math.min(offset + BYTES_PER_CHUNK, this.buffer.length);

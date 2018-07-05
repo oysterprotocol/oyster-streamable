@@ -47,7 +47,7 @@ function generate(handle, size) {
       dataMap = _keys$reduce2[0];
 
   return dataMap;
-};
+}
 
 function offsetHash(hash, offset) {
   var nextHash = hash;

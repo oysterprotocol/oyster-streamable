@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,11 +6,11 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _readableStream = require('readable-stream');
+var _readableStream = require("readable-stream");
 
-var _util = require('../util');
+var _util = require("../util");
 
-var _encryption = require('../utils/encryption');
+var _encryption = require("../utils/encryption");
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -39,7 +39,7 @@ var EncryptStream = function (_Transform) {
   }
 
   _createClass(EncryptStream, [{
-    key: '_transform',
+    key: "_transform",
     value: function _transform(chunk, encoding, callback) {
       var key = this.key;
       var iv = (0, _encryption.deriveNonce)(this.key, chunk.idx);

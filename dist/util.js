@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,24 +22,24 @@ exports.decryptMetadata = decryptMetadata;
 exports.getVersion = getVersion;
 exports.versionTrytes = versionTrytes;
 
-var _iotaLib = require('iota.lib.js');
+var _iotaLib = require("iota.lib.js");
 
 var _iotaLib2 = _interopRequireDefault(_iotaLib);
 
-var _nodeForge = require('node-forge');
+var _nodeForge = require("node-forge");
 
 var _nodeForge2 = _interopRequireDefault(_nodeForge);
 
-var _encryption = require('./utils/encryption');
+var _encryption = require("./utils/encryption");
 
-var _axios = require('axios');
+var _axios = require("axios");
 
 var _axios2 = _interopRequireDefault(_axios);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var CURRENT_VERSION = 1;
-var STOPPER_TRYTE = 'A';
+var STOPPER_TRYTE = "A";
 var IV_BYTE_LENGTH = 16;
 var TAG_BYTE_LENGTH = 16;
 var TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
@@ -47,7 +47,7 @@ var TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
 var iota = exports.iota = new _iotaLib2.default();
 
 function bytesFromHandle(handle) {
-  return _nodeForge2.default.md.sha256.create().update(handle, 'utf8').digest();
+  return _nodeForge2.default.md.sha256.create().update(handle, "utf8").digest();
 }
 
 // Offset hashes for IXI Oyster.findGeneratedSignatures
@@ -80,11 +80,11 @@ function parseMessage(trytes) {
 // Encryption to trytes
 function encrypt(key, iv, binaryString) {
   key.read = 0;
-  var cipher = _nodeForge2.default.cipher.createCipher('AES-GCM', key);
+  var cipher = _nodeForge2.default.cipher.createCipher("AES-GCM", key);
 
   cipher.start({
     iv: iv,
-    additionalData: 'binary-encoded string',
+    additionalData: "binary-encoded string",
     tagLength: TAG_BIT_LENGTH
   });
 
@@ -99,7 +99,7 @@ function encrypt(key, iv, binaryString) {
 }
 
 function encryptString(key, iv, string, encoding) {
-  var buf = _nodeForge2.default.util.createBuffer(string, encoding || 'utf8');
+  var buf = _nodeForge2.default.util.createBuffer(string, encoding || "utf8");
   return encrypt(key, iv, buf);
 }
 
@@ -109,7 +109,7 @@ function encryptBytes(key, iv, bytes) {
 
 function encryptMetadata(metadata, key) {
   var iv = (0, _encryption.deriveNonce)(key, 0);
-  var trytes = encryptString(key, iv, JSON.stringify(metadata), 'utf8');
+  var trytes = encryptString(key, iv, JSON.stringify(metadata), "utf8");
   return addStopperTryte(versionTrytes() + trytes);
 }
 
@@ -121,15 +121,15 @@ function decrypt(key, byteBuffer) {
   var iv = byteStr.substr(-IV_BYTE_LENGTH);
   var end = byteStr.length - TAG_BYTE_LENGTH - IV_BYTE_LENGTH;
   var msg = byteStr.substr(0, end);
-  var decipher = _nodeForge2.default.cipher.createDecipher('AES-GCM', key);
+  var decipher = _nodeForge2.default.cipher.createDecipher("AES-GCM", key);
 
   decipher.start({
     iv: iv,
-    additionalData: 'binary-encoded string',
+    additionalData: "binary-encoded string",
     tagLength: TAG_BIT_LENGTH,
     tag: tag
   });
-  decipher.update(new _nodeForge2.default.util.ByteBuffer(msg, 'binary'));
+  decipher.update(new _nodeForge2.default.util.ByteBuffer(msg, "binary"));
 
   if (decipher.finish()) {
     return decipher.output;
@@ -150,7 +150,7 @@ function decryptBytes(key, byteBuffer) {
 function decryptString(key, byteBuffer, encoding) {
   var output = decrypt(key, byteBuffer);
   if (output) {
-    return output.toString(encoding || 'utf8');
+    return output.toString(encoding || "utf8");
   } else {
     return false;
   }
@@ -159,7 +159,7 @@ function decryptString(key, byteBuffer, encoding) {
 function decryptMetadata(key, signature) {
   var trytes = parseMessage(signature);
   var byteStr = iota.utils.fromTrytes(trytes);
-  var byteBuffer = _nodeForge2.default.util.createBuffer(byteStr, 'binary');
+  var byteBuffer = _nodeForge2.default.util.createBuffer(byteStr, "binary");
   var version = getVersion(byteBuffer);
   var metadata = JSON.parse(decryptString(key, byteBuffer.compact()));
 
