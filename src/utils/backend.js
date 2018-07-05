@@ -112,14 +112,20 @@ const PAYMENT_STATUS = Object.freeze({
   CONFIRMED: "confirmed"
 });
 
+const setIntervalAndExecute = (fn, t) => fn() && setInterval(fn, t);
+
 const pollPaymentStatus = (host, sessId, statusFoundFn) => {
   return new Promise((resolve, reject) => {
-    setInterval(() => {
+    const poll = setIntervalAndExecute(() => {
       axiosInstance
-        .get(`${host}${API.V2_UPLOAD_SESSIONS_PATH}/${sessid}`)
+        .get(`${host}${API.V2_UPLOAD_SESSIONS_PATH}/${sessId}`)
         .then(response => {
           const status = response.data.paymentStatus;
-          if (statusFoundFn(status)) return resolve();
+
+          if (statusFoundFn(status)) {
+            clearInterval(poll);
+            return resolve();
+          }
         })
         .catch(reject);
     }, POLL_INTERVAL);
