@@ -1,15 +1,13 @@
 import { hashChain, genesisHash } from "./encryption";
 import { iota } from "../util";
-import { FILE } from "./config";
+import { FILE } from "../config";
 
-export function generate(handle, size, opts = {}) {
+export function generate(handle, size) {
   let offsets = 1; // Meta chunk
 
-  if (opts.includeTreasureOffsets) {
-    // Includes 1 treasure per sector.
-    const numTreasureChunks = Math.ceil(size / (FILE.CHUNKS_PER_SECTOR - 1));
-    offsets += numTreasureChunks;
-  }
+  // Includes 1 treasure per sector.
+  const numTreasureChunks = Math.ceil(size / (FILE.CHUNKS_PER_SECTOR - 1));
+  offsets += numTreasureChunks;
 
   const keys = Array.from(Array(size + offsets), (_, i) => i);
 

@@ -1,7 +1,6 @@
 import IOTA from "iota.lib.js";
 import Forge from "node-forge";
 import { deriveNonce, genesisHash, hashChain } from "./utils/encryption";
-import axios from "axios";
 
 const CURRENT_VERSION = 1;
 const STOPPER_TRYTE = "A";

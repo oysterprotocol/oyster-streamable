@@ -29,6 +29,7 @@ test("Upload emits the expected events", done => {
       alpha: "alpha",
       beta: "beta",
       epochs: 1,
+      iotaProvider: "http://fake-iota.com",
       testEnv: true,
       createUploadSession: createUploadSessionStub
     };

@@ -13,6 +13,7 @@ import {
 } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
 import { bytesFromHandle, encryptMetadata } from "./util";
+import { pollIotaProgress } from "./utils/iota";
 
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
@@ -20,7 +21,7 @@ const DEFAULT_OPTIONS = Object.freeze({
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
-const REQUIRED_OPTS = ["alpha", "beta", "epochs"];
+const REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
 
 export const EVENTS = Object.freeze({
   INVOICE: "invoice",
@@ -47,6 +48,7 @@ export default class Upload extends EventEmitter {
     this.alpha = opts.alpha;
     this.beta = opts.beta;
     this.epochs = opts.epochs;
+    this.iotaProvider = opta.iotaProvider;
     this.options = opts;
     this.filename = filename;
     this.handle = createHandle(filename);
@@ -159,11 +161,21 @@ export default class Upload extends EventEmitter {
           .pipe(this.encryptStream)
           .pipe(this.uploadStream)
           .on("finish", () => {
-            this.emit(EVENTS.FINISH, {
-              target: this,
-              handle: this.handle,
-              numberOfChunks: this.numberOfChunks,
-              metadata: this.metadata
+            // Eagerly show progress.
+            // Progress is 0 - 100? it should be 0.0 - 1.0...
+            this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 2.0 });
+
+            // TODO: Stream the datamap too?
+            const datamap = datamapGen(this.handle, this.numberOfChunks);
+            pollIotaProgress(datamap, this.iotaProvider, prog => {
+              this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+            }).then(() => {
+              this.emit(EVENTS.FINISH, {
+                target: this,
+                handle: this.handle,
+                numberOfChunks: this.numberOfChunks,
+                metadata: this.metadata
+              });
             });
           });
 
