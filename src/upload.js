@@ -152,10 +152,7 @@ export default class Upload extends EventEmitter {
           this.alpha,
           this.beta,
           sessIdA,
-          sessIdB,
-          prog => {
-            this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-          }
+          sessIdB
         );
 
         this.sourceStream
