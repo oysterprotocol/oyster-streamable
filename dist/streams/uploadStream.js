@@ -29,7 +29,7 @@ var DEFAULT_OPTIONS = Object.freeze({
 var UploadStream = function (_Writable) {
   _inherits(UploadStream, _Writable);
 
-  function UploadStream(metadataTrytes, genesisHash, numChunks, alpha, beta, sessIdA, sessIdB, progressCb, options) {
+  function UploadStream(metadataTrytes, genesisHash, numChunks, alpha, beta, sessIdA, sessIdB, options) {
     _classCallCheck(this, UploadStream);
 
     var opts = Object.assign({}, DEFAULT_OPTIONS, options);
@@ -50,7 +50,6 @@ var UploadStream = function (_Writable) {
     _this.ongoingUploads = 0;
     _this.chunksProcessed = 0;
     _this.retries = 0;
-    _this.progressCb = progressCb;
     _this.finishCallback = null;
     return _this;
   }
@@ -156,12 +155,6 @@ var UploadStream = function (_Writable) {
       this.ongoingUploads--;
       this.chunksProcessed++;
 
-      // Progress Callback.
-      if (this.progressCb) {
-        var prog = this.chunksProcessed / this.numChunks;
-        this.progressCb(this._clamp(prog, 0.0, 1.0));
-      }
-
       // Upload until done
       if (this.batchBuffer.length > 0) {
         return this._attemptUpload();
@@ -199,14 +192,6 @@ var UploadStream = function (_Writable) {
         this.emit("error", error);
         this.close();
       }
-    }
-
-    // This should be in utils somewhere else.
-
-  }, {
-    key: "_clamp",
-    value: function _clamp(num, min, max) {
-      return Math.min(Math.max(num, min), max);
     }
   }]);
 

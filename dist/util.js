@@ -32,10 +32,6 @@ var _nodeForge2 = _interopRequireDefault(_nodeForge);
 
 var _encryption = require("./utils/encryption");
 
-var _axios = require("axios");
-
-var _axios2 = _interopRequireDefault(_axios);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var CURRENT_VERSION = 1;

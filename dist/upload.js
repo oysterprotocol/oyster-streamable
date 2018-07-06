@@ -33,6 +33,8 @@ var _fileProcessor = require("./utils/file-processor");
 
 var _util = require("./util");
 
+var _iota = require("./utils/iota");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -47,7 +49,7 @@ var DEFAULT_OPTIONS = Object.freeze({
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
-var REQUIRED_OPTS = ["alpha", "beta", "epochs"];
+var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
 
 var EVENTS = exports.EVENTS = Object.freeze({
   INVOICE: "invoice",
@@ -79,6 +81,7 @@ var Upload = function (_EventEmitter) {
     _this.alpha = opts.alpha;
     _this.beta = opts.beta;
     _this.epochs = opts.epochs;
+    _this.iotaProvider = opta.iotaProvider;
     _this.options = opts;
     _this.filename = filename;
     _this.handle = (0, _encryption.createHandle)(filename);
@@ -147,16 +150,24 @@ var Upload = function (_EventEmitter) {
 
         _this2.sourceStream = new sourceStream(sourceData, sourceOptions || {});
         _this2.encryptStream = new _encryptStream2.default(_this2.handle);
-        _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB, function (prog) {
-          _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-        });
+        _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
 
         _this2.sourceStream.pipe(_this2.encryptStream).pipe(_this2.uploadStream).on("finish", function () {
-          _this2.emit(EVENTS.FINISH, {
-            target: _this2,
-            handle: _this2.handle,
-            numberOfChunks: _this2.numberOfChunks,
-            metadata: _this2.metadata
+          // Eagerly show progress.
+          // Progress is 0 - 100? it should be 0.0 - 1.0...
+          _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: 2.0 });
+
+          // TODO: Stream the datamap too?
+          var datamap = datamapGen(_this2.handle, _this2.numberOfChunks);
+          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
+            _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+          }).then(function () {
+            _this2.emit(EVENTS.FINISH, {
+              target: _this2,
+              handle: _this2.handle,
+              numberOfChunks: _this2.numberOfChunks,
+              metadata: _this2.metadata
+            });
           });
         });
 

@@ -13,14 +13,6 @@ var _axios = require("axios");
 
 var _axios2 = _interopRequireDefault(_axios);
 
-var _fileProcessor = require("./file-processor");
-
-var _fileProcessor2 = _interopRequireDefault(_fileProcessor);
-
-var _encryption = require("./encryption");
-
-var _encryption2 = _interopRequireDefault(_encryption);
-
 var _config = require("../config");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -28,9 +20,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var CURRENT_VERSION = 1;
 var SESSIONS_PATH = _config.API.V2_UPLOAD_SESSIONS_PATH;
 
-var axiosInstance = _axios2.default.create({
-  timeout: 200000
-});
+var axiosInstance = _axios2.default.create({ timeout: 200000 });
 
 function queryGeneratedSignatures(iotaProvider, hash, count) {
   var binary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
@@ -102,7 +92,7 @@ function sendToBroker(broker, sessId, chunks) {
 function sendChunksToBroker(brokerUrl, chunks) {
   return new Promise(function (resolve, reject) {
     axiosInstance.put(brokerUrl, { chunks: chunks }).then(function (response) {
-      resolve(response);
+      return resolve(response);
     }).catch(function (error) {
       console.log("ERROR SENDING CHUNK TO BROKER:", error);
       reject(error);
@@ -121,6 +111,10 @@ var PAYMENT_STATUS = Object.freeze({
 var setIntervalAndExecute = function setIntervalAndExecute(fn, t) {
   return fn() && setInterval(fn, t);
 };
+
+/**
+ * Payment polling
+ */
 
 var pollPaymentStatus = function pollPaymentStatus(host, sessId, statusFoundFn) {
   return new Promise(function (resolve, reject) {
