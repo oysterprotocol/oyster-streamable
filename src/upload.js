@@ -48,7 +48,7 @@ export default class Upload extends EventEmitter {
     this.alpha = opts.alpha;
     this.beta = opts.beta;
     this.epochs = opts.epochs;
-    this.iotaProvider = opta.iotaProvider;
+    this.iotaProvider = opts.iotaProvider;
     this.options = opts;
     this.filename = filename;
     this.handle = createHandle(filename);
