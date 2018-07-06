@@ -60,13 +60,13 @@ const skinnyQueryTransactions = (iotaProvider, addresses) =>
     );
   });
 
-const checkUploadPercentage = (addresses, indexes) => {
+const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
   return new Promise((resolve, reject) => {
     let promises = [];
 
     promises.push(
       new Promise((resolve, reject) => {
-        skinnyQueryTransactions(IotaA, [addresses[indexes[0]]]).then(
+        skinnyQueryTransactions(itoaProvider, [addresses[indexes[0]]]).then(
           transactions => {
             resolve({ removeIndex: transactions.length > 0 });
           }
@@ -77,7 +77,7 @@ const checkUploadPercentage = (addresses, indexes) => {
     if (indexes.length > 1) {
       promises.push(
         new Promise((resolve, reject) => {
-          skinnyQueryTransactions(IotaA, [
+          skinnyQueryTransactions(itoaProvider, [
             addresses[indexes[indexes.length - 1]]
           ]).then(transactions => {
             resolve({ removeIndex: transactions.length > 0 });
@@ -120,7 +120,7 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
     let indexesLen = indexes.length;
 
     const poll = setIntervalAndExecute(() => {
-      checkUploadPercentage(addresses, indexes).then(idxs => {
+      checkUploadPercentage(iotaProvider, addresses, indexes).then(idxs => {
         // Uh oh, race condition.
         indexes = idxs;
 
