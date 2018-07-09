@@ -1,14 +1,10 @@
 import axios from "axios";
-import FileProcessor from "./file-processor";
-import Encryption from "./encryption";
 import { API, IOTA_API } from "../config";
 
 const CURRENT_VERSION = 1;
 const SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH;
 
-const axiosInstance = axios.create({
-  timeout: 200000
-});
+const axiosInstance = axios.create({ timeout: 200000 });
 
 export function queryGeneratedSignatures(
   iotaProvider,
@@ -94,9 +90,7 @@ export function sendChunksToBroker(brokerUrl, chunks) {
   return new Promise((resolve, reject) => {
     axiosInstance
       .put(brokerUrl, { chunks })
-      .then(response => {
-        resolve(response);
-      })
+      .then(response => resolve(response))
       .catch(error => {
         console.log("ERROR SENDING CHUNK TO BROKER:", error);
         reject(error);
@@ -113,6 +107,10 @@ const PAYMENT_STATUS = Object.freeze({
 });
 
 const setIntervalAndExecute = (fn, t) => fn() && setInterval(fn, t);
+
+/**
+ * Payment polling
+ */
 
 const pollPaymentStatus = (host, sessId, statusFoundFn) => {
   return new Promise((resolve, reject) => {

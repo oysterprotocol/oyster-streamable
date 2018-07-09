@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -14,7 +14,7 @@ exports.genesisHash = genesisHash;
 exports.obfuscatedGenesisHash = obfuscatedGenesisHash;
 exports.createHandle = createHandle;
 
-var _nodeForge = require('node-forge');
+var _nodeForge = require("node-forge");
 
 var _nodeForge2 = _interopRequireDefault(_nodeForge);
 
@@ -74,7 +74,7 @@ function obfuscatedGenesisHash(hash) {
 
 // Moved to Encryption utility
 function createHandle(filename) {
-  var safeFilename = filename.replace(/\W/g, '');
+  var safeFilename = filename.replace(/\W/g, "");
   var prefix = (safeFilename + getSalt(8)).substr(0, 8);
   var suffix = getSalt(8);
   var primordialHash = getPrimordialHash();

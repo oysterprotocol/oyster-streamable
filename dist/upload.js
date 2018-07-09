@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.EVENTS = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -32,6 +33,8 @@ var _fileProcessor = require("./utils/file-processor");
 
 var _util = require("./util");
 
+var _iota = require("./utils/iota");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -43,15 +46,22 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var CHUNK_BYTE_SIZE = 1024;
 var DEFAULT_OPTIONS = Object.freeze({
   filename: "",
-  epochs: 1,
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
-var EVENTS = Object.freeze({
+var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
+
+var EVENTS = exports.EVENTS = Object.freeze({
   INVOICE: "invoice",
+  PAYMENT_PENDING: "payment-pending",
+  PAYMENT_CONFIRMED: "payment-confirmed",
+  UPLOAD_PROGRESS: "upload-progress",
   FINISH: "finish",
   ERROR: "error"
 });
+
+// TODO: Figure out which ivars are actually needed vs. just locally scoped.
+// Then convert all ivars to local consts
 
 var Upload = function (_EventEmitter) {
   _inherits(Upload, _EventEmitter);
@@ -60,7 +70,6 @@ var Upload = function (_EventEmitter) {
     _classCallCheck(this, Upload);
 
     var opts = Object.assign({}, DEFAULT_OPTIONS, options);
-    var epochs = opts.epochs;
     var chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
     var totalChunks = chunkCount + 1;
 
@@ -69,28 +78,56 @@ var Upload = function (_EventEmitter) {
     _this.startUpload = _this.startUpload.bind(_this);
     _this.propagateError = _this.propagateError.bind(_this);
 
+    _this.alpha = opts.alpha;
+    _this.beta = opts.beta;
+    _this.epochs = opts.epochs;
+    _this.iotaProvider = opts.iotaProvider;
     _this.options = opts;
+    _this.filename = filename;
     _this.handle = (0, _encryption.createHandle)(filename);
     _this.metadata = (0, _fileProcessor.createMetaData)(filename, chunkCount);
     _this.genesisHash = (0, _encryption.genesisHash)(_this.handle);
     _this.key = (0, _util.bytesFromHandle)(_this.handle);
     _this.numberOfChunks = totalChunks;
 
-    _this.uploadSession = (0, _backend.createUploadSession)(size, _this.genesisHash, totalChunks, epochs).then(_this.startUpload);
+    // hack to stub brokers for testing.
+    var createUploadSessionFn = _this.options.createUploadSession || _backend.createUploadSession;
+
+    _this.uploadSession = createUploadSessionFn(size, _this.genesisHash, totalChunks, _this.alpha, _this.beta, _this.epochs).then(_this.startUpload.bind(_this)).catch(_this.propagateError.bind(_this));
     return _this;
   }
-
-  // File object (browser)
-
 
   _createClass(Upload, [{
     key: "startUpload",
     value: function startUpload(session) {
       var _this2 = this;
 
+      if (!!this.options.testEnv) {
+        // TODO: Actually implement these.
+        // Stubbing for now to work on integration.
+
+        this.emit(EVENTS.INVOICE, session.invoice);
+        this.emit(EVENTS.PAYMENT_PENDING);
+
+        // This is currently what the client expects, not sure if this
+        // payload makes sense to be emitted here...
+        // TODO: Better stubs and mocks.
+        this.emit(EVENTS.PAYMENT_CONFIRMED, {
+          filename: this.filename,
+          handle: this.handle,
+          numberOfChunks: this.numberOfChunks
+        });
+
+        this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
+
+        this.emit(EVENTS.FINISH);
+        return;
+      }
+
       var sessIdA = session.alphaSessionId;
       var sessIdB = session.betaSessionId;
       var invoice = session.invoice || null;
+      var host = this.alpha;
       var metadata = (0, _util.encryptMetadata)(this.metadata, this.key);
       var _options = this.options,
           sourceStream = _options.sourceStream,
@@ -100,24 +137,44 @@ var Upload = function (_EventEmitter) {
 
       this.emit(EVENTS.INVOICE, invoice);
 
-      this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
-      this.encryptStream = new _encryptStream2.default(this.handle);
-      this.uploadStream = new _uploadStream2.default(metadata, this.genesisHash, sessIdA, sessIdB);
-
-      this.sourceStream.pipe(this.encryptStream).pipe(this.uploadStream).on("finish", function () {
-        _this2.emit(EVENTS.FINISH, {
-          target: _this2,
+      // Wait for payment.
+      (0, _backend.confirmPendingPoll)(host, sessIdA).then(function () {
+        _this2.emit(EVENTS.PAYMENT_PENDING);
+        return (0, _backend.confirmPaidPoll)(host, sessIdA);
+      }).then(function () {
+        _this2.emit(EVENTS.PAYMENT_CONFIRMED, {
+          filename: _this2.filename,
           handle: _this2.handle,
-          numberOfChunks: _this2.numberOfChunks,
-          metadata: _this2.metadata
+          numberOfChunks: _this2.numberOfChunks
         });
-      });
 
-      this.sourceStream.on("error", this.propagateError);
-      this.encryptStream.on("error", this.propagateError);
-      this.uploadStream.on("error", this.propagateError);
+        _this2.sourceStream = new sourceStream(sourceData, sourceOptions || {});
+        _this2.encryptStream = new _encryptStream2.default(_this2.handle);
+        _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
 
-      return this; // returns self for fluent chainable API.
+        _this2.sourceStream.pipe(_this2.encryptStream).pipe(_this2.uploadStream).on("finish", function () {
+          // Eagerly show progress.
+          // Progress is 0 - 100? it should be 0.0 - 1.0...
+          _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: 2.0 });
+
+          // TODO: Stream the datamap too?
+          var datamap = datamapGen(_this2.handle, _this2.numberOfChunks);
+          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
+            _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+          }).then(function () {
+            _this2.emit(EVENTS.FINISH, {
+              target: _this2,
+              handle: _this2.handle,
+              numberOfChunks: _this2.numberOfChunks,
+              metadata: _this2.metadata
+            });
+          });
+        });
+
+        _this2.sourceStream.on("error", _this2.propagateError);
+        _this2.encryptStream.on("error", _this2.propagateError);
+        _this2.uploadStream.on("error", _this2.propagateError);
+      }).catch(this.propagateError.bind(this));
     }
   }, {
     key: "propagateError",
@@ -125,13 +182,30 @@ var Upload = function (_EventEmitter) {
       this.emit(EVENTS.ERROR, error);
     }
   }], [{
+    key: "validateOptions",
+    value: function validateOptions(opts, keys) {
+      // TODO: Smarter validation.
+      var invalidKeys = keys.filter(function (key) {
+        return !opts.hasOwnProperty(key);
+      });
+
+      if (invalidKeys.length > 0) {
+        throw "Missing required keys: " + invalidKeys.join(",");
+      }
+    }
+
+    // File object (browser)
+
+  }, {
     key: "fromFile",
     value: function fromFile(file) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
       var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
+      var opts = Object.assign(options, source);
+      Upload.validateOptions(opts, REQUIRED_OPTS);
 
-      return new Upload(file.name, file.size, Object.assign(options, source));
+      return new Upload(file.name, file.size, opts);
     }
 
     // Uint8Array or node buffer
@@ -142,8 +216,10 @@ var Upload = function (_EventEmitter) {
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
       var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
+      var opts = Object.assign(options, source);
+      Upload.validateOptions(opts, REQUIRED_OPTS);
 
-      return new Upload(filename, buffer.length, Object.assign(options, source));
+      return new Upload(filename, buffer.length, opts);
     }
   }]);
 

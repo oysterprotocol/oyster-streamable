@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,9 +6,9 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _readableStream = require('readable-stream');
+var _readableStream = require("readable-stream");
 
-var _backend = require('../utils/backend');
+var _backend = require("../utils/backend");
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -29,7 +29,7 @@ var DEFAULT_OPTIONS = Object.freeze({
 var UploadStream = function (_Writable) {
   _inherits(UploadStream, _Writable);
 
-  function UploadStream(metadataTrytes, genesisHash, sessIdA, sessIdB, options) {
+  function UploadStream(metadataTrytes, genesisHash, numChunks, alpha, beta, sessIdA, sessIdB, options) {
     _classCallCheck(this, UploadStream);
 
     var opts = Object.assign({}, DEFAULT_OPTIONS, options);
@@ -39,19 +39,23 @@ var UploadStream = function (_Writable) {
 
     _this.options = opts;
     _this.genesisHash = genesisHash;
+    _this.numChunks = numChunks;
+    _this.alpha = alpha;
+    _this.beta = beta;
     _this.sessIdA = sessIdA;
     _this.sessIdB = sessIdB;
     _this.chunkBufferLow = [metachunk];
     _this.chunkBufferHigh = [];
     _this.batchBuffer = [];
     _this.ongoingUploads = 0;
+    _this.chunksProcessed = 0;
     _this.retries = 0;
     _this.finishCallback = null;
     return _this;
   }
 
   _createClass(UploadStream, [{
-    key: '_write',
+    key: "_write",
     value: function _write(data, encoding, callback) {
       var chunk = {
         idx: data.idx,
@@ -84,7 +88,7 @@ var UploadStream = function (_Writable) {
       callback();
     }
   }, {
-    key: '_final',
+    key: "_final",
     value: function _final(callback) {
       this.finishCallback = callback;
 
@@ -109,7 +113,7 @@ var UploadStream = function (_Writable) {
       }
     }
   }, {
-    key: '_attemptUpload',
+    key: "_attemptUpload",
     value: function _attemptUpload() {
       if (this.ongoingUploads >= this.options.maxParallelUploads) {
         return;
@@ -119,7 +123,7 @@ var UploadStream = function (_Writable) {
       this._upload(batch);
     }
   }, {
-    key: '_upload',
+    key: "_upload",
     value: function _upload(batch) {
       var _this2 = this;
 
@@ -132,9 +136,9 @@ var UploadStream = function (_Writable) {
 
       var upload = void 0;
       if (batch.order === CHUNK_ORDER_ASC) {
-        upload = (0, _backend.sendToBrokerA)(this.sessIdA, batch.chunks);
+        upload = (0, _backend.sendToBroker)(this.alpha, this.sessIdA, batch.chunks);
       } else {
-        upload = (0, _backend.sendToBrokerB)(this.sessIdB, batch.chunks);
+        upload = (0, _backend.sendToBroker)(this.beta, this.sessIdB, batch.chunks);
       }
 
       upload.then(function (result) {
@@ -144,11 +148,12 @@ var UploadStream = function (_Writable) {
       });
     }
   }, {
-    key: '_afterUpload',
+    key: "_afterUpload",
     value: function _afterUpload() {
       var _this3 = this;
 
       this.ongoingUploads--;
+      this.chunksProcessed++;
 
       // Upload until done
       if (this.batchBuffer.length > 0) {
@@ -168,14 +173,14 @@ var UploadStream = function (_Writable) {
       }
     }
   }, {
-    key: '_uploadError',
+    key: "_uploadError",
     value: function _uploadError(error, batch) {
       this.ongoingUploads--;
 
-      console.warn('error', error);
+      console.warn("error", error);
 
       if (this.retries++ < this.options.maxRetries) {
-        console.log('retrying', this.retries, 'of', this.options.maxRetries);
+        console.log("retrying", this.retries, "of", this.options.maxRetries);
         this.batchBuffer.push(batch);
         this._attemptUpload();
         return;
@@ -184,7 +189,7 @@ var UploadStream = function (_Writable) {
       if (this.finishCallback) {
         this.finishCallback(error);
       } else {
-        this.emit('error', error);
+        this.emit("error", error);
         this.close();
       }
     }

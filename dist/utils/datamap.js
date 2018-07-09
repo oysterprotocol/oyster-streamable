@@ -13,18 +13,14 @@ var _encryption = require("./encryption");
 
 var _util = require("../util");
 
-var _config = require("./config");
+var _config = require("../config");
 
 function generate(handle, size) {
-  var opts = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
   var offsets = 1; // Meta chunk
 
-  if (opts.includeTreasureOffsets) {
-    // Includes 1 treasure per sector.
-    var numTreasureChunks = Math.ceil(size / (_config.FILE.CHUNKS_PER_SECTOR - 1));
-    offsets += numTreasureChunks;
-  }
+  // Includes 1 treasure per sector.
+  var numTreasureChunks = Math.ceil(size / (_config.FILE.CHUNKS_PER_SECTOR - 1));
+  offsets += numTreasureChunks;
 
   var keys = Array.from(Array(size + offsets), function (_, i) {
     return i;
@@ -47,7 +43,7 @@ function generate(handle, size) {
       dataMap = _keys$reduce2[0];
 
   return dataMap;
-};
+}
 
 function offsetHash(hash, offset) {
   var nextHash = hash;

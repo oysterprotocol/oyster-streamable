@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _readableStream = require('readable-stream');
+var _readableStream = require("readable-stream");
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -34,14 +34,14 @@ var FilePreviewStream = function (_Writable) {
   }
 
   _createClass(FilePreviewStream, [{
-    key: '_write',
+    key: "_write",
     value: function _write(data, encoding, callback) {
       this.totalLength += data.length;
       this.chunks.push(data);
       callback();
     }
   }, {
-    key: '_final',
+    key: "_final",
     value: function _final(callback) {
       this.result = new Buffer.concat(this.chunks, this.totalLength);
       callback();
