@@ -14,6 +14,7 @@ import {
 import { createMetaData } from "./utils/file-processor";
 import { bytesFromHandle, encryptMetadata } from "./util";
 import { pollIotaProgress } from "./utils/iota";
+import { generate as datamapGen } from "./utils/datamap";
 
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
