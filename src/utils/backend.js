@@ -106,7 +106,10 @@ const PAYMENT_STATUS = Object.freeze({
   CONFIRMED: "confirmed"
 });
 
-const setIntervalAndExecute = (fn, t) => fn() && setInterval(fn, t);
+const setIntervalAndExecute = (fn, t) => {
+  fn();
+  return setInterval(fn, t);
+};
 
 /**
  * Payment polling
@@ -125,7 +128,10 @@ const pollPaymentStatus = (host, sessId, statusFoundFn) => {
             return resolve();
           }
         })
-        .catch(reject);
+        .catch(err => {
+          clearInterval(poll);
+          return reject(err);
+        });
     }, POLL_INTERVAL);
   });
 };

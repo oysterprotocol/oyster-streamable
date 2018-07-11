@@ -100,12 +100,16 @@ const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
  */
 
 // TODO: Make these configurable?
+const MIN_PROG = 0.02;
 const POLL_INTERVAL = 4000;
 const BUNDLE_SIZE = 100;
 const NUM_POLLING_ADDRESSES = 301;
 
 // This is copied and pasted from backend.js
-const setIntervalAndExecute = (fn, t) => fn() && setInterval(fn, t);
+const setIntervalAndExecute = (fn, t) => {
+  fn();
+  return setInterval(fn, t);
+};
 
 export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
   new Promise((resolve, reject) => {
@@ -118,19 +122,24 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
     let indexesLen = indexes.length;
 
     const poll = setIntervalAndExecute(() => {
-      checkUploadPercentage(iotaProvider, addresses, indexes).then(idxs => {
-        // Uh oh, race condition.
-        indexes = idxs;
+      checkUploadPercentage(iotaProvider, addresses, indexes)
+        .then(idxs => {
+          // Uh oh, race condition.
+          indexes = idxs;
 
-        // Emit progress.
-        const prog = clamp(1 - idxs.length / indexesLen, 0.0, 1.0) * 100;
-        progCb(prog);
+          // Emit progress.
+          const prog = clamp(1 - idxs.length / indexesLen, MIN_PROG, 1.0) * 100;
+          progCb(prog);
 
-        // Include a small epsilon for floating point errors.
-        if (prog >= 99.0) {
+          // Include a small epsilon for floating point errors.
+          if (prog >= 99.0) {
+            clearInterval(poll);
+            return resolve();
+          }
+        })
+        .catch(err => {
           clearInterval(poll);
-          return resolve();
-        }
-      });
+          return reject(err);
+        });
     }, POLL_INTERVAL);
   });
