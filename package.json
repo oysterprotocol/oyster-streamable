@@ -22,7 +22,10 @@
     }
   },
   "jest": {
-    "testPathIgnorePatterns": ["/node_modules/", "dist"]
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "dist"
+    ]
   },
   "dependencies": {
     "axios": "^0.18.0",
