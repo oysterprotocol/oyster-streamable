@@ -9,6 +9,10 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _events = require("events");
 
+var _datamapGenerator = require("datamap-generator");
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
+
 var _fileChunkStream = require("./streams/fileChunkStream");
 
 var _fileChunkStream2 = _interopRequireDefault(_fileChunkStream);
@@ -153,12 +157,9 @@ var Upload = function (_EventEmitter) {
         _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
 
         _this2.sourceStream.pipe(_this2.encryptStream).pipe(_this2.uploadStream).on("finish", function () {
-          // Eagerly show progress.
-          // Progress is 0 - 100? it should be 0.0 - 1.0...
-          _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: 2.0 });
+          var genHash = _datamapGenerator2.default.genesisHash(_this2.handle);
+          var datamap = _datamapGenerator2.default.generate(genHash, _this2.numberOfChunks - 1);
 
-          // TODO: Stream the datamap too?
-          var datamap = datamapGen(_this2.handle, _this2.numberOfChunks);
           (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
             _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
           }).then(function () {
