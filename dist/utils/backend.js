@@ -109,7 +109,8 @@ var PAYMENT_STATUS = Object.freeze({
 });
 
 var setIntervalAndExecute = function setIntervalAndExecute(fn, t) {
-  return fn() && setInterval(fn, t);
+  fn();
+  return setInterval(fn, t);
 };
 
 /**
@@ -126,7 +127,10 @@ var pollPaymentStatus = function pollPaymentStatus(host, sessId, statusFoundFn) 
           clearInterval(poll);
           return resolve();
         }
-      }).catch(reject);
+      }).catch(function (err) {
+        clearInterval(poll);
+        return reject(err);
+      });
     }, POLL_INTERVAL);
   });
 };

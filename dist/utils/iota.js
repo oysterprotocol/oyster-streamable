@@ -88,13 +88,15 @@ var checkUploadPercentage = function checkUploadPercentage(itoaProvider, address
  */
 
 // TODO: Make these configurable?
+var MIN_PROG = 0.02;
 var POLL_INTERVAL = 4000;
 var BUNDLE_SIZE = 100;
 var NUM_POLLING_ADDRESSES = 301;
 
 // This is copied and pasted from backend.js
 var setIntervalAndExecute = function setIntervalAndExecute(fn, t) {
-  return fn() && setInterval(fn, t);
+  fn();
+  return setInterval(fn, t);
 };
 
 var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(datamap, iotaProvider, progCb) {
@@ -109,7 +111,7 @@ var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(data
         indexes = idxs;
 
         // Emit progress.
-        var prog = clamp(1 - idxs.length / indexesLen, 0.0, 1.0) * 100;
+        var prog = clamp(1 - idxs.length / indexesLen, MIN_PROG, 1.0) * 100;
         progCb(prog);
 
         // Include a small epsilon for floating point errors.
@@ -117,6 +119,9 @@ var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(data
           clearInterval(poll);
           return resolve();
         }
+      }).catch(function (err) {
+        clearInterval(poll);
+        return reject(err);
       });
     }, POLL_INTERVAL);
   });

@@ -24,9 +24,10 @@ export function generate(handle, size) {
 
 export function offsetHash(hash, offset) {
   let nextHash = hash;
+  let obfuscatedHash;
 
   do {
-    const [obfuscatedHash, nextHash] = hashChain(nextHash);
+    [obfuscatedHash, nextHash] = hashChain(nextHash);
   } while (--offset > 0);
 
   return iota.utils.toTrytes(obfuscatedHash).substr(0, 81);

@@ -47,12 +47,15 @@ function generate(handle, size) {
 
 function offsetHash(hash, offset) {
   var nextHash = hash;
+  var obfuscatedHash = void 0;
 
   do {
-    var _hashChain3 = (0, _encryption.hashChain)(_nextHash),
-        _hashChain4 = _slicedToArray(_hashChain3, 2),
-        _obfuscatedHash = _hashChain4[0],
-        _nextHash = _hashChain4[1];
+    var _hashChain3 = (0, _encryption.hashChain)(nextHash);
+
+    var _hashChain4 = _slicedToArray(_hashChain3, 2);
+
+    obfuscatedHash = _hashChain4[0];
+    nextHash = _hashChain4[1];
   } while (--offset > 0);
 
   return _util.iota.utils.toTrytes(obfuscatedHash).substr(0, 81);

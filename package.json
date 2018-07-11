@@ -21,8 +21,15 @@
       "pre-commit": "yarn pretty"
     }
   },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "dist"
+    ]
+  },
   "dependencies": {
     "axios": "^0.18.0",
+    "datamap-generator": "git+https://github.com/oysterprotocol/datamap-generator.git",
     "iota.lib.js": "^0.4.7",
     "mime": "^2.3.1",
     "node-forge": "^0.7.5",
