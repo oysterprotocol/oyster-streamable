@@ -1,10 +1,4 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.createMetaData = createMetaData;
-function createMetaData(fileName, numberOfChunks) {
+export function createMetaData(fileName, numberOfChunks) {
   var fileExtension = fileName.split(".").pop();
 
   var meta = {

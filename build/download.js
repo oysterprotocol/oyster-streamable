@@ -1,50 +1,4 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _iotaLib = require("iota.lib.js");
-
-var _iotaLib2 = _interopRequireDefault(_iotaLib);
-
-var _events = require("events");
-
-var _nodeForge = require("node-forge");
-
-var _nodeForge2 = _interopRequireDefault(_nodeForge);
-
-var _decryptStream = require("./streams/decryptStream");
-
-var _decryptStream2 = _interopRequireDefault(_decryptStream);
-
-var _downloadStream = require("./streams/downloadStream");
-
-var _downloadStream2 = _interopRequireDefault(_downloadStream);
-
-var _filePreviewStream = require("./streams/filePreviewStream");
-
-var _filePreviewStream2 = _interopRequireDefault(_filePreviewStream);
-
-var _bufferTargetStream = require("./streams/bufferTargetStream");
-
-var _bufferTargetStream2 = _interopRequireDefault(_bufferTargetStream);
-
-var _encryption = require("./utils/encryption");
-
-var _backend = require("./utils/backend");
-
-var _config = require("./config");
-
-var _util = require("./util");
-
-var Util = _interopRequireWildcard(_util);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -52,7 +6,20 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var iota = new _iotaLib2.default({ provider: _config.IOTA_API.PROVIDER });
+import IOTA from "iota.lib.js";
+import { EventEmitter } from "events";
+import Forge from "node-forge";
+import DecryptStream from "./streams/decryptStream";
+import DownloadStream from "./streams/downloadStream";
+import FilePreviewStream from "./streams/filePreviewStream";
+import BufferTargetStream from "./streams/bufferTargetStream";
+
+import { genesisHash } from "./utils/encryption";
+import { queryGeneratedSignatures } from "./utils/backend";
+import { IOTA_API } from "./config";
+import * as Util from "./util";
+
+var iota = new IOTA({ provider: IOTA_API.PROVIDER });
 var DEFAULT_OPTIONS = Object.freeze({});
 
 var Download = function (_EventEmitter) {
@@ -70,7 +37,7 @@ var Download = function (_EventEmitter) {
 
     _this.options = opts;
     _this.handle = handle;
-    _this.genesisHash = (0, _encryption.genesisHash)(handle);
+    _this.genesisHash = genesisHash(handle);
     _this.key = Util.bytesFromHandle(handle);
 
     _this.getMetadata().then(_this.startDownload).catch(_this.propagateError);
@@ -82,7 +49,7 @@ var Download = function (_EventEmitter) {
     value: function getMetadata() {
       var _this2 = this;
 
-      return (0, _backend.queryGeneratedSignatures)(iota, this.genesisHash, 1).then(function (result) {
+      return queryGeneratedSignatures(iota, this.genesisHash, 1).then(function (result) {
         var signature = result.data[0];
 
         if (signature === null) {
@@ -110,10 +77,10 @@ var Download = function (_EventEmitter) {
           targetOptions = _options.targetOptions;
 
 
-      this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, {
+      this.downloadStream = new DownloadStream(this.genesisHash, metadata, {
         iota: iota
       });
-      this.decryptStream = new _decryptStream2.default(this.key);
+      this.decryptStream = new DecryptStream(this.key);
       this.targetStream = new targetStream(metadata, targetOptions || {});
 
       this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on("finish", function () {
@@ -139,7 +106,7 @@ var Download = function (_EventEmitter) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
       var target = {
-        targetStream: _bufferTargetStream2.default
+        targetStream: BufferTargetStream
       };
 
       return new Download(handle, Object.assign(options, target));
@@ -150,7 +117,7 @@ var Download = function (_EventEmitter) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
       var target = {
-        targetStream: _filePreviewStream2.default
+        targetStream: FilePreviewStream
       };
 
       return new Download(handle, Object.assign(options, target));
@@ -158,6 +125,6 @@ var Download = function (_EventEmitter) {
   }]);
 
   return Download;
-}(_events.EventEmitter);
+}(EventEmitter);
 
-exports.default = Download;
+export default Download;
