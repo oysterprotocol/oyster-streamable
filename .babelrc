@@ -1,4 +1,14 @@
 {
-  "presets": ["env"],
-  "ignore": []
+  "env": {
+    "test": {
+      "presets": ["env"],
+      "ignore": []
+    },
+    "development": {
+      "presets": [["env", {
+        "modules": false
+      }]],
+      "ignore": []
+    }
+  }
 }

@@ -1,51 +1,24 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.EVENTS = undefined;
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _events = require("events");
-
-var _datamapGenerator = require("datamap-generator");
-
-var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
-
-var _fileChunkStream = require("./streams/fileChunkStream");
-
-var _fileChunkStream2 = _interopRequireDefault(_fileChunkStream);
-
-var _bufferSourceStream = require("./streams/bufferSourceStream");
-
-var _bufferSourceStream2 = _interopRequireDefault(_bufferSourceStream);
-
-var _encryptStream = require("./streams/encryptStream");
-
-var _encryptStream2 = _interopRequireDefault(_encryptStream);
-
-var _uploadStream = require("./streams/uploadStream");
-
-var _uploadStream2 = _interopRequireDefault(_uploadStream);
-
-var _encryption = require("./utils/encryption");
-
-var _backend = require("./utils/backend");
-
-var _fileProcessor = require("./utils/file-processor");
-
-var _util = require("./util");
-
-var _iota = require("./utils/iota");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+import { EventEmitter } from "events";
+import Datamap from "datamap-generator";
+
+import FileChunkStream from "./streams/fileChunkStream";
+import BufferSourceStream from "./streams/bufferSourceStream";
+import EncryptStream from "./streams/encryptStream";
+import UploadStream from "./streams/uploadStream";
+
+import { createHandle, genesisHash } from "./utils/encryption";
+import { createUploadSession, confirmPendingPoll, confirmPaidPoll } from "./utils/backend";
+import { createMetaData } from "./utils/file-processor";
+import { bytesFromHandle, encryptMetadata } from "./util";
+import { pollIotaProgress } from "./utils/iota";
 
 var CHUNK_BYTE_SIZE = 1024;
 var DEFAULT_OPTIONS = Object.freeze({
@@ -55,7 +28,7 @@ var DEFAULT_OPTIONS = Object.freeze({
 
 var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
 
-var EVENTS = exports.EVENTS = Object.freeze({
+export var EVENTS = Object.freeze({
   INVOICE: "invoice",
   PAYMENT_PENDING: "payment-pending",
   PAYMENT_CONFIRMED: "payment-confirmed",
@@ -88,14 +61,14 @@ var Upload = function (_EventEmitter) {
     _this.iotaProvider = opts.iotaProvider;
     _this.options = opts;
     _this.filename = filename;
-    _this.handle = (0, _encryption.createHandle)(filename);
-    _this.metadata = (0, _fileProcessor.createMetaData)(filename, chunkCount);
-    _this.genesisHash = (0, _encryption.genesisHash)(_this.handle);
-    _this.key = (0, _util.bytesFromHandle)(_this.handle);
+    _this.handle = createHandle(filename);
+    _this.metadata = createMetaData(filename, chunkCount);
+    _this.genesisHash = genesisHash(_this.handle);
+    _this.key = bytesFromHandle(_this.handle);
     _this.numberOfChunks = totalChunks;
 
     // hack to stub brokers for testing.
-    var createUploadSessionFn = _this.options.createUploadSession || _backend.createUploadSession;
+    var createUploadSessionFn = _this.options.createUploadSession || createUploadSession;
 
     _this.uploadSession = createUploadSessionFn(size, _this.genesisHash, totalChunks, _this.alpha, _this.beta, _this.epochs).then(_this.startUpload.bind(_this)).catch(_this.propagateError.bind(_this));
     return _this;
@@ -132,7 +105,7 @@ var Upload = function (_EventEmitter) {
       var sessIdB = session.betaSessionId;
       var invoice = session.invoice || null;
       var host = this.alpha;
-      var metadata = (0, _util.encryptMetadata)(this.metadata, this.key);
+      var metadata = encryptMetadata(this.metadata, this.key);
       var _options = this.options,
           sourceStream = _options.sourceStream,
           sourceData = _options.sourceData,
@@ -142,9 +115,9 @@ var Upload = function (_EventEmitter) {
       this.emit(EVENTS.INVOICE, invoice);
 
       // Wait for payment.
-      (0, _backend.confirmPendingPoll)(host, sessIdA).then(function () {
+      confirmPendingPoll(host, sessIdA).then(function () {
         _this2.emit(EVENTS.PAYMENT_PENDING);
-        return (0, _backend.confirmPaidPoll)(host, sessIdA);
+        return confirmPaidPoll(host, sessIdA);
       }).then(function () {
         _this2.emit(EVENTS.PAYMENT_CONFIRMED, {
           filename: _this2.filename,
@@ -153,14 +126,14 @@ var Upload = function (_EventEmitter) {
         });
 
         _this2.sourceStream = new sourceStream(sourceData, sourceOptions || {});
-        _this2.encryptStream = new _encryptStream2.default(_this2.handle);
-        _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
+        _this2.encryptStream = new EncryptStream(_this2.handle);
+        _this2.uploadStream = new UploadStream(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
 
         _this2.sourceStream.pipe(_this2.encryptStream).pipe(_this2.uploadStream).on("finish", function () {
-          var genHash = _datamapGenerator2.default.genesisHash(_this2.handle);
-          var datamap = _datamapGenerator2.default.generate(genHash, _this2.numberOfChunks - 1);
+          var genHash = Datamap.genesisHash(_this2.handle);
+          var datamap = Datamap.generate(genHash, _this2.numberOfChunks - 1);
 
-          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
+          pollIotaProgress(datamap, _this2.iotaProvider, function (prog) {
             _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
           }).then(function () {
             _this2.emit(EVENTS.FINISH, {
@@ -202,7 +175,7 @@ var Upload = function (_EventEmitter) {
     value: function fromFile(file) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-      var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
+      var source = { sourceData: file, sourceStream: FileChunkStream };
       var opts = Object.assign(options, source);
       Upload.validateOptions(opts, REQUIRED_OPTS);
 
@@ -216,7 +189,7 @@ var Upload = function (_EventEmitter) {
     value: function fromData(buffer, filename) {
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
+      var source = { sourceData: buffer, sourceStream: BufferSourceStream };
       var opts = Object.assign(options, source);
       Upload.validateOptions(opts, REQUIRED_OPTS);
 
@@ -225,6 +198,6 @@ var Upload = function (_EventEmitter) {
   }]);
 
   return Upload;
-}(_events.EventEmitter);
+}(EventEmitter);
 
-exports.default = Upload;
+export default Upload;

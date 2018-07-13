@@ -1,28 +1,12 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.confirmPaidPoll = exports.confirmPendingPoll = undefined;
-exports.queryGeneratedSignatures = queryGeneratedSignatures;
-exports.createUploadSession = createUploadSession;
-exports.sendToBroker = sendToBroker;
-exports.sendChunksToBroker = sendChunksToBroker;
-
-var _axios = require("axios");
-
-var _axios2 = _interopRequireDefault(_axios);
-
-var _config = require("../config");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+import axios from "axios";
+import { API, IOTA_API } from "../config";
 
 var CURRENT_VERSION = 1;
-var SESSIONS_PATH = _config.API.V2_UPLOAD_SESSIONS_PATH;
+var SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH;
 
-var axiosInstance = _axios2.default.create({ timeout: 200000 });
+var axiosInstance = axios.create({ timeout: 200000 });
 
-function queryGeneratedSignatures(iotaProvider, hash, count) {
+export function queryGeneratedSignatures(iotaProvider, hash, count) {
   var binary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
 
   return new Promise(function (resolve, reject) {
@@ -62,9 +46,9 @@ function queryGeneratedSignatures(iotaProvider, hash, count) {
   });
 }
 
-function createUploadSession(filesize, genesisHash, numChunks, alpha, beta, epochs) {
+export function createUploadSession(filesize, genesisHash, numChunks, alpha, beta, epochs) {
   return new Promise(function (resolve, reject) {
-    axiosInstance.post("" + alpha + _config.API.V2_UPLOAD_SESSIONS_PATH, {
+    axiosInstance.post("" + alpha + API.V2_UPLOAD_SESSIONS_PATH, {
       fileSizeBytes: filesize,
       numChunks: numChunks,
       genesisHash: genesisHash,
@@ -84,12 +68,12 @@ function createUploadSession(filesize, genesisHash, numChunks, alpha, beta, epoc
   });
 }
 
-function sendToBroker(broker, sessId, chunks) {
+export function sendToBroker(broker, sessId, chunks) {
   var endpoint = "" + broker + SESSIONS_PATH + "/" + sessId;
   return sendChunksToBroker(endpoint, chunks);
 }
 
-function sendChunksToBroker(brokerUrl, chunks) {
+export function sendChunksToBroker(brokerUrl, chunks) {
   return new Promise(function (resolve, reject) {
     axiosInstance.put(brokerUrl, { chunks: chunks }).then(function (response) {
       return resolve(response);
@@ -120,7 +104,7 @@ var setIntervalAndExecute = function setIntervalAndExecute(fn, t) {
 var pollPaymentStatus = function pollPaymentStatus(host, sessId, statusFoundFn) {
   return new Promise(function (resolve, reject) {
     var poll = setIntervalAndExecute(function () {
-      axiosInstance.get("" + host + _config.API.V2_UPLOAD_SESSIONS_PATH + "/" + sessId).then(function (response) {
+      axiosInstance.get("" + host + API.V2_UPLOAD_SESSIONS_PATH + "/" + sessId).then(function (response) {
         var status = response.data.paymentStatus;
 
         if (statusFoundFn(status)) {
@@ -135,13 +119,13 @@ var pollPaymentStatus = function pollPaymentStatus(host, sessId, statusFoundFn) 
   });
 };
 
-var confirmPendingPoll = exports.confirmPendingPoll = function confirmPendingPoll(host, sessId) {
+export var confirmPendingPoll = function confirmPendingPoll(host, sessId) {
   return pollPaymentStatus(host, sessId, function (status) {
     return status === PAYMENT_STATUS.PENDING || status === PAYMENT_STATUS.CONFIRMED;
   });
 };
 
-var confirmPaidPoll = exports.confirmPaidPoll = function confirmPaidPoll(host, sessId) {
+export var confirmPaidPoll = function confirmPaidPoll(host, sessId) {
   return pollPaymentStatus(host, sessId, function (status) {
     return status === PAYMENT_STATUS.CONFIRMED;
   });

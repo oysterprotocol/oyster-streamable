@@ -1,24 +1,15 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _readableStream = require("readable-stream");
-
-var _util = require("../util");
-
-var _backend = require("../utils/backend");
-
-var _config = require("../config");
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+import { Readable } from "readable-stream";
+import { offsetHash } from "../util";
+import { queryGeneratedSignatures } from "../utils/backend";
+import { INCLUDE_TREASURE_OFFSETS, FILE } from "../config";
 
 var DEFAULT_OPTIONS = Object.freeze({
   maxParallelDownloads: 4,
@@ -45,7 +36,7 @@ var DownloadStream = function (_Readable) {
 
     _this.options = opts;
     _this.numChunks = metadata.numberOfChunks;
-    _this.hash = (0, _util.offsetHash)(genesisHash, 0);
+    _this.hash = offsetHash(genesisHash, 0);
     _this.chunkOffset = 0;
     _this.chunkBuffer = [];
     _this.isDownloadFinished = false;
@@ -55,8 +46,8 @@ var DownloadStream = function (_Readable) {
     _this.pushChunk = false;
     _this.ongoingDownloads = 0;
 
-    if (_config.INCLUDE_TREASURE_OFFSETS) {
-      _this.numChunks += Math.ceil(_this.numChunks / (_config.FILE.CHUNKS_PER_SECTOR - 1));
+    if (INCLUDE_TREASURE_OFFSETS) {
+      _this.numChunks += Math.ceil(_this.numChunks / (FILE.CHUNKS_PER_SECTOR - 1));
     }
 
     _this._download();
@@ -116,13 +107,13 @@ var DownloadStream = function (_Readable) {
       }
 
       this.ongoingDownloads++;
-      this.hash = (0, _util.offsetHash)(hash, limit - 1);
+      this.hash = offsetHash(hash, limit - 1);
       this.chunkOffset += limit;
 
       var batchId = this.batchId++;
       var iota = this.options.iota;
       var binaryMode = this.options.binaryMode;
-      (0, _backend.queryGeneratedSignatures)(iota, hash, limit, binaryMode).then(function (result) {
+      queryGeneratedSignatures(iota, hash, limit, binaryMode).then(function (result) {
         _this2.ongoingDownloads--;
 
         // Process result
@@ -171,6 +162,6 @@ var DownloadStream = function (_Readable) {
   }]);
 
   return DownloadStream;
-}(_readableStream.Readable);
+}(Readable);
 
-exports.default = DownloadStream;
+export default DownloadStream;
