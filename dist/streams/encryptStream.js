@@ -8,9 +8,15 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _readableStream = require("readable-stream");
 
+var _datamapGenerator = require("datamap-generator");
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
+
 var _util = require("../util");
 
 var _encryption = require("../utils/encryption");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -34,7 +40,7 @@ var EncryptStream = function (_Transform) {
 
     _this.options = opts;
     _this.key = (0, _util.bytesFromHandle)(handle);
-    _this.genesisHash = (0, _encryption.genesisHash)(handle);
+    _this.genesisHash = _datamapGenerator2.default.genesisHash(handle);
     return _this;
   }
 

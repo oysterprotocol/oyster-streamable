@@ -101,6 +101,9 @@ var Upload = function (_EventEmitter) {
     return _this;
   }
 
+  // File object (browser)
+
+
   _createClass(Upload, [{
     key: "startUpload",
     value: function startUpload(session) {
@@ -183,28 +186,13 @@ var Upload = function (_EventEmitter) {
       this.emit(EVENTS.ERROR, error);
     }
   }], [{
-    key: "validateOptions",
-    value: function validateOptions(opts, keys) {
-      // TODO: Smarter validation.
-      var invalidKeys = keys.filter(function (key) {
-        return !opts.hasOwnProperty(key);
-      });
-
-      if (invalidKeys.length > 0) {
-        throw "Missing required keys: " + invalidKeys.join(",");
-      }
-    }
-
-    // File object (browser)
-
-  }, {
     key: "fromFile",
     value: function fromFile(file) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
       var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
       var opts = Object.assign(options, source);
-      Upload.validateOptions(opts, REQUIRED_OPTS);
+      (0, _util.validateKeys)(opts, REQUIRED_OPTS);
 
       return new Upload(file.name, file.size, opts);
     }
@@ -218,7 +206,7 @@ var Upload = function (_EventEmitter) {
 
       var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
       var opts = Object.assign(options, source);
-      Upload.validateOptions(opts, REQUIRED_OPTS);
+      (0, _util.validateKeys)(opts, REQUIRED_OPTS);
 
       return new Upload(filename, buffer.length, opts);
     }
