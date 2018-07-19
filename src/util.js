@@ -144,3 +144,12 @@ export function versionTrytes() {
   const buf = new Forge.util.ByteBuffer(typedVersion.buffer);
   return iota.utils.toTrytes(buf.bytes());
 }
+
+export const validateKeys = (obj, keys) => {
+  // TODO: Smarter validation.
+  const invalidKeys = keys.filter(key => !obj.hasOwnProperty(key));
+
+  if (invalidKeys.length > 0) {
+    throw `Missing required keys: ${invalidKeys.join(", ")}`;
+  }
+};

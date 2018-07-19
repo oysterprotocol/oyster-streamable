@@ -13,7 +13,7 @@ import {
   confirmPaidPoll
 } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
-import { bytesFromHandle, encryptMetadata } from "./util";
+import { bytesFromHandle, encryptMetadata, validateKeys } from "./util";
 import { pollIotaProgress } from "./utils/iota";
 
 const CHUNK_BYTE_SIZE = 1024;
@@ -74,20 +74,11 @@ export default class Upload extends EventEmitter {
       .catch(this.propagateError.bind(this));
   }
 
-  static validateOptions(opts, keys) {
-    // TODO: Smarter validation.
-    const invalidKeys = keys.filter(key => !opts.hasOwnProperty(key));
-
-    if (invalidKeys.length > 0) {
-      throw `Missing required keys: ${invalidKeys.join(",")}`;
-    }
-  }
-
   // File object (browser)
   static fromFile(file, options = {}) {
     const source = { sourceData: file, sourceStream: FileChunkStream };
     const opts = Object.assign(options, source);
-    Upload.validateOptions(opts, REQUIRED_OPTS);
+    validateKeys(opts, REQUIRED_OPTS);
 
     return new Upload(file.name, file.size, opts);
   }
@@ -96,7 +87,7 @@ export default class Upload extends EventEmitter {
   static fromData(buffer, filename, options = {}) {
     const source = { sourceData: buffer, sourceStream: BufferSourceStream };
     const opts = Object.assign(options, source);
-    Upload.validateOptions(opts, REQUIRED_OPTS);
+    validateKeys(opts, REQUIRED_OPTS);
 
     return new Upload(filename, buffer.length, opts);
   }
