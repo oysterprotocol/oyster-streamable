@@ -9,7 +9,9 @@ module.exports = {
   },
   output: {
     filename: 'oyster-streamable.min.js',
-    path: __dirname + '/dist'
+    path: __dirname + '/dist',
+    libraryTarget: 'umd',
+    library: 'Oyster'
   },
   optimization: {
     minimizer: [
