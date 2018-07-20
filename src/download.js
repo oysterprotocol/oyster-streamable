@@ -1,18 +1,15 @@
-import IOTA from "iota.lib.js";
 import { EventEmitter } from "events";
-import Forge from "node-forge";
 import DecryptStream from "./streams/decryptStream";
 import DownloadStream from "./streams/downloadStream";
 import FilePreviewStream from "./streams/filePreviewStream";
 import BufferTargetStream from "./streams/bufferTargetStream";
+import Datamap from "datamap-generator";
 
-import { genesisHash } from "./utils/encryption";
 import { queryGeneratedSignatures } from "./utils/backend";
-import { IOTA_API } from "./config";
 import * as Util from "./util";
 
-const iota = new IOTA({ provider: IOTA_API.PROVIDER });
 const DEFAULT_OPTIONS = Object.freeze({});
+const REQUIRED_OPTS = ["iotaProvider"];
 
 export default class Download extends EventEmitter {
   constructor(handle, options) {
@@ -23,8 +20,9 @@ export default class Download extends EventEmitter {
     this.propagateError = this.propagateError.bind(this);
 
     this.options = opts;
+    this.iota = opts.iotaProvider;
     this.handle = handle;
-    this.genesisHash = genesisHash(handle);
+    this.genesisHash = Datamap.genesisHash(handle);
     this.key = Util.bytesFromHandle(handle);
 
     this.getMetadata()
@@ -33,23 +31,21 @@ export default class Download extends EventEmitter {
   }
 
   static toBuffer(handle, options = {}) {
-    const target = {
-      targetStream: BufferTargetStream
-    };
+    const target = { targetStream: BufferTargetStream };
+    Util.validateKeys(options, REQUIRED_OPTS);
 
     return new Download(handle, Object.assign(options, target));
   }
 
   static toBlob(handle, options = {}) {
-    const target = {
-      targetStream: FilePreviewStream
-    };
+    const target = { targetStream: FilePreviewStream };
+    Util.validateKeys(options, REQUIRED_OPTS);
 
     return new Download(handle, Object.assign(options, target));
   }
 
   getMetadata() {
-    return queryGeneratedSignatures(iota, this.genesisHash, 1)
+    return queryGeneratedSignatures(this.iota, this.genesisHash, 1)
       .then(result => {
         const signature = result.data[0];
 
@@ -70,7 +66,7 @@ export default class Download extends EventEmitter {
     const { targetStream, targetOptions } = this.options;
 
     this.downloadStream = new DownloadStream(this.genesisHash, metadata, {
-      iota
+      iota: this.iota
     });
     this.decryptStream = new DecryptStream(this.key);
     this.targetStream = new targetStream(metadata, targetOptions || {});

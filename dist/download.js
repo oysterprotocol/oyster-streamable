@@ -6,15 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _iotaLib = require("iota.lib.js");
-
-var _iotaLib2 = _interopRequireDefault(_iotaLib);
-
 var _events = require("events");
-
-var _nodeForge = require("node-forge");
-
-var _nodeForge2 = _interopRequireDefault(_nodeForge);
 
 var _decryptStream = require("./streams/decryptStream");
 
@@ -32,11 +24,11 @@ var _bufferTargetStream = require("./streams/bufferTargetStream");
 
 var _bufferTargetStream2 = _interopRequireDefault(_bufferTargetStream);
 
-var _encryption = require("./utils/encryption");
+var _datamapGenerator = require("datamap-generator");
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
 
 var _backend = require("./utils/backend");
-
-var _config = require("./config");
 
 var _util = require("./util");
 
@@ -52,8 +44,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var iota = new _iotaLib2.default({ provider: _config.IOTA_API.PROVIDER });
 var DEFAULT_OPTIONS = Object.freeze({});
+var REQUIRED_OPTS = ["iotaProvider"];
 
 var Download = function (_EventEmitter) {
   _inherits(Download, _EventEmitter);
@@ -69,8 +61,9 @@ var Download = function (_EventEmitter) {
     _this.propagateError = _this.propagateError.bind(_this);
 
     _this.options = opts;
+    _this.iota = opts.iotaProvider;
     _this.handle = handle;
-    _this.genesisHash = (0, _encryption.genesisHash)(handle);
+    _this.genesisHash = _datamapGenerator2.default.genesisHash(handle);
     _this.key = Util.bytesFromHandle(handle);
 
     _this.getMetadata().then(_this.startDownload).catch(_this.propagateError);
@@ -82,7 +75,7 @@ var Download = function (_EventEmitter) {
     value: function getMetadata() {
       var _this2 = this;
 
-      return (0, _backend.queryGeneratedSignatures)(iota, this.genesisHash, 1).then(function (result) {
+      return (0, _backend.queryGeneratedSignatures)(this.iota, this.genesisHash, 1).then(function (result) {
         var signature = result.data[0];
 
         if (signature === null) {
@@ -111,7 +104,7 @@ var Download = function (_EventEmitter) {
 
 
       this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, {
-        iota: iota
+        iota: this.iota
       });
       this.decryptStream = new _decryptStream2.default(this.key);
       this.targetStream = new targetStream(metadata, targetOptions || {});
@@ -138,9 +131,8 @@ var Download = function (_EventEmitter) {
     value: function toBuffer(handle) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-      var target = {
-        targetStream: _bufferTargetStream2.default
-      };
+      var target = { targetStream: _bufferTargetStream2.default };
+      Util.validateKeys(options, REQUIRED_OPTS);
 
       return new Download(handle, Object.assign(options, target));
     }
@@ -149,9 +141,8 @@ var Download = function (_EventEmitter) {
     value: function toBlob(handle) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-      var target = {
-        targetStream: _filePreviewStream2.default
-      };
+      var target = { targetStream: _filePreviewStream2.default };
+      Util.validateKeys(options, REQUIRED_OPTS);
 
       return new Download(handle, Object.assign(options, target));
     }

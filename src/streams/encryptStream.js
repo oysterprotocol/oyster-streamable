@@ -1,6 +1,8 @@
 import { Transform } from "readable-stream";
+import Datamap from "datamap-generator";
+
 import { bytesFromHandle, encryptBytes, addStopperTryte } from "../util";
-import { genesisHash, deriveNonce } from "../utils/encryption";
+import { deriveNonce } from "../utils/encryption";
 
 const DEFAULT_OPTIONS = Object.freeze({
   objectMode: true
@@ -13,7 +15,7 @@ export default class EncryptStream extends Transform {
     super(opts);
     this.options = opts;
     this.key = bytesFromHandle(handle);
-    this.genesisHash = genesisHash(handle);
+    this.genesisHash = Datamap.genesisHash(handle);
   }
   _transform(chunk, encoding, callback) {
     const key = this.key;
