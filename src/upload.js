@@ -39,6 +39,8 @@ export const EVENTS = Object.freeze({
 export default class Upload extends EventEmitter {
   constructor(filename, size, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
+    validateKeys(opts, REQUIRED_OPTS);
+
     const chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
     const totalChunks = chunkCount + 1;
 
@@ -78,7 +80,6 @@ export default class Upload extends EventEmitter {
   static fromFile(file, options = {}) {
     const source = { sourceData: file, sourceStream: FileChunkStream };
     const opts = Object.assign(options, source);
-    validateKeys(opts, REQUIRED_OPTS);
 
     return new Upload(file.name, file.size, opts);
   }
@@ -87,7 +88,6 @@ export default class Upload extends EventEmitter {
   static fromData(buffer, filename, options = {}) {
     const source = { sourceData: buffer, sourceStream: BufferSourceStream };
     const opts = Object.assign(options, source);
-    validateKeys(opts, REQUIRED_OPTS);
 
     return new Upload(filename, buffer.length, opts);
   }
