@@ -8,7 +8,9 @@ import Datamap from "datamap-generator";
 import { queryGeneratedSignatures } from "./utils/backend";
 import * as Util from "./util";
 
-const DEFAULT_OPTIONS = Object.freeze({});
+const DEFAULT_OPTIONS = Object.freeze({
+  autoStart: true
+});
 const REQUIRED_OPTS = ["iotaProvider"];
 
 export default class Download extends EventEmitter {
@@ -25,9 +27,10 @@ export default class Download extends EventEmitter {
     this.genesisHash = Datamap.genesisHash(handle);
     this.key = Util.bytesFromHandle(handle);
 
-    this.getMetadata()
-      .then(this.startDownload)
-      .catch(this.propagateError);
+    this.getMetadata().then(() => {
+      if (opts.targetStream && opts.autoStart)
+        this.startDownload()
+    }).catch(this.propagateError);
   }
 
   static toBuffer(handle, options = {}) {
