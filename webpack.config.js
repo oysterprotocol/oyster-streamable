@@ -1,22 +1,34 @@
 const
   UglifyJsPlugin = require('uglifyjs-webpack-plugin'),
-  BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+  BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin,
 
-module.exports = {
+  deepClone = (a) => {
+    if (!a)
+      return a
+
+    const b = new a.constructor
+    for (let key in a) {
+      const val = a[key]
+      b[key] = (typeof val === "object") ? deepClone(val) : val
+    }
+    return b
+  }
+
+
+
+const config = Object.freeze({
   entry: './build/index.js',
   resolve: {
     modules: ['node_modules']
   },
   output: {
-    filename: 'oyster-streamable.min.js',
+    filename: 'oyster-streamable.js',
     path: __dirname + '/dist',
     libraryTarget: 'umd',
     library: 'Oyster'
   },
   optimization: {
-    minimizer: [
-      new UglifyJsPlugin()
-    ]
+    minimizer: []
   },
   plugins:
     [ ...(process.env.NODE_ENV == "development"
@@ -25,6 +37,26 @@ module.exports = {
       // production plugins
       : []),
       // plugins for both
-      
+
     ]
-}
+})
+
+minifiedConfig = (config => {
+  config.output.filename = 'oyster-streamable.min.js'
+
+  config.optimization = {
+    minimizer: [
+      new UglifyJsPlugin({
+        parallel: true
+      })
+    ]
+  }
+  return config
+})(deepClone(config))
+
+
+
+module.exports = [
+  config,
+  minifiedConfig
+]
