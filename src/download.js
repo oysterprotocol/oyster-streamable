@@ -6,7 +6,7 @@ import BufferTargetStream from "./streams/bufferTargetStream";
 import Datamap from "datamap-generator";
 
 import { queryGeneratedSignatures } from "./utils/backend";
-import * as Util from "./util";
+import { bytesFromHandle, decryptMetadata, validateKeys } from "./util";
 
 const DEFAULT_OPTIONS = Object.freeze({});
 const REQUIRED_OPTS = ["iotaProvider"];
@@ -14,6 +14,7 @@ const REQUIRED_OPTS = ["iotaProvider"];
 export default class Download extends EventEmitter {
   constructor(handle, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
+    validateKeys(opts, REQUIRED_OPTS);
 
     super();
     this.startDownload = this.startDownload.bind(this);
@@ -23,7 +24,7 @@ export default class Download extends EventEmitter {
     this.iota = opts.iotaProvider;
     this.handle = handle;
     this.genesisHash = Datamap.genesisHash(handle);
-    this.key = Util.bytesFromHandle(handle);
+    this.key = bytesFromHandle(handle);
 
     this.getMetadata()
       .then(this.startDownload)
@@ -32,16 +33,16 @@ export default class Download extends EventEmitter {
 
   static toBuffer(handle, options = {}) {
     const target = { targetStream: BufferTargetStream };
-    Util.validateKeys(options, REQUIRED_OPTS);
+    const opts = Object.assign(options, target);
 
-    return new Download(handle, Object.assign(options, target));
+    return new Download(handle, opts);
   }
 
   static toBlob(handle, options = {}) {
     const target = { targetStream: FilePreviewStream };
-    Util.validateKeys(options, REQUIRED_OPTS);
+    const opts = Object.assign(options, target);
 
-    return new Download(handle, Object.assign(options, target));
+    return new Download(handle, opts);
   }
 
   getMetadata() {
@@ -53,7 +54,7 @@ export default class Download extends EventEmitter {
           throw new Error("File does not exist.");
         }
 
-        const { version, metadata } = Util.decryptMetadata(this.key, signature);
+        const { version, metadata } = decryptMetadata(this.key, signature);
         this.emit("metadata", metadata);
         this.metadata = metadata;
         return Promise.resolve(metadata);
