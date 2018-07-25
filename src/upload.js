@@ -71,11 +71,11 @@ export default class Upload extends EventEmitter {
       this.beta,
       this.epochs
     )
-      .then((session) => {
-        if (opts.autoStart)
-          this.startUpload.bind(this)(session)
-      })
-      .catch(this.propagateError.bind(this));
+
+    if (opts.autoStart)
+      this.uploadSession
+        .then(this.startUpload.bind(this))
+        .catch(this.propagateError.bind(this));
   }
 
   // File object (browser)
