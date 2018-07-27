@@ -27,9 +27,9 @@ export default class Download extends EventEmitter {
     this.genesisHash = Datamap.genesisHash(handle);
     this.key = Util.bytesFromHandle(handle);
 
-    this.getMetadata().then(() => {
+    this.getMetadata().then(metadata => {
       if (opts.targetStream && opts.autoStart)
-        this.startDownload()
+        this.startDownload(metadata)
     }).catch(this.propagateError);
   }
 
