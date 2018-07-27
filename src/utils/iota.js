@@ -58,13 +58,18 @@ const skinnyQueryTransactions = (iotaProvider, addresses) =>
     );
   });
 
-const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
+const queryTransactionsMultipleProviders = (iotaProviders, addresses) =>
+  new Promise.all(
+    iotaProviders.map(p => skinnyQueryTransactions(p, addresses))
+  ).then(txsLists => txsLists.reduce((acc, txs) => [...acc, ...txs], []));
+
+const checkUploadPercentage = (iotaProvider, addresses, indexes) => {
   return new Promise((resolve, reject) => {
     let promises = [];
 
     promises.push(
       new Promise((resolve, reject) => {
-        skinnyQueryTransactions(itoaProvider, [addresses[indexes[0]]]).then(
+        skinnyQueryTransactions(iotaProvider, [addresses[indexes[0]]]).then(
           transactions => {
             resolve({ removeIndex: transactions.length > 0 });
           }
@@ -75,7 +80,7 @@ const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
     if (indexes.length > 1) {
       promises.push(
         new Promise((resolve, reject) => {
-          skinnyQueryTransactions(itoaProvider, [
+          skinnyQueryTransactions(iotaProvider, [
             addresses[indexes[indexes.length - 1]]
           ]).then(transactions => {
             resolve({ removeIndex: transactions.length > 0 });
