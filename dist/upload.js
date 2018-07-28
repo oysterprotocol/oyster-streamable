@@ -53,7 +53,7 @@ var DEFAULT_OPTIONS = Object.freeze({
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
-var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
+var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProviders"];
 
 var EVENTS = exports.EVENTS = Object.freeze({
   INVOICE: "invoice",
@@ -74,6 +74,8 @@ var Upload = function (_EventEmitter) {
     _classCallCheck(this, Upload);
 
     var opts = Object.assign({}, DEFAULT_OPTIONS, options);
+    (0, _util.validateKeys)(opts, REQUIRED_OPTS);
+
     var chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
     var totalChunks = chunkCount + 1;
 
@@ -85,7 +87,7 @@ var Upload = function (_EventEmitter) {
     _this.alpha = opts.alpha;
     _this.beta = opts.beta;
     _this.epochs = opts.epochs;
-    _this.iotaProvider = opts.iotaProvider;
+    _this.iotaProviders = opts.iotaProviders;
     _this.options = opts;
     _this.filename = filename;
     _this.handle = (0, _encryption.createHandle)(filename);
@@ -163,7 +165,7 @@ var Upload = function (_EventEmitter) {
           var genHash = _datamapGenerator2.default.genesisHash(_this2.handle);
           var datamap = _datamapGenerator2.default.generate(genHash, _this2.numberOfChunks - 1);
 
-          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
+          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProviders, function (prog) {
             _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
           }).then(function () {
             _this2.emit(EVENTS.FINISH, {
@@ -192,7 +194,6 @@ var Upload = function (_EventEmitter) {
 
       var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
       var opts = Object.assign(options, source);
-      (0, _util.validateKeys)(opts, REQUIRED_OPTS);
 
       return new Upload(file.name, file.size, opts);
     }
@@ -206,7 +207,6 @@ var Upload = function (_EventEmitter) {
 
       var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
       var opts = Object.assign(options, source);
-      (0, _util.validateKeys)(opts, REQUIRED_OPTS);
 
       return new Upload(filename, buffer.length, opts);
     }

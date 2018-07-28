@@ -7,7 +7,7 @@ const SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH;
 const axiosInstance = axios.create({ timeout: 200000 });
 
 export function queryGeneratedSignatures(
-  iotaProvider,
+  iotaProviders,
   hash,
   count,
   binary = false
@@ -27,28 +27,35 @@ export function queryGeneratedSignatures(
       headers: { "X-IOTA-API-Version": "1" }
     };
 
-    axiosInstance
-      .post(iotaProvider.provider, data, opts)
-      .then(response => {
-        if (response.status !== 200) {
-          throw `Request failed (${response.status}) ${response.statusText}`;
-        }
+    const signatures = Promise.all(iotaProviders.map(provider =>
+      new Promise((resolve, reject) => {
+        axiosInstance
+          .post(provider.provider, data, opts)
+          .then(response => {
+            if (response.status !== 200) {
+              throw `Request failed (${response.status}) ${response.statusText}`;
+            }
 
-        if (response.headers["content-type"] === "application/octet-stream") {
-          resolve({
-            isBinary: true,
-            data: response.data
-          });
-        } else {
-          resolve({
-            isBinary: false,
-            data: response.data.ixi.signatures || []
-          });
-        }
+            if (response.headers["content-type"] === "application/octet-stream") {
+              resolve({
+                isBinary: true,
+                data: response.data
+              });
+            } else {
+              resolve({
+                isBinary: false,
+                data: response.data.ixi.signatures || []
+              });
+            }
+          })
+          .catch(reject);
       })
-      .catch(error => {
-        reject(error);
-      });
+      .catch(reject)
+    ))
+    .then(dataList => {
+      // console.log(dataList, dataList.find(data => !data.data))
+      resolve(dataList.find(data => !!data.data[0]))
+    })
   });
 }
 

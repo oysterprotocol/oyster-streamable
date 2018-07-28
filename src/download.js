@@ -9,7 +9,7 @@ import { queryGeneratedSignatures } from "./utils/backend";
 import { bytesFromHandle, decryptMetadata, validateKeys } from "./util";
 
 const DEFAULT_OPTIONS = Object.freeze({});
-const REQUIRED_OPTS = ["iotaProvider"];
+const REQUIRED_OPTS = ["iotaProviders"];
 
 export default class Download extends EventEmitter {
   constructor(handle, options) {
@@ -21,7 +21,7 @@ export default class Download extends EventEmitter {
     this.propagateError = this.propagateError.bind(this);
 
     this.options = opts;
-    this.iota = opts.iotaProvider;
+    this.iotaProviders = opts.iotaProviders;
     this.handle = handle;
     this.genesisHash = Datamap.genesisHash(handle);
     this.key = bytesFromHandle(handle);
@@ -46,7 +46,7 @@ export default class Download extends EventEmitter {
   }
 
   getMetadata() {
-    return queryGeneratedSignatures(this.iota, this.genesisHash, 1)
+    return queryGeneratedSignatures(this.iotaProviders, this.genesisHash, 1)
       .then(result => {
         const signature = result.data[0];
 
@@ -67,7 +67,7 @@ export default class Download extends EventEmitter {
     const { targetStream, targetOptions } = this.options;
 
     this.downloadStream = new DownloadStream(this.genesisHash, metadata, {
-      iota: this.iota
+      iotaProviders: this.iotaProviders
     });
     this.decryptStream = new DecryptStream(this.key);
     this.targetStream = new targetStream(metadata, targetOptions || {});

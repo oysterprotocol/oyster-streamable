@@ -32,10 +32,6 @@ var _backend = require("./utils/backend");
 
 var _util = require("./util");
 
-var Util = _interopRequireWildcard(_util);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -45,7 +41,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var DEFAULT_OPTIONS = Object.freeze({});
-var REQUIRED_OPTS = ["iotaProvider"];
+var REQUIRED_OPTS = ["iotaProviders"];
 
 var Download = function (_EventEmitter) {
   _inherits(Download, _EventEmitter);
@@ -54,6 +50,7 @@ var Download = function (_EventEmitter) {
     _classCallCheck(this, Download);
 
     var opts = Object.assign({}, DEFAULT_OPTIONS, options);
+    (0, _util.validateKeys)(opts, REQUIRED_OPTS);
 
     var _this = _possibleConstructorReturn(this, (Download.__proto__ || Object.getPrototypeOf(Download)).call(this));
 
@@ -61,10 +58,10 @@ var Download = function (_EventEmitter) {
     _this.propagateError = _this.propagateError.bind(_this);
 
     _this.options = opts;
-    _this.iota = opts.iotaProvider;
+    _this.iotaProviders = opts.iotaProviders;
     _this.handle = handle;
     _this.genesisHash = _datamapGenerator2.default.genesisHash(handle);
-    _this.key = Util.bytesFromHandle(handle);
+    _this.key = (0, _util.bytesFromHandle)(handle);
 
     _this.getMetadata().then(_this.startDownload).catch(_this.propagateError);
     return _this;
@@ -75,17 +72,19 @@ var Download = function (_EventEmitter) {
     value: function getMetadata() {
       var _this2 = this;
 
-      return (0, _backend.queryGeneratedSignatures)(this.iota, this.genesisHash, 1).then(function (result) {
+      return (0, _backend.queryGeneratedSignatures)(this.iotaProviders, this.genesisHash, 1).then(function (result) {
         var signature = result.data[0];
+        // console.log(result)
 
         if (signature === null) {
           throw new Error("File does not exist.");
         }
 
-        var _Util$decryptMetadata = Util.decryptMetadata(_this2.key, signature),
-            version = _Util$decryptMetadata.version,
-            metadata = _Util$decryptMetadata.metadata;
+        var _decryptMetadata = (0, _util.decryptMetadata)(_this2.key, signature),
+            version = _decryptMetadata.version,
+            metadata = _decryptMetadata.metadata;
 
+        console.log(version, metadata);
         _this2.emit("metadata", metadata);
         _this2.metadata = metadata;
         return Promise.resolve(metadata);
@@ -104,7 +103,7 @@ var Download = function (_EventEmitter) {
 
 
       this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, {
-        iota: this.iota
+        iotaProviders: this.iotaProviders
       });
       this.decryptStream = new _decryptStream2.default(this.key);
       this.targetStream = new targetStream(metadata, targetOptions || {});
@@ -132,9 +131,9 @@ var Download = function (_EventEmitter) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
       var target = { targetStream: _bufferTargetStream2.default };
-      Util.validateKeys(options, REQUIRED_OPTS);
+      var opts = Object.assign(options, target);
 
-      return new Download(handle, Object.assign(options, target));
+      return new Download(handle, opts);
     }
   }, {
     key: "toBlob",
@@ -142,9 +141,9 @@ var Download = function (_EventEmitter) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
       var target = { targetStream: _filePreviewStream2.default };
-      Util.validateKeys(options, REQUIRED_OPTS);
+      var opts = Object.assign(options, target);
 
-      return new Download(handle, Object.assign(options, target));
+      return new Download(handle, opts);
     }
   }]);
 
