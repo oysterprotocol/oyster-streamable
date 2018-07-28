@@ -19,4 +19,5 @@ const download = Oyster.Download.toBuffer(
 
 download.on(`meta`, console.log)
 
-setInterval(() => {}, 1 << 30);
+// keep node instance open to recieve metadata
+setInterval(() => {}, 1 << 30)
