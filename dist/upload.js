@@ -59,6 +59,8 @@ var EVENTS = exports.EVENTS = Object.freeze({
   INVOICE: "invoice",
   PAYMENT_PENDING: "payment-pending",
   PAYMENT_CONFIRMED: "payment-confirmed",
+  // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
+  RETRIEVED: "retrieved",
   UPLOAD_PROGRESS: "upload-progress",
   FINISH: "finish",
   ERROR: "error"
@@ -74,6 +76,8 @@ var Upload = function (_EventEmitter) {
     _classCallCheck(this, Upload);
 
     var opts = Object.assign({}, DEFAULT_OPTIONS, options);
+    (0, _util.validateKeys)(opts, REQUIRED_OPTS);
+
     var chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
     var totalChunks = chunkCount + 1;
 
@@ -163,6 +167,13 @@ var Upload = function (_EventEmitter) {
           var genHash = _datamapGenerator2.default.genesisHash(_this2.handle);
           var datamap = _datamapGenerator2.default.generate(genHash, _this2.numberOfChunks - 1);
 
+          _this2.emit(EVENTS.RETRIEVED, {
+            target: _this2,
+            handle: _this2.handle,
+            numberOfChunks: _this2.numberOfChunks,
+            metadata: _this2.metadata
+          });
+
           (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
             _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
           }).then(function () {
@@ -192,7 +203,6 @@ var Upload = function (_EventEmitter) {
 
       var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
       var opts = Object.assign(options, source);
-      (0, _util.validateKeys)(opts, REQUIRED_OPTS);
 
       return new Upload(file.name, file.size, opts);
     }
@@ -206,7 +216,6 @@ var Upload = function (_EventEmitter) {
 
       var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
       var opts = Object.assign(options, source);
-      (0, _util.validateKeys)(opts, REQUIRED_OPTS);
 
       return new Upload(filename, buffer.length, opts);
     }

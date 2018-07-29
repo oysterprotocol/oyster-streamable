@@ -120,9 +120,10 @@ var DownloadStream = function (_Readable) {
       this.chunkOffset += limit;
 
       var batchId = this.batchId++;
-      var iota = this.options.iota;
+      var iotaProvider = this.options.iotaProvider;
       var binaryMode = this.options.binaryMode;
-      (0, _backend.queryGeneratedSignatures)(iota, hash, limit, binaryMode).then(function (result) {
+
+      (0, _backend.queryGeneratedSignatures)(iotaProvider, hash, limit, binaryMode).then(function (result) {
         _this2.ongoingDownloads--;
 
         // Process result
