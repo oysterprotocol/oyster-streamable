@@ -22,7 +22,7 @@ var SESSIONS_PATH = _config.API.V2_UPLOAD_SESSIONS_PATH;
 
 var axiosInstance = _axios2.default.create({ timeout: 200000 });
 
-function queryGeneratedSignatures(iotaProviders, hash, count) {
+function queryGeneratedSignatures(iotaProvider, hash, count) {
   var binary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
 
   return new Promise(function (resolve, reject) {
@@ -40,35 +40,24 @@ function queryGeneratedSignatures(iotaProviders, hash, count) {
       headers: { "X-IOTA-API-Version": "1" }
     };
 
-    var signatures = Promise.all(iotaProviders.map(function (provider) {
-      return new Promise(function (resolve, reject) {
-        axiosInstance.post(provider, data, opts).then(function (response) {
-          if (response.status !== 200) {
-            throw "Request failed (" + response.status + ") " + response.statusText;
-          }
+    axiosInstance.post(iotaProvider.provider, data, opts).then(function (response) {
+      if (response.status !== 200) {
+        throw "Request failed (" + response.status + ") " + response.statusText;
+      }
 
-          if (response.headers["content-type"] === "application/octet-stream") {
-            resolve({
-              isBinary: true,
-              data: response.data
-            });
-          } else {
-            resolve({
-              isBinary: false,
-              data: response.data.ixi.signatures || []
-            });
-          }
-        }).catch(function (error) {
-          reject(error);
+      if (response.headers["content-type"] === "application/octet-stream") {
+        resolve({
+          isBinary: true,
+          data: response.data
         });
-      }).catch(function (err) {
-        reject(err);
-      });
-    })).then(function (dataList) {
-      // console.log(dataList, dataList.find(data => !data.data))
-      resolve(dataList.find(function (data) {
-        return !!data.data[0];
-      }));
+      } else {
+        resolve({
+          isBinary: false,
+          data: response.data.ixi.signatures || []
+        });
+      }
+    }).catch(function (error) {
+      reject(error);
     });
   });
 }

@@ -58,23 +58,35 @@ var Download = function (_EventEmitter) {
     _this.propagateError = _this.propagateError.bind(_this);
 
     _this.options = opts;
-    _this.iotaProviders = opts.iotaProviders;
     _this.handle = handle;
     _this.genesisHash = _datamapGenerator2.default.genesisHash(handle);
     _this.key = (0, _util.bytesFromHandle)(handle);
 
-    _this.getMetadata().then(_this.startDownload).catch(_this.propagateError);
+    _this.getMetadata(opts.iotaProviders).then(_this.startDownload).catch(_this.propagateError);
     return _this;
   }
 
   _createClass(Download, [{
     key: "getMetadata",
-    value: function getMetadata() {
+    value: function getMetadata(iotaProviders) {
       var _this2 = this;
 
-      return (0, _backend.queryGeneratedSignatures)(this.iotaProviders, this.genesisHash, 1).then(function (result) {
-        var signature = result.data[0];
-        // console.log(result)
+      var queries = Promise.all(iotaProviders.map(function (provider) {
+        return new Promise(function (resolve, reject) {
+          (0, _backend.queryGeneratedSignatures)(provider, _this2.genesisHash, 1).then(function (signatures) {
+            return resolve({ provider: provider, signatures: signatures });
+          }, reject);
+        });
+      }));
+
+      return queries.then(function (result) {
+        var _result$find = result.find(function (res) {
+          return !!res.signatures.data[0];
+        }),
+            provider = _result$find.provider,
+            signatures = _result$find.signatures;
+
+        var signature = signatures ? signatures.data[0] : null;
 
         if (signature === null) {
           throw new Error("File does not exist.");
@@ -84,9 +96,9 @@ var Download = function (_EventEmitter) {
             version = _decryptMetadata.version,
             metadata = _decryptMetadata.metadata;
 
-        console.log(version, metadata);
-        _this2.emit("metadata", metadata);
+        _this2.iotaProvider = provider;
         _this2.metadata = metadata;
+        _this2.emit("metadata", metadata);
         return Promise.resolve(metadata);
       }).catch(function (error) {
         throw error;
@@ -103,7 +115,7 @@ var Download = function (_EventEmitter) {
 
 
       this.downloadStream = new _downloadStream2.default(this.genesisHash, metadata, {
-        iotaProviders: this.iotaProviders
+        iotaProvider: this.iotaProvider
       });
       this.decryptStream = new _decryptStream2.default(this.key);
       this.targetStream = new targetStream(metadata, targetOptions || {});

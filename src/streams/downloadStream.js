@@ -94,9 +94,10 @@ export default class DownloadStream extends Readable {
     this.chunkOffset += limit;
 
     const batchId = this.batchId++;
-    const iotaProviders = this.options.iotaProviders;
+    const iotaProvider = this.options.iotaProvider;
     const binaryMode = this.options.binaryMode;
-    queryGeneratedSignatures(iotaProviders, hash, limit, binaryMode)
+
+    queryGeneratedSignatures(iotaProvider, hash, limit, binaryMode)
       .then(result => {
         this.ongoingDownloads--;
 

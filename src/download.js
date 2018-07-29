@@ -21,12 +21,11 @@ export default class Download extends EventEmitter {
     this.propagateError = this.propagateError.bind(this);
 
     this.options = opts;
-    this.iotaProviders = opts.iotaProviders;
     this.handle = handle;
     this.genesisHash = Datamap.genesisHash(handle);
     this.key = bytesFromHandle(handle);
 
-    this.getMetadata()
+    this.getMetadata(opts.iotaProviders)
       .then(this.startDownload)
       .catch(this.propagateError);
   }
@@ -45,18 +44,28 @@ export default class Download extends EventEmitter {
     return new Download(handle, opts);
   }
 
-  getMetadata() {
-    return queryGeneratedSignatures(this.iotaProviders, this.genesisHash, 1)
-      .then(result => {
-        const signature = result ? result.data[0] : null;
+  getMetadata(iotaProviders) {
+    const queries = Promise.all(
+      iotaProviders.map(provider =>
+        new Promise((resolve, reject) => {
+          queryGeneratedSignatures(provider, this.genesisHash, 1)
+          .then(signatures => resolve({ provider, signatures }), reject)
+        })
+      )
+    );
+
+    return queries.then(result => {
+        const { provider, signatures } = result.find(res => !!res.signatures.data[0])
+        const signature = signatures ? signatures.data[0] : null;
 
         if (signature === null) {
           throw new Error("File does not exist.");
         }
 
         const { version, metadata } = decryptMetadata(this.key, signature);
-        this.emit("metadata", metadata);
+        this.iotaProvider = provider
         this.metadata = metadata;
+        this.emit("metadata", metadata);
         return Promise.resolve(metadata);
       })
       .catch(error => {
@@ -67,7 +76,7 @@ export default class Download extends EventEmitter {
     const { targetStream, targetOptions } = this.options;
 
     this.downloadStream = new DownloadStream(this.genesisHash, metadata, {
-      iotaProviders: this.iotaProviders
+      iotaProvider: this.iotaProvider
     });
     this.decryptStream = new DecryptStream(this.key);
     this.targetStream = new targetStream(metadata, targetOptions || {});
