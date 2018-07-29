@@ -48,7 +48,7 @@ export default class Download extends EventEmitter {
   getMetadata() {
     return queryGeneratedSignatures(this.iotaProviders, this.genesisHash, 1)
       .then(result => {
-        const signature = result.data[0];
+        const signature = result ? result.data[0] : null;
 
         if (signature === null) {
           throw new Error("File does not exist.");
