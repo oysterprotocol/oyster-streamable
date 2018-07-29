@@ -1,6 +1,6 @@
 # oyster-streamable
 
-A proof of concept, streamable implementation of the Oyster protocol (not fully compatible)
+A proof of concept, streamable implementation of the Oyster Protocol (not fully compatible)
 with a few significant changes:
 
 - CryptoJS replaced with node-forge
