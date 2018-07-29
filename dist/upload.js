@@ -53,12 +53,14 @@ var DEFAULT_OPTIONS = Object.freeze({
   encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
 });
 
-var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProviders"];
+var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
 
 var EVENTS = exports.EVENTS = Object.freeze({
   INVOICE: "invoice",
   PAYMENT_PENDING: "payment-pending",
   PAYMENT_CONFIRMED: "payment-confirmed",
+  // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
+  RETRIEVED: "retrieved",
   UPLOAD_PROGRESS: "upload-progress",
   FINISH: "finish",
   ERROR: "error"
@@ -87,7 +89,7 @@ var Upload = function (_EventEmitter) {
     _this.alpha = opts.alpha;
     _this.beta = opts.beta;
     _this.epochs = opts.epochs;
-    _this.iotaProviders = opts.iotaProviders;
+    _this.iotaProvider = opts.iotaProvider;
     _this.options = opts;
     _this.filename = filename;
     _this.handle = (0, _encryption.createHandle)(filename);
@@ -165,7 +167,14 @@ var Upload = function (_EventEmitter) {
           var genHash = _datamapGenerator2.default.genesisHash(_this2.handle);
           var datamap = _datamapGenerator2.default.generate(genHash, _this2.numberOfChunks - 1);
 
-          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProviders, function (prog) {
+          _this2.emit(EVENTS.RETRIEVED, {
+            target: _this2,
+            handle: _this2.handle,
+            numberOfChunks: _this2.numberOfChunks,
+            metadata: _this2.metadata
+          });
+
+          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
             _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
           }).then(function () {
             _this2.emit(EVENTS.FINISH, {

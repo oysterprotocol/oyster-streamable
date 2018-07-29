@@ -6,8 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 var clamp = function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
 };
@@ -54,29 +52,19 @@ var skinnyQueryTransactions = function skinnyQueryTransactions(iotaProvider, add
   });
 };
 
-var queryTransactionsMultipleProviders = function queryTransactionsMultipleProviders(iotaProviders, addresses) {
-  return new Promise.all(iotaProviders.map(function (p) {
-    return skinnyQueryTransactions(p, addresses);
-  })).then(function (txsLists) {
-    return txsLists.reduce(function (acc, txs) {
-      return [].concat(_toConsumableArray(acc), _toConsumableArray(txs));
-    }, []);
-  });
-};
-
-var checkUploadPercentage = function checkUploadPercentage(iotaProviders, addresses, indexes) {
+var checkUploadPercentage = function checkUploadPercentage(itoaProvider, addresses, indexes) {
   return new Promise(function (resolve, reject) {
     var promises = [];
 
     promises.push(new Promise(function (resolve, reject) {
-      queryTransactionsMultipleProviders(iotaProviders, [addresses[indexes[0]]]).then(function (transactions) {
+      skinnyQueryTransactions(itoaProvider, [addresses[indexes[0]]]).then(function (transactions) {
         resolve({ removeIndex: transactions.length > 0 });
       });
     }));
 
     if (indexes.length > 1) {
       promises.push(new Promise(function (resolve, reject) {
-        queryTransactionsMultipleProviders(iotaProviders, [addresses[indexes[indexes.length - 1]]]).then(function (transactions) {
+        skinnyQueryTransactions(itoaProvider, [addresses[indexes[indexes.length - 1]]]).then(function (transactions) {
           resolve({ removeIndex: transactions.length > 0 });
         });
       }));
@@ -111,14 +99,14 @@ var setIntervalAndExecute = function setIntervalAndExecute(fn, t) {
   return setInterval(fn, t);
 };
 
-var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(datamap, iotaProviders, progCb) {
+var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(datamap, iotaProvider, progCb) {
   return new Promise(function (resolve, reject) {
     var addresses = Object.values(datamap);
     var indexes = selectPollingIndexes(addresses, NUM_POLLING_ADDRESSES, BUNDLE_SIZE);
     var indexesLen = indexes.length;
 
     var poll = setIntervalAndExecute(function () {
-      checkUploadPercentage(iotaProviders, addresses, indexes).then(function (idxs) {
+      checkUploadPercentage(iotaProvider, addresses, indexes).then(function (idxs) {
         // Uh oh, race condition.
         indexes = idxs;
 

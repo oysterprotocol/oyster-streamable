@@ -28,6 +28,8 @@ export const EVENTS = Object.freeze({
   INVOICE: "invoice",
   PAYMENT_PENDING: "payment-pending",
   PAYMENT_CONFIRMED: "payment-confirmed",
+  // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
+  RETRIEVED: "retrieved",
   UPLOAD_PROGRESS: "upload-progress",
   FINISH: "finish",
   ERROR: "error"
@@ -155,6 +157,13 @@ export default class Upload extends EventEmitter {
           .on("finish", () => {
             const genHash = Datamap.genesisHash(this.handle);
             const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
+
+            this.emit(EVENTS.RETRIEVED, {
+              target: this,
+              handle: this.handle,
+              numberOfChunks: this.numberOfChunks,
+              metadata: this.metadata
+            });
 
             pollIotaProgress(datamap, this.iotaProvider, prog => {
               this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
