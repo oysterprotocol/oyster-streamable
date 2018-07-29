@@ -73,8 +73,7 @@ var Download = function (_EventEmitter) {
       var _this2 = this;
 
       return (0, _backend.queryGeneratedSignatures)(this.iotaProviders, this.genesisHash, 1).then(function (result) {
-        var signature = result.data[0];
-        // console.log(result)
+        var signature = result ? result.data[0] : null;
 
         if (signature === null) {
           throw new Error("File does not exist.");
@@ -84,7 +83,6 @@ var Download = function (_EventEmitter) {
             version = _decryptMetadata.version,
             metadata = _decryptMetadata.metadata;
 
-        console.log(version, metadata);
         _this2.emit("metadata", metadata);
         _this2.metadata = metadata;
         return Promise.resolve(metadata);
