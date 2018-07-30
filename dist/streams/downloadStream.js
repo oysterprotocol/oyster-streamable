@@ -45,6 +45,7 @@ var DownloadStream = function (_Readable) {
 
     _this.options = opts;
     _this.numChunks = metadata.numberOfChunks;
+    _this.downloadedChunks = 0;
     _this.hash = (0, _util.offsetHash)(genesisHash, 0);
     _this.chunkOffset = 0;
     _this.chunkBuffer = [];
@@ -133,6 +134,7 @@ var DownloadStream = function (_Readable) {
           var signatures = result.data.filter(notNull);
           if (signatures && signatures.length === limit) {
             _this2.batches[batchId] = signatures;
+            _this2.downloadedChunks += signatures.length;
           } else {
             _this2.emit("error", "Download incomplete");
           }
@@ -143,6 +145,7 @@ var DownloadStream = function (_Readable) {
           _this2.isDownloadFinished = true;
         }
 
+        _this2.emit("progress", 100 * _this2.downloadedChunks / _this2.numChunks);
         _this2._pushChunk();
       }).catch(function (error) {
         _this2.ongoingDownloads--;
@@ -168,6 +171,7 @@ var DownloadStream = function (_Readable) {
       }
 
       this.batches[batchId] = batch;
+      this.downloadedChunks += batch.length;
     }
   }]);
 

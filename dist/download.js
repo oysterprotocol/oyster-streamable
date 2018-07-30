@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.EVENTS = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -42,6 +43,11 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var DEFAULT_OPTIONS = Object.freeze({});
 var REQUIRED_OPTS = ["iotaProviders"];
+
+var EVENTS = exports.EVENTS = Object.freeze({
+  DOWNLOAD_PROGRESS: "download-progress",
+  FINISH: "finish"
+});
 
 var Download = function (_EventEmitter) {
   _inherits(Download, _EventEmitter);
@@ -121,11 +127,15 @@ var Download = function (_EventEmitter) {
       this.targetStream = new targetStream(metadata, targetOptions || {});
 
       this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on("finish", function () {
-        _this3.emit("finish", {
+        _this3.emit(EVENTS.FINISH, {
           target: _this3,
           metadata: _this3.metadata,
           result: _this3.targetStream.result
         });
+      });
+
+      this.downloadStream.on("progress", function (progress) {
+        _this3.emit(EVENTS.DOWNLOAD_PROGRESS, { progress: progress });
       });
 
       this.downloadStream.on("error", this.propagateError);
