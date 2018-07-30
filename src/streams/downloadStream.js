@@ -23,6 +23,7 @@ export default class DownloadStream extends Readable {
     super(opts);
     this.options = opts;
     this.numChunks = metadata.numberOfChunks;
+    this.downloadedChunks = 0;
     this.hash = offsetHash(genesisHash, 0);
     this.chunkOffset = 0;
     this.chunkBuffer = [];
@@ -108,6 +109,7 @@ export default class DownloadStream extends Readable {
           const signatures = result.data.filter(notNull);
           if (signatures && signatures.length === limit) {
             this.batches[batchId] = signatures;
+            this.downloadedChunks += signatures.length;
           } else {
             this.emit("error", "Download incomplete");
           }
@@ -121,6 +123,7 @@ export default class DownloadStream extends Readable {
           this.isDownloadFinished = true;
         }
 
+        this.emit("progress", (100 * this.downloadedChunks) / this.numChunks);
         this._pushChunk();
       })
       .catch(error => {
@@ -146,5 +149,6 @@ export default class DownloadStream extends Readable {
     }
 
     this.batches[batchId] = batch;
+    this.downloadedChunks += batch.length;
   }
 }

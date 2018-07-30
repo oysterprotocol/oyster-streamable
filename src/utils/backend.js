@@ -4,7 +4,7 @@ import { API, IOTA_API } from "../config";
 const CURRENT_VERSION = 1;
 const SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH;
 
-const axiosInstance = axios.create({ timeout: 200000 });
+const axiosInstance = axios.create({ timeout: 60000 });
 
 export function queryGeneratedSignatures(
   iotaProvider,
@@ -22,7 +22,6 @@ export function queryGeneratedSignatures(
     };
 
     const opts = {
-      timeout: 5000,
       responseType: binary ? "arraybuffer" : "json",
       headers: { "X-IOTA-API-Version": "1" }
     };

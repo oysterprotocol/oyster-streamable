@@ -11,6 +11,11 @@ import { bytesFromHandle, decryptMetadata, validateKeys } from "./util";
 const DEFAULT_OPTIONS = Object.freeze({});
 const REQUIRED_OPTS = ["iotaProviders"];
 
+export const EVENTS = Object.freeze({
+  DOWNLOAD_PROGRESS: "download-progress",
+  FINISH: "finish"
+});
+
 export default class Download extends EventEmitter {
   constructor(handle, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
@@ -91,12 +96,16 @@ export default class Download extends EventEmitter {
       .pipe(this.decryptStream)
       .pipe(this.targetStream)
       .on("finish", () => {
-        this.emit("finish", {
+        this.emit(EVENTS.FINISH, {
           target: this,
           metadata: this.metadata,
           result: this.targetStream.result
         });
       });
+
+    this.downloadStream.on("progress", progress => {
+      this.emit(EVENTS.DOWNLOAD_PROGRESS, { progress });
+    });
 
     this.downloadStream.on("error", this.propagateError);
     this.decryptStream.on("error", this.propagateError);

@@ -20,7 +20,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var CURRENT_VERSION = 1;
 var SESSIONS_PATH = _config.API.V2_UPLOAD_SESSIONS_PATH;
 
-var axiosInstance = _axios2.default.create({ timeout: 200000 });
+var axiosInstance = _axios2.default.create({ timeout: 60000 });
 
 function queryGeneratedSignatures(iotaProvider, hash, count) {
   var binary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
@@ -35,7 +35,6 @@ function queryGeneratedSignatures(iotaProvider, hash, count) {
     };
 
     var opts = {
-      timeout: 5000,
       responseType: binary ? "arraybuffer" : "json",
       headers: { "X-IOTA-API-Version": "1" }
     };
