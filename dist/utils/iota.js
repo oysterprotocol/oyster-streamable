@@ -88,7 +88,7 @@ var checkUploadPercentage = function checkUploadPercentage(itoaProvider, address
  */
 
 // TODO: Make these configurable?
-var MIN_PROG = 0.02;
+var MIN_PROG = 0.0;
 var POLL_INTERVAL = 4000;
 var BUNDLE_SIZE = 100;
 var NUM_POLLING_ADDRESSES = 301;
