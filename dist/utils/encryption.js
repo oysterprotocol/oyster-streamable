@@ -14,35 +14,43 @@ exports.genesisHash = genesisHash;
 exports.obfuscatedGenesisHash = obfuscatedGenesisHash;
 exports.createHandle = createHandle;
 
-var _nodeForge = require("node-forge");
+var _md = require("node-forge/lib/md");
 
-var _nodeForge2 = _interopRequireDefault(_nodeForge);
+var _md2 = _interopRequireDefault(_md);
+
+var _random = require("node-forge/lib/random");
+
+var _random2 = _interopRequireDefault(_random);
+
+var _util = require("node-forge/lib/util");
+
+var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var IV_BYTE_LENGTH = 16;
 
 function getSalt(length) {
-  var bytes = _nodeForge2.default.random.getBytesSync(length);
-  var byteArr = _nodeForge2.default.util.binary.raw.decode(bytes);
-  var salt = _nodeForge2.default.util.binary.base58.encode(byteArr);
+  var bytes = _random2.default.getBytesSync(length);
+  var byteArr = _util2.default.binary.raw.decode(bytes);
+  var salt = _util2.default.binary.base58.encode(byteArr);
   return salt.substr(0, length);
 }
 
 function getPrimordialHash() {
-  var bytes = _nodeForge2.default.random.getBytesSync(16);
-  return _nodeForge2.default.md.sha256.create().update(bytes).digest().toHex();
+  var bytes = _random2.default.getBytesSync(16);
+  return _md2.default.sha256.create().update(bytes).digest().toHex();
 }
 
 function deriveNonce(key, idx) {
-  var nonce = _nodeForge2.default.util.binary.hex.decode(idx.toString(16));
-  return _nodeForge2.default.md.sha384.create().update(key.bytes()).update(nonce).digest().getBytes(IV_BYTE_LENGTH);
+  var nonce = _util2.default.binary.hex.decode(idx.toString(16));
+  return _md2.default.sha384.create().update(key.bytes()).update(nonce).digest().getBytes(IV_BYTE_LENGTH);
 }
 
 // Returns [obfuscatedHash, nextHash]
 function hashChain(byteStr) {
-  var obfuscatedHash = _nodeForge2.default.md.sha384.create().update(byteStr).digest().bytes();
-  var nextHash = _nodeForge2.default.md.sha256.create().update(byteStr).digest().bytes();
+  var obfuscatedHash = _md2.default.sha384.create().update(byteStr).digest().bytes();
+  var nextHash = _md2.default.sha256.create().update(byteStr).digest().bytes();
 
   return [obfuscatedHash, nextHash];
 }
@@ -50,26 +58,26 @@ function hashChain(byteStr) {
 // Genesis hash is not yet obfuscated.
 function genesisHash(handle) {
   var primordialHash = handle.substr(8, 64);
-  var byteStr = _nodeForge2.default.util.hexToBytes(primordialHash);
+  var byteStr = _util2.default.hexToBytes(primordialHash);
 
   var _hashChain = hashChain(byteStr),
       _hashChain2 = _slicedToArray(_hashChain, 2),
       _obfuscatedHash = _hashChain2[0],
       genHash = _hashChain2[1];
 
-  return _nodeForge2.default.util.bytesToHex(genHash);
+  return _util2.default.bytesToHex(genHash);
 }
 
 // First hash in the datamap
 function obfuscatedGenesisHash(hash) {
-  var byteStr = _nodeForge2.default.util.hexToBytes(hash);
+  var byteStr = _util2.default.hexToBytes(hash);
 
   var _hashChain3 = hashChain(byteStr),
       _hashChain4 = _slicedToArray(_hashChain3, 2),
       obfuscatedHash = _hashChain4[0],
       _genHash = _hashChain4[1];
 
-  return _nodeForge2.default.util.bytesToHex(obfuscatedHash);
+  return _util2.default.bytesToHex(obfuscatedHash);
 }
 
 // Moved to Encryption utility

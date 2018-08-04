@@ -1,5 +1,7 @@
 import IOTA from "iota.lib.js";
-import Forge from "node-forge";
+import cipher from "node-forge/lib/cipher";
+import md from "node-forge/lib/md";
+import util from "node-forge/lib/util";
 import { deriveNonce, genesisHash, hashChain } from "./utils/encryption";
 
 const CURRENT_VERSION = 1;
@@ -11,7 +13,7 @@ const TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
 export let iota = new IOTA();
 
 export function bytesFromHandle(handle) {
-  return Forge.md.sha256
+  return md.sha256
     .create()
     .update(handle, "utf8")
     .digest();
@@ -22,15 +24,15 @@ export function bytesFromHandle(handle) {
 // Alternatively pass last hash, relative offset, to save cycles
 export function offsetHash(hashStr, offset) {
   let obfuscatedHash;
-  let hash = Forge.util
-    .createBuffer(Forge.util.binary.hex.decode(hashStr))
+  let hash = util
+    .createBuffer(util.binary.hex.decode(hashStr))
     .bytes();
 
   do {
     [obfuscatedHash, hash] = hashChain(hash);
   } while (offset-- > 0);
 
-  return Forge.util.binary.hex.encode(hash);
+  return util.binary.hex.encode(hash);
 }
 
 export function addStopperTryte(trytes) {
@@ -44,7 +46,7 @@ export function parseMessage(trytes) {
 // Encryption to trytes
 export function encrypt(key, iv, binaryString) {
   key.read = 0;
-  const cipher = Forge.cipher.createCipher("AES-GCM", key);
+  const cipher = cipher.createCipher("AES-GCM", key);
 
   cipher.start({
     iv: iv,
@@ -63,12 +65,12 @@ export function encrypt(key, iv, binaryString) {
 }
 
 export function encryptString(key, iv, string, encoding) {
-  const buf = Forge.util.createBuffer(string, encoding || "utf8");
+  const buf = util.createBuffer(string, encoding || "utf8");
   return encrypt(key, iv, buf);
 }
 
 export function encryptBytes(key, iv, bytes) {
-  return encrypt(key, iv, Forge.util.createBuffer(bytes));
+  return encrypt(key, iv, util.createBuffer(bytes));
 }
 
 export function encryptMetadata(metadata, key) {
@@ -88,7 +90,7 @@ export function decrypt(key, byteBuffer) {
   const iv = byteStr.substr(-IV_BYTE_LENGTH);
   const end = byteStr.length - TAG_BYTE_LENGTH - IV_BYTE_LENGTH;
   const msg = byteStr.substr(0, end);
-  const decipher = Forge.cipher.createDecipher("AES-GCM", key);
+  const decipher = cipher.createDecipher("AES-GCM", key);
 
   decipher.start({
     iv: iv,
@@ -96,7 +98,7 @@ export function decrypt(key, byteBuffer) {
     tagLength: TAG_BIT_LENGTH,
     tag
   });
-  decipher.update(new Forge.util.ByteBuffer(msg, "binary"));
+  decipher.update(new util.ByteBuffer(msg, "binary"));
 
   if (decipher.finish()) {
     return decipher.output;
@@ -108,7 +110,7 @@ export function decrypt(key, byteBuffer) {
 export function decryptBytes(key, byteBuffer) {
   const output = decrypt(key, byteBuffer);
   if (output) {
-    return Forge.util.binary.raw.decode(output.bytes());
+    return util.binary.raw.decode(output.bytes());
   } else {
     return false;
   }
@@ -126,7 +128,7 @@ export function decryptString(key, byteBuffer, encoding) {
 export function decryptMetadata(key, signature) {
   const trytes = parseMessage(signature);
   const byteStr = iota.utils.fromTrytes(trytes);
-  const byteBuffer = Forge.util.createBuffer(byteStr, "binary");
+  const byteBuffer = util.createBuffer(byteStr, "binary");
   const version = getVersion(byteBuffer);
   const metadata = JSON.parse(decryptString(key, byteBuffer.compact()));
 
@@ -134,14 +136,14 @@ export function decryptMetadata(key, signature) {
 }
 
 export function getVersion(byteBuffer) {
-  const bytes = Forge.util.binary.raw.decode(byteBuffer.getBytes(4));
+  const bytes = util.binary.raw.decode(byteBuffer.getBytes(4));
   return new DataView(bytes.buffer).getUint32(0);
 }
 
 export function versionTrytes() {
   const typedVersion = new DataView(new ArrayBuffer(4));
   typedVersion.setUint32(0, CURRENT_VERSION);
-  const buf = new Forge.util.ByteBuffer(typedVersion.buffer);
+  const buf = new util.ByteBuffer(typedVersion.buffer);
   return iota.utils.toTrytes(buf.bytes());
 }
 
