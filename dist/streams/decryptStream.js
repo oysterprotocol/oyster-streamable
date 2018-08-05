@@ -6,13 +6,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _nodeForge = require("node-forge");
+var _util = require("node-forge/lib/util");
 
-var _nodeForge2 = _interopRequireDefault(_nodeForge);
+var _util2 = _interopRequireDefault(_util);
 
 var _readableStream = require("readable-stream");
 
-var _util = require("../util");
+var _util3 = require("../util");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -22,7 +22,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var ByteBuffer = _nodeForge2.default.util.ByteBuffer;
+var ByteBuffer = _util2.default.ByteBuffer;
 var DEFAULT_OPTIONS = Object.freeze({
   binaryMode: false,
   objectMode: true
@@ -51,8 +51,8 @@ var DecryptStream = function (_Transform) {
       if (this.options.binaryMode) {
         byteBuffer = new ByteBuffer(chunk, "raw");
       } else {
-        var trytes = (0, _util.parseMessage)(chunk);
-        var bytes = _util.iota.utils.fromTrytes(trytes);
+        var trytes = (0, _util3.parseMessage)(chunk);
+        var bytes = _util3.iota.utils.fromTrytes(trytes);
 
         // odd tryte count. assume treasure and continue
         if (!bytes) {
@@ -61,7 +61,7 @@ var DecryptStream = function (_Transform) {
         byteBuffer = new ByteBuffer(bytes, "binary");
       }
 
-      var decrypted = (0, _util.decryptBytes)(this.key, byteBuffer);
+      var decrypted = (0, _util3.decryptBytes)(this.key, byteBuffer);
       if (decrypted) {
         callback(null, decrypted);
       } else {
