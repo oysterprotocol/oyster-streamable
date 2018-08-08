@@ -38,6 +38,7 @@ var UploadStream = function (_Writable) {
     var _this = _possibleConstructorReturn(this, (UploadStream.__proto__ || Object.getPrototypeOf(UploadStream)).call(this, opts));
 
     _this.options = opts;
+    _this.metachunk = metachunk;
     _this.genesisHash = genesisHash;
     _this.numChunks = numChunks;
     _this.alpha = alpha;
@@ -91,6 +92,9 @@ var UploadStream = function (_Writable) {
     key: "_final",
     value: function _final(callback) {
       this.finishCallback = callback;
+
+      // Appends metachunk to beta.
+      this.chunkBufferHigh.push(this.metachunk);
 
       if (this.chunkBufferLow.length > 0) {
         this.batchBuffer.push({

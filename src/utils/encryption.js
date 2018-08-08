@@ -1,4 +1,7 @@
-import Forge from "node-forge";
+import ForgeMd from "node-forge/lib/md";
+import ForgeRandom from "node-forge/lib/random";
+import ForgeUtil from "node-forge/lib/util";
+const forge = { md: ForgeMd, random: ForgeRandom, util: ForgeUtil };
 
 const IV_BYTE_LENGTH = 16;
 

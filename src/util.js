@@ -1,5 +1,10 @@
 import IOTA from "iota.lib.js";
-import Forge from "node-forge";
+
+import ForgeCipher from "node-forge/lib/cipher";
+import ForgeMd from "node-forge/lib/md";
+import ForgeUtil from "node-forge/lib/util";
+const Forge = { cipher: ForgeCipher, md: ForgeMd, util: ForgeUtil };
+
 import { deriveNonce, genesisHash, hashChain } from "./utils/encryption";
 
 const CURRENT_VERSION = 1;

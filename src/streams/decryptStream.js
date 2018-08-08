@@ -1,4 +1,6 @@
-import Forge from "node-forge";
+import ForgeUtil from "node-forge/lib/util";
+const Forge = { util: ForgeUtil };
+
 import { Transform } from "readable-stream";
 import { iota, bytesFromHandle, decryptBytes, parseMessage } from "../util";
 
