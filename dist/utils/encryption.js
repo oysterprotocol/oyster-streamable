@@ -28,29 +28,31 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var Forge = { md: _md2.default, random: _random2.default, util: _util2.default };
+
 var IV_BYTE_LENGTH = 16;
 
 function getSalt(length) {
-  var bytes = _random2.default.getBytesSync(length);
-  var byteArr = _util2.default.binary.raw.decode(bytes);
-  var salt = _util2.default.binary.base58.encode(byteArr);
+  var bytes = Forge.random.getBytesSync(length);
+  var byteArr = Forge.util.binary.raw.decode(bytes);
+  var salt = Forge.util.binary.base58.encode(byteArr);
   return salt.substr(0, length);
 }
 
 function getPrimordialHash() {
-  var bytes = _random2.default.getBytesSync(16);
-  return _md2.default.sha256.create().update(bytes).digest().toHex();
+  var bytes = Forge.random.getBytesSync(16);
+  return Forge.md.sha256.create().update(bytes).digest().toHex();
 }
 
 function deriveNonce(key, idx) {
-  var nonce = _util2.default.binary.hex.decode(idx.toString(16));
-  return _md2.default.sha384.create().update(key.bytes()).update(nonce).digest().getBytes(IV_BYTE_LENGTH);
+  var nonce = Forge.util.binary.hex.decode(idx.toString(16));
+  return Forge.md.sha384.create().update(key.bytes()).update(nonce).digest().getBytes(IV_BYTE_LENGTH);
 }
 
 // Returns [obfuscatedHash, nextHash]
 function hashChain(byteStr) {
-  var obfuscatedHash = _md2.default.sha384.create().update(byteStr).digest().bytes();
-  var nextHash = _md2.default.sha256.create().update(byteStr).digest().bytes();
+  var obfuscatedHash = Forge.md.sha384.create().update(byteStr).digest().bytes();
+  var nextHash = Forge.md.sha256.create().update(byteStr).digest().bytes();
 
   return [obfuscatedHash, nextHash];
 }
@@ -58,26 +60,26 @@ function hashChain(byteStr) {
 // Genesis hash is not yet obfuscated.
 function genesisHash(handle) {
   var primordialHash = handle.substr(8, 64);
-  var byteStr = _util2.default.hexToBytes(primordialHash);
+  var byteStr = Forge.util.hexToBytes(primordialHash);
 
   var _hashChain = hashChain(byteStr),
       _hashChain2 = _slicedToArray(_hashChain, 2),
       _obfuscatedHash = _hashChain2[0],
       genHash = _hashChain2[1];
 
-  return _util2.default.bytesToHex(genHash);
+  return Forge.util.bytesToHex(genHash);
 }
 
 // First hash in the datamap
 function obfuscatedGenesisHash(hash) {
-  var byteStr = _util2.default.hexToBytes(hash);
+  var byteStr = Forge.util.hexToBytes(hash);
 
   var _hashChain3 = hashChain(byteStr),
       _hashChain4 = _slicedToArray(_hashChain3, 2),
       obfuscatedHash = _hashChain4[0],
       _genHash = _hashChain4[1];
 
-  return _util2.default.bytesToHex(obfuscatedHash);
+  return Forge.util.bytesToHex(obfuscatedHash);
 }
 
 // Moved to Encryption utility
