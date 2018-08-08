@@ -26,17 +26,9 @@ var _iotaLib = require("iota.lib.js");
 
 var _iotaLib2 = _interopRequireDefault(_iotaLib);
 
-var _cipher = require("node-forge/lib/cipher");
+var _nodeForge = require("node-forge");
 
-var _cipher2 = _interopRequireDefault(_cipher);
-
-var _md = require("node-forge/lib/md");
-
-var _md2 = _interopRequireDefault(_md);
-
-var _util = require("node-forge/lib/util");
-
-var _util2 = _interopRequireDefault(_util);
+var _nodeForge2 = _interopRequireDefault(_nodeForge);
 
 var _encryption = require("./utils/encryption");
 
@@ -51,7 +43,7 @@ var TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
 var iota = exports.iota = new _iotaLib2.default();
 
 function bytesFromHandle(handle) {
-  return _md2.default.sha256.create().update(handle, "utf8").digest();
+  return _nodeForge2.default.md.sha256.create().update(handle, "utf8").digest();
 }
 
 // Offset hashes for IXI Oyster.findGeneratedSignatures
@@ -59,7 +51,7 @@ function bytesFromHandle(handle) {
 // Alternatively pass last hash, relative offset, to save cycles
 function offsetHash(hashStr, offset) {
   var obfuscatedHash = void 0;
-  var hash = _util2.default.createBuffer(_util2.default.binary.hex.decode(hashStr)).bytes();
+  var hash = _nodeForge2.default.util.createBuffer(_nodeForge2.default.util.binary.hex.decode(hashStr)).bytes();
 
   do {
     var _hashChain = (0, _encryption.hashChain)(hash);
@@ -70,7 +62,7 @@ function offsetHash(hashStr, offset) {
     hash = _hashChain2[1];
   } while (offset-- > 0);
 
-  return _util2.default.binary.hex.encode(hash);
+  return _nodeForge2.default.util.binary.hex.encode(hash);
 }
 
 function addStopperTryte(trytes) {
@@ -84,7 +76,7 @@ function parseMessage(trytes) {
 // Encryption to trytes
 function encrypt(key, iv, binaryString) {
   key.read = 0;
-  var cipher = cipher.createCipher("AES-GCM", key);
+  var cipher = _nodeForge2.default.cipher.createCipher("AES-GCM", key);
 
   cipher.start({
     iv: iv,
@@ -103,12 +95,12 @@ function encrypt(key, iv, binaryString) {
 }
 
 function encryptString(key, iv, string, encoding) {
-  var buf = _util2.default.createBuffer(string, encoding || "utf8");
+  var buf = _nodeForge2.default.util.createBuffer(string, encoding || "utf8");
   return encrypt(key, iv, buf);
 }
 
 function encryptBytes(key, iv, bytes) {
-  return encrypt(key, iv, _util2.default.createBuffer(bytes));
+  return encrypt(key, iv, _nodeForge2.default.util.createBuffer(bytes));
 }
 
 function encryptMetadata(metadata, key) {
@@ -125,7 +117,7 @@ function decrypt(key, byteBuffer) {
   var iv = byteStr.substr(-IV_BYTE_LENGTH);
   var end = byteStr.length - TAG_BYTE_LENGTH - IV_BYTE_LENGTH;
   var msg = byteStr.substr(0, end);
-  var decipher = _cipher2.default.createDecipher("AES-GCM", key);
+  var decipher = _nodeForge2.default.cipher.createDecipher("AES-GCM", key);
 
   decipher.start({
     iv: iv,
@@ -133,7 +125,7 @@ function decrypt(key, byteBuffer) {
     tagLength: TAG_BIT_LENGTH,
     tag: tag
   });
-  decipher.update(new _util2.default.ByteBuffer(msg, "binary"));
+  decipher.update(new _nodeForge2.default.util.ByteBuffer(msg, "binary"));
 
   if (decipher.finish()) {
     return decipher.output;
@@ -145,7 +137,7 @@ function decrypt(key, byteBuffer) {
 function decryptBytes(key, byteBuffer) {
   var output = decrypt(key, byteBuffer);
   if (output) {
-    return _util2.default.binary.raw.decode(output.bytes());
+    return _nodeForge2.default.util.binary.raw.decode(output.bytes());
   } else {
     return false;
   }
@@ -163,7 +155,7 @@ function decryptString(key, byteBuffer, encoding) {
 function decryptMetadata(key, signature) {
   var trytes = parseMessage(signature);
   var byteStr = iota.utils.fromTrytes(trytes);
-  var byteBuffer = _util2.default.createBuffer(byteStr, "binary");
+  var byteBuffer = _nodeForge2.default.util.createBuffer(byteStr, "binary");
   var version = getVersion(byteBuffer);
   var metadata = JSON.parse(decryptString(key, byteBuffer.compact()));
 
@@ -171,14 +163,14 @@ function decryptMetadata(key, signature) {
 }
 
 function getVersion(byteBuffer) {
-  var bytes = _util2.default.binary.raw.decode(byteBuffer.getBytes(4));
+  var bytes = _nodeForge2.default.util.binary.raw.decode(byteBuffer.getBytes(4));
   return new DataView(bytes.buffer).getUint32(0);
 }
 
 function versionTrytes() {
   var typedVersion = new DataView(new ArrayBuffer(4));
   typedVersion.setUint32(0, CURRENT_VERSION);
-  var buf = new _util2.default.ByteBuffer(typedVersion.buffer);
+  var buf = new _nodeForge2.default.util.ByteBuffer(typedVersion.buffer);
   return iota.utils.toTrytes(buf.bytes());
 }
 

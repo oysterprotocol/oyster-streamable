@@ -1,8 +1,8 @@
-import util from "node-forge/lib/util";
+import Forge from "node-forge";
 import { Transform } from "readable-stream";
 import { iota, bytesFromHandle, decryptBytes, parseMessage } from "../util";
 
-const ByteBuffer = util.ByteBuffer;
+const ByteBuffer = Forge.util.ByteBuffer;
 const DEFAULT_OPTIONS = Object.freeze({
   binaryMode: false,
   objectMode: true

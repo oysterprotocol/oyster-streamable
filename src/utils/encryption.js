@@ -1,19 +1,17 @@
-import md from "node-forge/lib/md";
-import random from "node-forge/lib/random";
-import util from "node-forge/lib/util";
+import Forge from "node-forge";
 
 const IV_BYTE_LENGTH = 16;
 
 export function getSalt(length) {
-  const bytes = random.getBytesSync(length);
-  const byteArr = util.binary.raw.decode(bytes);
-  const salt = util.binary.base58.encode(byteArr);
+  const bytes = Forge.random.getBytesSync(length);
+  const byteArr = Forge.util.binary.raw.decode(bytes);
+  const salt = Forge.util.binary.base58.encode(byteArr);
   return salt.substr(0, length);
 }
 
 export function getPrimordialHash() {
-  const bytes = random.getBytesSync(16);
-  return md.sha256
+  const bytes = Forge.random.getBytesSync(16);
+  return Forge.md.sha256
     .create()
     .update(bytes)
     .digest()
@@ -21,8 +19,8 @@ export function getPrimordialHash() {
 }
 
 export function deriveNonce(key, idx) {
-  const nonce = util.binary.hex.decode(idx.toString(16));
-  return md.sha384
+  const nonce = Forge.util.binary.hex.decode(idx.toString(16));
+  return Forge.md.sha384
     .create()
     .update(key.bytes())
     .update(nonce)
@@ -32,12 +30,12 @@ export function deriveNonce(key, idx) {
 
 // Returns [obfuscatedHash, nextHash]
 export function hashChain(byteStr) {
-  const obfuscatedHash = md.sha384
+  const obfuscatedHash = Forge.md.sha384
     .create()
     .update(byteStr)
     .digest()
     .bytes();
-  const nextHash = md.sha256
+  const nextHash = Forge.md.sha256
     .create()
     .update(byteStr)
     .digest()
@@ -49,17 +47,17 @@ export function hashChain(byteStr) {
 // Genesis hash is not yet obfuscated.
 export function genesisHash(handle) {
   const primordialHash = handle.substr(8, 64);
-  const byteStr = util.hexToBytes(primordialHash);
+  const byteStr = Forge.util.hexToBytes(primordialHash);
   const [_obfuscatedHash, genHash] = hashChain(byteStr);
-  return util.bytesToHex(genHash);
+  return Forge.util.bytesToHex(genHash);
 }
 
 // First hash in the datamap
 export function obfuscatedGenesisHash(hash) {
-  const byteStr = util.hexToBytes(hash);
+  const byteStr = Forge.util.hexToBytes(hash);
   const [obfuscatedHash, _genHash] = hashChain(byteStr);
 
-  return util.bytesToHex(obfuscatedHash);
+  return Forge.util.bytesToHex(obfuscatedHash);
 }
 
 // Moved to Encryption utility
