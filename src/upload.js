@@ -165,16 +165,7 @@ export default class Upload extends EventEmitter {
               metadata: this.metadata
             });
 
-            pollIotaProgress(datamap, this.iotaProvider, prog => {
-              this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-            }).then(() => {
-              this.emit(EVENTS.FINISH, {
-                target: this,
-                handle: this.handle,
-                numberOfChunks: this.numberOfChunks,
-                metadata: this.metadata
-              });
-            });
+            this.pollUploadProgress(datamap)
           });
 
         this.sourceStream.on("error", this.propagateError);
@@ -185,5 +176,18 @@ export default class Upload extends EventEmitter {
   }
   propagateError(error) {
     this.emit(EVENTS.ERROR, error);
+  }
+
+  pollUploadProgress(datamap) {
+    pollIotaProgress(datamap, this.iotaProvider, prog => {
+      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+    }).then(() => {
+      this.emit(EVENTS.FINISH, {
+        target: this,
+        handle: this.handle,
+        numberOfChunks: this.numberOfChunks,
+        metadata: this.metadata
+      });
+    });
   }
 }
