@@ -28,7 +28,7 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var forge = { md: _md2.default, random: _random2.default, util: _util2.default };
+var Forge = { md: _md2.default, random: _random2.default, util: _util2.default };
 
 var IV_BYTE_LENGTH = 16;
 
