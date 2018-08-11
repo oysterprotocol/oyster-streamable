@@ -155,9 +155,6 @@ export default class Upload extends EventEmitter {
           .pipe(this.encryptStream)
           .pipe(this.uploadStream)
           .on("finish", () => {
-            const genHash = Datamap.genesisHash(this.handle);
-            const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
-
             this.emit(EVENTS.RETRIEVED, {
               target: this,
               handle: this.handle,
@@ -165,16 +162,7 @@ export default class Upload extends EventEmitter {
               metadata: this.metadata
             });
 
-            pollIotaProgress(datamap, this.iotaProvider, prog => {
-              this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-            }).then(() => {
-              this.emit(EVENTS.FINISH, {
-                target: this,
-                handle: this.handle,
-                numberOfChunks: this.numberOfChunks,
-                metadata: this.metadata
-              });
-            });
+            this.pollUploadProgress(this.handle)
           });
 
         this.sourceStream.on("error", this.propagateError);
@@ -185,5 +173,23 @@ export default class Upload extends EventEmitter {
   }
   propagateError(error) {
     this.emit(EVENTS.ERROR, error);
+  }
+
+  pollUploadProgress(handle) {
+
+    const genHash = Datamap.genesisHash(handle);
+    const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
+
+    console.log("Datamap: ", datamap);
+    pollIotaProgress(datamap, this.iotaProvider, prog => {
+      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+    }).then(() => {
+      this.emit(EVENTS.FINISH, {
+        target: this,
+        handle: this.handle,
+        numberOfChunks: this.numberOfChunks,
+        metadata: this.metadata
+      });
+    });
   }
 }
