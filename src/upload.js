@@ -176,11 +176,9 @@ export default class Upload extends EventEmitter {
   }
 
   pollUploadProgress(handle) {
-
     const genHash = Datamap.genesisHash(handle);
     const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
 
-    console.log("Datamap: ", datamap);
     pollIotaProgress(datamap, this.iotaProvider, prog => {
       this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
     }).then(() => {
