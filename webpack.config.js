@@ -25,7 +25,8 @@ const config = Object.freeze({
     filename: 'oyster-streamable.js',
     path: __dirname + '/dist',
     libraryTarget: 'umd',
-    library: 'Oyster'
+    library: 'Oyster',
+    globalObject: 'typeof self !== \'undefined\' ? self : this'
   },
   optimization: {
     minimizer: []
