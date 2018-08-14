@@ -1,5 +1,6 @@
 import { queryGeneratedSignatures } from "./backend";
-import { decryptMetadata } from "../util";
+import { bytesFromHandle, decryptMetadata } from "../util";
+import Datamap from "datamap-generator";
 
 const clamp = (num, min, max) => {
   return Math.min(Math.max(num, min), max);
@@ -147,37 +148,31 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
     }, POLL_INTERVAL);
   });
 
-export const getMetadata = (iotaProviders) => {
-  const queries = Promise.all(
-    iotaProviders.map(
-      provider =>
-        new Promise((resolve, reject) => {
-          queryGeneratedSignatures(provider, this.genesisHash, 1).then(
-            signatures => resolve({ provider, signatures }),
-            reject
-          );
-        })
-    )
-  );
+export const getMetadata = (handle, iotaProviders) => {
+  return new Promise((resolve, reject) => {
+    const genesisHash = Datamap.genesisHash(handle)
+    const queries = Promise.all(iotaProviders.map(provider =>
+      new Promise((resolve, reject) => {
+        queryGeneratedSignatures(provider, genesisHash, 1).then(
+          signatures => resolve({ provider, signatures }),
+          reject
+        );
+      })
+    ));
 
-  return queries
-    .then(result => {
-      const { provider, signatures } = result.find(
-        res => !!res.signatures.data[0]
-      );
-      const signature = signatures ? signatures.data[0] : null;
+    return queries
+      .then(result => {
+        const { provider, signatures } = result.find(
+          res => !!res.signatures.data[0]
+        ) || {};
+        const signature = signatures ? signatures.data[0] : null;
 
-      if (signature === null) {
-        throw new Error("File does not exist.");
-      }
+        if (signature === null)
+          reject(new Error("File does not exist."));
 
-      const { version, metadata } = decryptMetadata(this.key, signature);
-      this.iotaProvider = provider;
-      this.metadata = metadata;
-      this.emit("metadata", metadata);
-      return Promise.resolve(metadata);
-    })
-    .catch(error => {
-      throw error;
-    });
+        const { version, metadata } = decryptMetadata(bytesFromHandle(handle), signature);
+
+        resolve({ provider, metadata, version });
+      }).catch(reject);
+  });
 }
