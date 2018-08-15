@@ -31,7 +31,7 @@ export default class Download extends EventEmitter {
     this.genesisHash = Datamap.genesisHash(handle);
     this.key = bytesFromHandle(handle);
 
-    getMetadata(opts.iotaProviders)
+    this.getMetadata(opts.iotaProviders)
       .then(this.startDownload)
       .catch(this.propagateError);
   }
@@ -50,6 +50,40 @@ export default class Download extends EventEmitter {
     return new Download(handle, opts);
   }
 
+  getMetadata(iotaProviders) {
+    const queries = Promise.all(
+      iotaProviders.map(
+        provider =>
+          new Promise((resolve, reject) => {
+            queryGeneratedSignatures(provider, this.genesisHash, 1).then(
+              signatures => resolve({ provider, signatures }),
+              reject
+            );
+          })
+      )
+    );
+
+    return queries
+      .then(result => {
+        const { provider, signatures } = result.find(
+          res => !!res.signatures.data[0]
+        );
+        const signature = signatures ? signatures.data[0] : null;
+
+        if (signature === null) {
+          throw new Error("File does not exist.");
+        }
+
+        const { version, metadata } = decryptMetadata(this.key, signature);
+        this.iotaProvider = provider;
+        this.metadata = metadata;
+        this.emit("metadata", metadata);
+        return Promise.resolve(metadata);
+      })
+      .catch(error => {
+        throw error;
+      });
+  }
   startDownload(metadata) {
     const { targetStream, targetOptions } = this.options;
 
