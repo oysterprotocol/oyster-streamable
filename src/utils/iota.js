@@ -1,5 +1,6 @@
 import { queryGeneratedSignatures } from "./backend";
-import { decryptMetadata } from "../util";
+import { bytesFromHandle, decryptMetadata } from "../util";
+import Datamap from "datamap-generator";
 
 const clamp = (num, min, max) => {
   return Math.min(Math.max(num, min), max);
@@ -147,16 +148,21 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
     }, POLL_INTERVAL);
   });
 
-export const getMetadata = (iotaProviders) => {
+export const getMetadata = (handle, iotaProviders) => {
+  const genesisHash = Datamap.genesisHash(handle);
+  const key = bytesFromHandle(handle);
+
   const queries = Promise.all(
     iotaProviders.map(
       provider =>
-        new Promise((resolve, reject) => {
-          queryGeneratedSignatures(provider, this.genesisHash, 1).then(
+      {
+        return new Promise((resolve, reject) => {
+          queryGeneratedSignatures(provider, genesisHash, 1).then(
             signatures => resolve({ provider, signatures }),
             reject
           );
-        })
+        })}
+
     )
   );
 
@@ -171,7 +177,7 @@ export const getMetadata = (iotaProviders) => {
         throw new Error("File does not exist.");
       }
 
-      const { version, metadata } = decryptMetadata(this.key, signature);
+      const { version, metadata } = decryptMetadata(key, signature);
       this.iotaProvider = provider;
       this.metadata = metadata;
       this.emit("metadata", metadata);
@@ -180,4 +186,4 @@ export const getMetadata = (iotaProviders) => {
     .catch(error => {
       throw error;
     });
-}
+};
