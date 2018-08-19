@@ -1,16 +1,17 @@
-const
-  UglifyJsPlugin = require("uglifyjs-webpack-plugin"),
-  BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin,
-  deepClone = a => {
-    if (!a) return a
+const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer")
+  .BundleAnalyzerPlugin;
 
-    const b = new a.constructor()
-    for (let key in a) {
-      const val = a[key]
-      b[key] = typeof val === "object" ? deepClone(val) : val
-    }
-    return b
+const deepClone = a => {
+  if (!a) return a;
+
+  const b = new a.constructor();
+  for (let key in a) {
+    const val = a[key];
+    b[key] = typeof val === "object" ? deepClone(val) : val;
   }
+  return b;
+};
 
 const config = Object.freeze({
   entry: "./build/index.js",
@@ -33,9 +34,9 @@ const config = Object.freeze({
         test: /src\.js$/,
         exclude: /(node_modules|bower_components)/,
         use: {
-          loader: 'babel-loader',
+          loader: "babel-loader",
           options: {
-            presets: ['env']
+            presets: ["env"]
           }
         }
       }
@@ -49,10 +50,10 @@ const config = Object.freeze({
         [])
     // plugins for both
   ]
-})
+});
 
 minifiedConfig = (config => {
-  config.output.filename = "oyster-streamable.min.js"
+  config.output.filename = "oyster-streamable.min.js";
 
   config.optimization = {
     minimizer: [
@@ -60,9 +61,9 @@ minifiedConfig = (config => {
         parallel: true
       })
     ]
-  }
+  };
 
-  return config
-})(deepClone(config))
+  return config;
+})(deepClone(config));
 
-module.exports = [config, minifiedConfig]
+module.exports = [config, minifiedConfig];
