@@ -41,6 +41,46 @@ export default class Download extends EventEmitter {
       .catch(this.propagateError);
   }
 
+  getMetadata(handle, iotaProviders) {
+    const genesisHash = Datamap.genesisHash(handle);
+    const key = bytesFromHandle(handle);
+
+    const queries = Promise.all(
+      iotaProviders.map(
+        provider =>
+        {
+          return new Promise((resolve, reject) => {
+            queryGeneratedSignatures(provider, genesisHash, 1).then(
+              signatures => resolve({ provider, signatures }),
+              reject
+            );
+          })}
+
+      )
+    );
+
+    return queries
+      .then(result => {
+        const { provider, signatures } = result.find(
+          res => !!res.signatures.data[0]
+        );
+        const signature = signatures ? signatures.data[0] : null;
+
+        if (signature === null) {
+          throw new Error("File does not exist.");
+        }
+
+        const { version, metadata } = decryptMetadata(key, signature);
+        this.iotaProvider = provider;
+        this.metadata = metadata;
+        this.emit("metadata", metadata);
+        return Promise.resolve(metadata);
+      })
+      .catch(error => {
+        throw error;
+      });
+  };
+
   static toBuffer(handle, options = {}) {
     const target = { targetStream: BufferTargetStream };
     const opts = Object.assign(options, target);
