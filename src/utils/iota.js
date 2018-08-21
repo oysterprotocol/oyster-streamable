@@ -149,41 +149,30 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
   });
 
 export const getMetadata = (handle, iotaProviders) => {
-  const genesisHash = Datamap.genesisHash(handle);
-  const key = bytesFromHandle(handle);
+  return new Promise((resolve, reject) => {
+    const genesisHash = Datamap.genesisHash(handle)
+    const queries = Promise.all(iotaProviders.map(provider =>
+      new Promise((resolve, reject) => {
+        queryGeneratedSignatures(provider, genesisHash, 1).then(
+          signatures => resolve({ provider, signatures }),
+          reject
+        );
+      })
+    ));
 
-  const queries = Promise.all(
-    iotaProviders.map(
-      provider =>
-      {
-        return new Promise((resolve, reject) => {
-          queryGeneratedSignatures(provider, genesisHash, 1).then(
-            signatures => resolve({ provider, signatures }),
-            reject
-          );
-        })}
+    return queries
+      .then(result => {
+        const { provider, signatures } = result.find(
+          res => !!res.signatures.data[0]
+        ) || {};
+        const signature = signatures ? signatures.data[0] : null;
 
-    )
-  );
+        if (signature === null)
+          reject(new Error("File does not exist."));
 
-  return queries
-    .then(result => {
-      const { provider, signatures } = result.find(
-        res => !!res.signatures.data[0]
-      );
-      const signature = signatures ? signatures.data[0] : null;
+        const { version, metadata } = decryptMetadata(bytesFromHandle(handle), signature);
 
-      if (signature === null) {
-        throw new Error("File does not exist.");
-      }
-
-      const { version, metadata } = decryptMetadata(key, signature);
-      this.iotaProvider = provider;
-      this.metadata = metadata;
-      this.emit("metadata", metadata);
-      return Promise.resolve(metadata);
-    })
-    .catch(error => {
-      throw error;
-    });
-};
+        resolve({ provider, metadata, version });
+      }).catch(reject);
+  });
+}

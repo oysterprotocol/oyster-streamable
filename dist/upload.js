@@ -164,9 +164,6 @@ var Upload = function (_EventEmitter) {
         _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
 
         _this2.sourceStream.pipe(_this2.encryptStream).pipe(_this2.uploadStream).on("finish", function () {
-          var genHash = _datamapGenerator2.default.genesisHash(_this2.handle);
-          var datamap = _datamapGenerator2.default.generate(genHash, _this2.numberOfChunks - 1);
-
           _this2.emit(EVENTS.RETRIEVED, {
             target: _this2,
             handle: _this2.handle,
@@ -174,16 +171,7 @@ var Upload = function (_EventEmitter) {
             metadata: _this2.metadata
           });
 
-          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
-            _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-          }).then(function () {
-            _this2.emit(EVENTS.FINISH, {
-              target: _this2,
-              handle: _this2.handle,
-              numberOfChunks: _this2.numberOfChunks,
-              metadata: _this2.metadata
-            });
-          });
+          _this2.pollUploadProgress(_this2.handle);
         });
 
         _this2.sourceStream.on("error", _this2.propagateError);
@@ -195,6 +183,25 @@ var Upload = function (_EventEmitter) {
     key: "propagateError",
     value: function propagateError(error) {
       this.emit(EVENTS.ERROR, error);
+    }
+  }, {
+    key: "pollUploadProgress",
+    value: function pollUploadProgress(handle) {
+      var _this3 = this;
+
+      var genHash = _datamapGenerator2.default.genesisHash(handle);
+      var datamap = _datamapGenerator2.default.generate(genHash, this.numberOfChunks - 1);
+
+      (0, _iota.pollIotaProgress)(datamap, this.iotaProvider, function (prog) {
+        _this3.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+      }).then(function () {
+        _this3.emit(EVENTS.FINISH, {
+          target: _this3,
+          handle: _this3.handle,
+          numberOfChunks: _this3.numberOfChunks,
+          metadata: _this3.metadata
+        });
+      });
     }
   }], [{
     key: "fromFile",
