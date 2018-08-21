@@ -5,9 +5,7 @@ import FilePreviewStream from "./streams/filePreviewStream";
 import BufferTargetStream from "./streams/bufferTargetStream";
 import Datamap from "datamap-generator";
 import { getMetadata } from "./utils/iota";
-
-import { queryGeneratedSignatures } from "./utils/backend";
-import { bytesFromHandle, decryptMetadata, validateKeys } from "./util";
+import { bytesFromHandle, validateKeys } from "./util";
 
 const DEFAULT_OPTIONS = Object.freeze({});
 const REQUIRED_OPTS = ["iotaProviders"];

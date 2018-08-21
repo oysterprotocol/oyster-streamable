@@ -4,7 +4,6 @@ import { pollIotaProgress } from "./utils/iota";
 import { EVENTS } from "./upload";
 import { validateKeys } from "./util";
 import { getMetadata } from "./utils/iota";
-import { createMetaData } from "./utils/file-processor";
 
 const REQUIRED_OPTS = ["iotaProvider"];
 const DEFAULT_OPTIONS = Object.freeze({});
@@ -27,9 +26,7 @@ export default class UploadProgress extends EventEmitter {
 
       this.pollUploadProgress()
     })
-      .catch(this.propagateError);
-
-
+      .catch(this.emit("error", error););
   }
 
   static streamUploadProgress(handle, opts) {
