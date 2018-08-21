@@ -18,24 +18,26 @@ export default class UploadProgress extends EventEmitter {
 
     this.handle = handle
     this.options = opts;
-    this.iotaProvider = opts.iotaProvider;
+    this.iotaProviders = [opts.iotaProvider];
+    this.chunks = 0;
 
-    getMetadata(handle, [ opts.iotaProvider ]).then(({ metadata, provider }) => {
+    getMetadata(this.handle, this.iotaProviders).then(({ metadata, provider }) => {
       this.numberOfChunks = metadata.numberOfChunks;
-      this.metadata = metadata
+      this.iotaProvider = provider;
 
-      this.pollUploadProgress();
-    }).catch(err => { throw err });
+      this.pollUploadProgress()
+    })
+      .catch(this.propagateError);
+
+
   }
 
-  static streamUploadProgress(handle) {
+  static streamUploadProgress(handle, opts) {
     console.log("Check upload progress on :", handle);
-    return new UploadProgress(handle);
+    return new UploadProgress(handle, opts);
   }
 
   pollUploadProgress() {
-    console.log(this.numberOfChunks);
-
     const genesisHash = Datamap.genesisHash(this.handle);
     const datamap = Datamap.generate(genesisHash, this.numberOfChunks - 1);
 
