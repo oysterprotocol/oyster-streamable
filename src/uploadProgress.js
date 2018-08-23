@@ -26,7 +26,7 @@ export default class UploadProgress extends EventEmitter {
 
       this.pollUploadProgress()
     })
-      .catch(this.emit("error", error););
+      .catch(this.emit("error", error));
   }
 
   static streamUploadProgress(handle, opts) {
