@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import Datamap from "datamap-generator";
+
 import { pollIotaProgress } from "./utils/iota";
 import { EVENTS } from "./upload";
 import { validateKeys } from "./util";
@@ -15,18 +16,19 @@ export default class UploadProgress extends EventEmitter {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
     validateKeys(opts, REQUIRED_OPTS);
 
-    this.handle = handle
+    this.handle = handle;
     this.options = opts;
     this.iotaProviders = [opts.iotaProvider];
     this.chunks = 0;
 
-    getMetadata(this.handle, this.iotaProviders).then(({ metadata, provider }) => {
-      this.numberOfChunks = metadata.numberOfChunks;
-      this.iotaProvider = provider;
+    getMetadata(this.handle, this.iotaProviders)
+      .then(({ metadata, provider }) => {
+        this.numberOfChunks = metadata.numberOfChunks;
+        this.iotaProvider = provider;
 
-      this.pollUploadProgress()
-    })
-      .catch(this.emit("error", error););
+        this.pollUploadProgress();
+      })
+      .catch(this.emit("error", error));
   }
 
   static streamUploadProgress(handle, opts) {

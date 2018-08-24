@@ -1,9 +1,10 @@
 import { EventEmitter } from "events";
+import Datamap from "datamap-generator";
+
 import DecryptStream from "./streams/decryptStream";
 import DownloadStream from "./streams/downloadStream";
 import FilePreviewStream from "./streams/filePreviewStream";
 import BufferTargetStream from "./streams/bufferTargetStream";
-import Datamap from "datamap-generator";
 import { getMetadata } from "./utils/iota";
 import { bytesFromHandle, validateKeys } from "./util";
 

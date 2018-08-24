@@ -9,6 +9,10 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _events = require("events");
 
+var _datamapGenerator = require("datamap-generator");
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
+
 var _decryptStream = require("./streams/decryptStream");
 
 var _decryptStream2 = _interopRequireDefault(_decryptStream);
@@ -25,13 +29,7 @@ var _bufferTargetStream = require("./streams/bufferTargetStream");
 
 var _bufferTargetStream2 = _interopRequireDefault(_bufferTargetStream);
 
-var _datamapGenerator = require("datamap-generator");
-
-var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
-
 var _iota = require("./utils/iota");
-
-var _backend = require("./utils/backend");
 
 var _util = require("./util");
 

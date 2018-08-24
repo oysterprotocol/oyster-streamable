@@ -18,8 +18,6 @@ var _upload = require("./upload");
 
 var _util = require("./util");
 
-var _fileProcessor = require("./utils/file-processor");
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -44,19 +42,18 @@ var UploadProgress = function (_EventEmitter) {
 
     _this.handle = handle;
     _this.options = opts;
-    _this.iotaProvider = opts.iotaProvider;
+    _this.iotaProviders = [opts.iotaProvider];
+    _this.chunks = 0;
 
-    (0, _iota.getMetadata)(handle, [opts.iotaProvider]).then(function (_ref) {
+    (0, _iota.getMetadata)(_this.handle, _this.iotaProviders).then(function (_ref) {
       var metadata = _ref.metadata,
           provider = _ref.provider;
 
       _this.numberOfChunks = metadata.numberOfChunks;
-      _this.metadata = metadata;
+      _this.iotaProvider = provider;
 
       _this.pollUploadProgress();
-    }).catch(function (err) {
-      throw err;
-    });
+    }).catch(_this.emit("error", error));
     return _this;
   }
 
@@ -64,8 +61,6 @@ var UploadProgress = function (_EventEmitter) {
     key: "pollUploadProgress",
     value: function pollUploadProgress() {
       var _this2 = this;
-
-      console.log(this.numberOfChunks);
 
       var genesisHash = _datamapGenerator2.default.genesisHash(this.handle);
       var datamap = _datamapGenerator2.default.generate(genesisHash, this.numberOfChunks - 1);
@@ -83,9 +78,9 @@ var UploadProgress = function (_EventEmitter) {
     }
   }], [{
     key: "streamUploadProgress",
-    value: function streamUploadProgress(handle) {
+    value: function streamUploadProgress(handle, opts) {
       console.log("Check upload progress on :", handle);
-      return new UploadProgress(handle);
+      return new UploadProgress(handle, opts);
     }
   }]);
 

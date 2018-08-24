@@ -6,6 +6,7 @@ import BufferSourceStream from "./streams/bufferSourceStream";
 import EncryptStream from "./streams/encryptStream";
 import UploadStream from "./streams/uploadStream";
 
+import { bytesFromHandle, encryptMetadata, validateKeys } from "./util";
 import { createHandle, genesisHash } from "./utils/encryption";
 import {
   createUploadSession,
@@ -13,7 +14,6 @@ import {
   confirmPaidPoll
 } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
-import { bytesFromHandle, encryptMetadata, validateKeys } from "./util";
 import { pollIotaProgress } from "./utils/iota";
 
 const CHUNK_BYTE_SIZE = 1024;
@@ -162,7 +162,7 @@ export default class Upload extends EventEmitter {
               metadata: this.metadata
             });
 
-            this.pollUploadProgress(this.handle)
+            this.pollUploadProgress(this.handle);
           });
 
         this.sourceStream.on("error", this.propagateError);
