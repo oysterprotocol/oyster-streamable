@@ -25,10 +25,11 @@ export default class UploadProgress extends EventEmitter {
       .then(({ metadata, provider }) => {
         this.numberOfChunks = metadata.numberOfChunks;
         this.iotaProvider = provider;
-
-        this.pollUploadProgress();
-      })
-      .catch(this.emit("error", error));
+        this.pollUploadProgress()
+    })
+      .catch((err) => {
+        this.emit("error", err)
+      });
   }
 
   static streamUploadProgress(handle, opts) {
