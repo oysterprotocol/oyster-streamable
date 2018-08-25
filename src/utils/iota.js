@@ -1,6 +1,7 @@
+import Datamap from "datamap-generator";
+
 import { queryGeneratedSignatures } from "./backend";
 import { bytesFromHandle, decryptMetadata } from "../util";
-import Datamap from "datamap-generator";
 
 const clamp = (num, min, max) => {
   return Math.min(Math.max(num, min), max);
@@ -150,29 +151,34 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
 
 export const getMetadata = (handle, iotaProviders) => {
   return new Promise((resolve, reject) => {
-    const genesisHash = Datamap.genesisHash(handle)
-    const queries = Promise.all(iotaProviders.map(provider =>
-      new Promise((resolve, reject) => {
-        queryGeneratedSignatures(provider, genesisHash, 1).then(
-          signatures => resolve({ provider, signatures }),
-          reject
-        );
-      })
-    ));
+    const genesisHash = Datamap.genesisHash(handle);
+    const queries = Promise.all(
+      iotaProviders.map(
+        provider =>
+          new Promise((resolve, reject) => {
+            queryGeneratedSignatures(provider, genesisHash, 1).then(
+              signatures => resolve({ provider, signatures }),
+              reject
+            );
+          })
+      )
+    );
 
     return queries
       .then(result => {
-        const { provider, signatures } = result.find(
-          res => !!res.signatures.data[0]
-        ) || {};
+        const { provider, signatures } =
+          result.find(res => !!res.signatures.data[0]) || {};
         const signature = signatures ? signatures.data[0] : null;
 
-        if (signature === null)
-          reject(new Error("File does not exist."));
+        if (signature === null) reject(new Error("File does not exist."));
 
-        const { version, metadata } = decryptMetadata(bytesFromHandle(handle), signature);
+        const { version, metadata } = decryptMetadata(
+          bytesFromHandle(handle),
+          signature
+        );
 
         resolve({ provider, metadata, version });
-      }).catch(reject);
+      })
+      .catch(reject);
   });
-}
+};

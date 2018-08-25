@@ -1,4 +1,5 @@
 import { Readable } from "readable-stream";
+
 import { offsetHash } from "../util";
 import { queryGeneratedSignatures } from "../utils/backend";
 import { INCLUDE_TREASURE_OFFSETS, FILE } from "../config";

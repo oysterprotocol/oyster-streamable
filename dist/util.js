@@ -42,8 +42,6 @@ var _encryption = require("./utils/encryption");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var Forge = { cipher: _cipher2.default, md: _md2.default, util: _util2.default };
-
 var CURRENT_VERSION = 1;
 var STOPPER_TRYTE = "A";
 var IV_BYTE_LENGTH = 16;
@@ -51,6 +49,7 @@ var TAG_BYTE_LENGTH = 16;
 var TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
 
 var iota = exports.iota = new _iotaLib2.default();
+var Forge = { cipher: _cipher2.default, md: _md2.default, util: _util2.default };
 
 function bytesFromHandle(handle) {
   return Forge.md.sha256.create().update(handle, "utf8").digest();

@@ -29,13 +29,13 @@ var _uploadStream = require("./streams/uploadStream");
 
 var _uploadStream2 = _interopRequireDefault(_uploadStream);
 
+var _util = require("./util");
+
 var _encryption = require("./utils/encryption");
 
 var _backend = require("./utils/backend");
 
 var _fileProcessor = require("./utils/file-processor");
-
-var _util = require("./util");
 
 var _iota = require("./utils/iota");
 
