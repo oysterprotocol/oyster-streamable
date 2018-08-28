@@ -51,9 +51,10 @@ var UploadProgress = function (_EventEmitter) {
 
       _this.numberOfChunks = metadata.numberOfChunks;
       _this.iotaProvider = provider;
-
       _this.pollUploadProgress();
-    }).catch(_this.emit("error", error));
+    }).catch(function (err) {
+      _this.emit("error", err);
+    });
     return _this;
   }
 
