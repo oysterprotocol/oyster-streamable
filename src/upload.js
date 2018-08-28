@@ -6,6 +6,7 @@ import BufferSourceStream from "./streams/bufferSourceStream";
 import EncryptStream from "./streams/encryptStream";
 import UploadStream from "./streams/uploadStream";
 
+import { bytesFromHandle, encryptMetadata, validateKeys } from "./util";
 import { createHandle, genesisHash } from "./utils/encryption";
 import {
   createUploadSession,
@@ -13,7 +14,6 @@ import {
   confirmPaidPoll
 } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
-import { bytesFromHandle, encryptMetadata, validateKeys } from "./util";
 import { pollIotaProgress } from "./utils/iota";
 
 const CHUNK_BYTE_SIZE = 1024;
@@ -155,9 +155,6 @@ export default class Upload extends EventEmitter {
           .pipe(this.encryptStream)
           .pipe(this.uploadStream)
           .on("finish", () => {
-            const genHash = Datamap.genesisHash(this.handle);
-            const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
-
             this.emit(EVENTS.RETRIEVED, {
               target: this,
               handle: this.handle,
@@ -165,16 +162,7 @@ export default class Upload extends EventEmitter {
               metadata: this.metadata
             });
 
-            pollIotaProgress(datamap, this.iotaProvider, prog => {
-              this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-            }).then(() => {
-              this.emit(EVENTS.FINISH, {
-                target: this,
-                handle: this.handle,
-                numberOfChunks: this.numberOfChunks,
-                metadata: this.metadata
-              });
-            });
+            this.pollUploadProgress(this.handle);
           });
 
         this.sourceStream.on("error", this.propagateError);
@@ -185,5 +173,21 @@ export default class Upload extends EventEmitter {
   }
   propagateError(error) {
     this.emit(EVENTS.ERROR, error);
+  }
+
+  pollUploadProgress(handle) {
+    const genHash = Datamap.genesisHash(handle);
+    const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
+
+    pollIotaProgress(datamap, this.iotaProvider, prog => {
+      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+    }).then(() => {
+      this.emit(EVENTS.FINISH, {
+        target: this,
+        handle: this.handle,
+        numberOfChunks: this.numberOfChunks,
+        metadata: this.metadata
+      });
+    });
   }
 }

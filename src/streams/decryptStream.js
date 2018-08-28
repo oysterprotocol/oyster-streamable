@@ -1,10 +1,12 @@
 import ForgeUtil from "node-forge/lib/util";
-const Forge = { util: ForgeUtil };
 
 import { Transform } from "readable-stream";
 import { iota, bytesFromHandle, decryptBytes, parseMessage } from "../util";
 
+const Forge = { util: ForgeUtil };
+
 const ByteBuffer = Forge.util.ByteBuffer;
+
 const DEFAULT_OPTIONS = Object.freeze({
   binaryMode: false,
   objectMode: true

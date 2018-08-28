@@ -25,6 +25,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Forge = { util: _util2.default };
 
 var ByteBuffer = Forge.util.ByteBuffer;
+
 var DEFAULT_OPTIONS = Object.freeze({
   binaryMode: false,
   objectMode: true
