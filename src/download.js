@@ -30,13 +30,14 @@ export default class Download extends EventEmitter {
     this.genesisHash = Datamap.genesisHash(handle);
     this.key = bytesFromHandle(handle);
 
-    getMetadata(handle, opts.iotaProviders).then(({ metadata, provider }) => {
-      this.iotaProvider = provider
-      this.metadata = metadata
-      this.emit('metadata', metadata)
+    getMetadata(handle, opts.iotaProviders)
+      .then(({ metadata, provider }) => {
+        this.iotaProvider = provider;
+        this.metadata = metadata;
+        this.emit("metadata", metadata);
 
-      this.startDownload(metadata)
-    })
+        this.startDownload(metadata);
+      })
       .catch(this.propagateError);
   }
 
