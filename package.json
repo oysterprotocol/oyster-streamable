@@ -9,6 +9,10 @@
   "browser": "dist/index.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/oysterprotocol/oyster-streamable.git"
+  },
   "scripts": {
     "build": "babel src --presets babel-preset-env --out-dir dist",
     "prepublish": "yarn build",
