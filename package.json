@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
-    "datamap-generator": "git+https://github.com/oysterprotocol/datamap-generator.git",
+    "datamap-generator": "^1.0.8",
     "iota.lib.js": "^0.4.7",
     "mime": "^2.3.1",
     "node-forge": "^0.7.5",
