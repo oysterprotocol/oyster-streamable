@@ -1,10 +1,10 @@
 {
   "name": "oyster-streamable",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Arbitrary size interface for the Oyster network",
   "main": "dist/index.js",
   "files": [
-    "dist/index.js"
+    "dist/"
   ],
   "browser": "dist/index.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "babel src --presets babel-preset-env --out-dir dist",
-    "prepublish": "yarn build",
+    "prepublishOnly": "yarn && yarn build",
     "pretty": "prettier --write \"src/**/*.js\"",
     "test": "jest",
     "test:watch": "jest --watch --colors"
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
-    "datamap-generator": "git+https://github.com/oysterprotocol/datamap-generator.git",
+    "datamap-generator": "^1.0.8",
     "iota.lib.js": "^0.4.7",
     "mime": "^2.3.1",
     "node-forge": "^0.7.5",
