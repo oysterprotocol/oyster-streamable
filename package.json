@@ -1,6 +1,6 @@
 {
   "name": "oyster-streamable",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Arbitrary size interface for the Oyster network",
   "main": "dist/index.js",
   "files": [
@@ -10,8 +10,8 @@
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/oysterprotocol/oyster-streamable.git"
+    "type": "git",
+    "url": "https://github.com/oysterprotocol/oyster-streamable.git"
   },
   "scripts": {
     "build": "babel src --presets babel-preset-env --out-dir dist",
