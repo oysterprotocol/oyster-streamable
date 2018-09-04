@@ -25,10 +25,10 @@ export default class UploadProgress extends EventEmitter {
       .then(({ metadata, provider }) => {
         this.numberOfChunks = metadata.numberOfChunks;
         this.iotaProvider = provider;
-        this.pollUploadProgress()
-    })
-      .catch((err) => {
-        this.emit("error", err)
+        this.pollUploadProgress();
+      })
+      .catch(err => {
+        this.emit("error", err);
       });
   }
 
@@ -41,7 +41,10 @@ export default class UploadProgress extends EventEmitter {
     const genesisHash = Datamap.genesisHash(this.handle);
     const datamap = Datamap.generate(genesisHash, this.numberOfChunks - 1);
 
-    pollIotaProgress(datamap, this.iotaProvider, prog => {
+    // HACK! Cleanup API so all functions expect either an array or 1 provider.
+    const iotaProvider = this.iotaProvider || this.iotaProviders[0];
+
+    pollIotaProgress(datamap, iotaProvider, prog => {
       this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
     }).then(() => {
       this.emit(EVENTS.FINISH, {
