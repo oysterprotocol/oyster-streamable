@@ -149,6 +149,16 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
     }, POLL_INTERVAL);
   });
 
+export const pollMetadata = (handle, iotaProviders) => {
+  return new Promise((resolve, reject) => {
+    setInterval(() => {
+      getMetadata(handle, iotaProviders)
+        .then(resolve)
+        .catch(console.log); // No-op. Waits for meta to attach. TODO: have a timeout?
+    }, POLL_INTERVAL);
+  });
+};
+
 export const getMetadata = (handle, iotaProviders) => {
   return new Promise((resolve, reject) => {
     const genesisHash = Datamap.genesisHash(handle);
