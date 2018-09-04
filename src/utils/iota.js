@@ -149,6 +149,21 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
     }, POLL_INTERVAL);
   });
 
+export const pollMetadata = (handle, iotaProviders) => {
+  return new Promise((resolve, reject) => {
+    const poll = setIntervalAndExecute(() => {
+      getMetadata(handle, iotaProviders)
+        .then(res => {
+          clearInterval(poll);
+          resolve(res);
+        })
+        // TODO: Continue only if "File does not exist" error.
+        // TODO: Timeout if this takes too long?
+        .catch(console.log); // No-op. Waits for meta to attach.
+    }, POLL_INTERVAL);
+  });
+};
+
 export const getMetadata = (handle, iotaProviders) => {
   return new Promise((resolve, reject) => {
     const genesisHash = Datamap.genesisHash(handle);

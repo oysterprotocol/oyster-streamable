@@ -14,7 +14,7 @@ import {
   confirmPaidPoll
 } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
-import { pollIotaProgress } from "./utils/iota";
+import { pollMetadata, pollIotaProgress } from "./utils/iota";
 
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
@@ -53,7 +53,7 @@ export default class Upload extends EventEmitter {
     this.alpha = opts.alpha;
     this.beta = opts.beta;
     this.epochs = opts.epochs;
-    this.iotaProvider = opts.iotaProvider;
+    this.iotaProviders = [opts.iotaProvider];
     this.options = opts;
     this.filename = filename;
     this.handle = createHandle(filename);
@@ -155,14 +155,16 @@ export default class Upload extends EventEmitter {
           .pipe(this.encryptStream)
           .pipe(this.uploadStream)
           .on("finish", () => {
-            this.emit(EVENTS.RETRIEVED, {
-              target: this,
-              handle: this.handle,
-              numberOfChunks: this.numberOfChunks,
-              metadata: this.metadata
-            });
+            pollMetadata(this.handle, this.iotaProviders).then(() => {
+              this.emit(EVENTS.RETRIEVED, {
+                target: this,
+                handle: this.handle,
+                numberOfChunks: this.numberOfChunks,
+                metadata: this.metadata
+              });
 
-            this.pollUploadProgress(this.handle);
+              this.pollUploadProgress(this.handle);
+            });
           });
 
         this.sourceStream.on("error", this.propagateError);
@@ -179,7 +181,7 @@ export default class Upload extends EventEmitter {
     const genHash = Datamap.genesisHash(handle);
     const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
 
-    pollIotaProgress(datamap, this.iotaProvider, prog => {
+    pollIotaProgress(datamap, this.iotaProviders, prog => {
       this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
     }).then(() => {
       this.emit(EVENTS.FINISH, {
