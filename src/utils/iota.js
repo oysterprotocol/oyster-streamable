@@ -154,7 +154,9 @@ export const pollMetadata = (handle, iotaProviders) => {
     setInterval(() => {
       getMetadata(handle, iotaProviders)
         .then(resolve)
-        .catch(console.log); // No-op. Waits for meta to attach. TODO: have a timeout?
+        // TODO: Continue only if "File does not exist" error.
+        // TODO: Timeout if this takes too long?
+        .catch(console.log); // No-op. Waits for meta to attach.
     }, POLL_INTERVAL);
   });
 };
