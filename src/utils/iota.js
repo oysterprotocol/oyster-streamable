@@ -151,9 +151,12 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
 
 export const pollMetadata = (handle, iotaProviders) => {
   return new Promise((resolve, reject) => {
-    setInterval(() => {
+    const poll = setIntervalAndExecute(() => {
       getMetadata(handle, iotaProviders)
-        .then(resolve)
+        .then(res => {
+          clearInterval(poll);
+          resolve(res);
+        })
         // TODO: Continue only if "File does not exist" error.
         // TODO: Timeout if this takes too long?
         .catch(console.log); // No-op. Waits for meta to attach.
