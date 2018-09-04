@@ -53,7 +53,7 @@ export default class Upload extends EventEmitter {
     this.alpha = opts.alpha;
     this.beta = opts.beta;
     this.epochs = opts.epochs;
-    this.iotaProvider = opts.iotaProvider;
+    this.iotaProviders = [opts.iotaProvider];
     this.options = opts;
     this.filename = filename;
     this.handle = createHandle(filename);
@@ -179,7 +179,7 @@ export default class Upload extends EventEmitter {
     const genHash = Datamap.genesisHash(handle);
     const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
 
-    pollIotaProgress(datamap, this.iotaProvider, prog => {
+    pollIotaProgress(datamap, this.iotaProviders, prog => {
       this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
     }).then(() => {
       this.emit(EVENTS.FINISH, {
