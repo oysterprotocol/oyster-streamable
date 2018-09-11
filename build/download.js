@@ -9,6 +9,10 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _events = require("events");
 
+var _datamapGenerator = require("datamap-generator");
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
+
 var _decryptStream = require("./streams/decryptStream");
 
 var _decryptStream2 = _interopRequireDefault(_decryptStream);
@@ -25,11 +29,7 @@ var _bufferTargetStream = require("./streams/bufferTargetStream");
 
 var _bufferTargetStream2 = _interopRequireDefault(_bufferTargetStream);
 
-var _datamapGenerator = require("datamap-generator");
-
-var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
-
-var _backend = require("./utils/backend");
+var _iota = require("./utils/iota");
 
 var _util = require("./util");
 
@@ -68,52 +68,23 @@ var Download = function (_EventEmitter) {
     _this.genesisHash = _datamapGenerator2.default.genesisHash(handle);
     _this.key = (0, _util.bytesFromHandle)(handle);
 
-    _this.getMetadata(opts.iotaProviders).then(_this.startDownload).catch(_this.propagateError);
+    (0, _iota.getMetadata)(handle, opts.iotaProviders).then(function (_ref) {
+      var metadata = _ref.metadata,
+          provider = _ref.provider;
+
+      _this.iotaProvider = provider;
+      _this.metadata = metadata;
+      _this.emit("metadata", metadata);
+
+      _this.startDownload(metadata);
+    }).catch(_this.propagateError);
     return _this;
   }
 
   _createClass(Download, [{
-    key: "getMetadata",
-    value: function getMetadata(iotaProviders) {
-      var _this2 = this;
-
-      var queries = Promise.all(iotaProviders.map(function (provider) {
-        return new Promise(function (resolve, reject) {
-          (0, _backend.queryGeneratedSignatures)(provider, _this2.genesisHash, 1).then(function (signatures) {
-            return resolve({ provider: provider, signatures: signatures });
-          }, reject);
-        });
-      }));
-
-      return queries.then(function (result) {
-        var _result$find = result.find(function (res) {
-          return !!res.signatures.data[0];
-        }),
-            provider = _result$find.provider,
-            signatures = _result$find.signatures;
-
-        var signature = signatures ? signatures.data[0] : null;
-
-        if (signature === null) {
-          throw new Error("File does not exist.");
-        }
-
-        var _decryptMetadata = (0, _util.decryptMetadata)(_this2.key, signature),
-            version = _decryptMetadata.version,
-            metadata = _decryptMetadata.metadata;
-
-        _this2.iotaProvider = provider;
-        _this2.metadata = metadata;
-        _this2.emit("metadata", metadata);
-        return Promise.resolve(metadata);
-      }).catch(function (error) {
-        throw error;
-      });
-    }
-  }, {
     key: "startDownload",
     value: function startDownload(metadata) {
-      var _this3 = this;
+      var _this2 = this;
 
       var _options = this.options,
           targetStream = _options.targetStream,
@@ -127,15 +98,15 @@ var Download = function (_EventEmitter) {
       this.targetStream = new targetStream(metadata, targetOptions || {});
 
       this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on("finish", function () {
-        _this3.emit(EVENTS.FINISH, {
-          target: _this3,
-          metadata: _this3.metadata,
-          result: _this3.targetStream.result
+        _this2.emit(EVENTS.FINISH, {
+          target: _this2,
+          metadata: _this2.metadata,
+          result: _this2.targetStream.result
         });
       });
 
       this.downloadStream.on("progress", function (progress) {
-        _this3.emit(EVENTS.DOWNLOAD_PROGRESS, { progress: progress });
+        _this2.emit(EVENTS.DOWNLOAD_PROGRESS, { progress: progress });
       });
 
       this.downloadStream.on("error", this.propagateError);

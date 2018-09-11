@@ -1532,9 +1532,9 @@ data-urls@^1.0.0:
     whatwg-mimetype "^2.0.0"
     whatwg-url "^6.4.0"
 
-"datamap-generator@git+https://github.com/oysterprotocol/datamap-generator.git":
-  version "1.0.7"
-  resolved "git+https://github.com/oysterprotocol/datamap-generator.git#05abccb9fa2af0630c5d5a58142d0853c937ac15"
+datamap-generator@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/datamap-generator/-/datamap-generator-1.0.8.tgz#8d899964be513eae21157d7657954ce879546ca9"
   dependencies:
     js-sha3 "^0.7.0"
     lodash "^4.17.5"

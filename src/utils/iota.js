@@ -1,3 +1,8 @@
+import Datamap from "datamap-generator";
+
+import { queryGeneratedSignatures } from "./backend";
+import { bytesFromHandle, decryptMetadata } from "../util";
+
 const clamp = (num, min, max) => {
   return Math.min(Math.max(num, min), max);
 };
@@ -143,3 +148,52 @@ export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
         });
     }, POLL_INTERVAL);
   });
+
+export const pollMetadata = (handle, iotaProviders) => {
+  return new Promise((resolve, reject) => {
+    const poll = setIntervalAndExecute(() => {
+      getMetadata(handle, iotaProviders)
+        .then(res => {
+          clearInterval(poll);
+          resolve(res);
+        })
+        // TODO: Continue only if "File does not exist" error.
+        // TODO: Timeout if this takes too long?
+        .catch(console.log); // No-op. Waits for meta to attach.
+    }, POLL_INTERVAL);
+  });
+};
+
+export const getMetadata = (handle, iotaProviders) => {
+  return new Promise((resolve, reject) => {
+    const genesisHash = Datamap.genesisHash(handle);
+    const queries = Promise.all(
+      iotaProviders.map(
+        provider =>
+          new Promise((resolve, reject) => {
+            queryGeneratedSignatures(provider, genesisHash, 1).then(
+              signatures => resolve({ provider, signatures }),
+              reject
+            );
+          })
+      )
+    );
+
+    return queries
+      .then(result => {
+        const { provider, signatures } =
+          result.find(res => !!res.signatures.data[0]) || {};
+        const signature = signatures ? signatures.data[0] : null;
+
+        if (signature === null) reject(new Error("File does not exist."));
+
+        const { version, metadata } = decryptMetadata(
+          bytesFromHandle(handle),
+          signature
+        );
+
+        resolve({ provider, metadata, version });
+      })
+      .catch(reject);
+  });
+};

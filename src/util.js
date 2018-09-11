@@ -3,7 +3,6 @@ import IOTA from "iota.lib.js";
 import ForgeCipher from "node-forge/lib/cipher";
 import ForgeMd from "node-forge/lib/md";
 import ForgeUtil from "node-forge/lib/util";
-const Forge = { cipher: ForgeCipher, md: ForgeMd, util: ForgeUtil };
 
 import { deriveNonce, genesisHash, hashChain } from "./utils/encryption";
 
@@ -14,6 +13,7 @@ const TAG_BYTE_LENGTH = 16;
 const TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
 
 export let iota = new IOTA();
+const Forge = { cipher: ForgeCipher, md: ForgeMd, util: ForgeUtil };
 
 export function bytesFromHandle(handle) {
   return Forge.md.sha256

@@ -91,7 +91,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 64);
+/******/ 	return __webpack_require__(__webpack_require__.s = 66);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -1742,7 +1742,7 @@ return /******/ (function(modules) { // webpackBootstrap
  * Copyright (c) 2010-2018 Digital Bazaar, Inc.
  */
 var forge = __webpack_require__(7);
-var baseN = __webpack_require__(104);
+var baseN = __webpack_require__(105);
 
 /* Utilities API */
 var util = module.exports = forge.util = forge.util || {};
@@ -4713,7 +4713,7 @@ util.estimateCores = function(options, callback) {
   }
 };
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(4), __webpack_require__(30).setImmediate, __webpack_require__(17).Buffer))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(4), __webpack_require__(30).setImmediate, __webpack_require__(20).Buffer))
 
 /***/ }),
 /* 3 */
@@ -4722,8 +4722,8 @@ util.estimateCores = function(options, callback) {
 "use strict";
 
 
-var bind = __webpack_require__(58);
-var isBuffer = __webpack_require__(143);
+var bind = __webpack_require__(60);
+var isBuffer = __webpack_require__(144);
 
 /*global toString:true*/
 
@@ -5585,13 +5585,13 @@ module.exports = Curl
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(52);
+exports = module.exports = __webpack_require__(54);
 exports.Stream = exports;
 exports.Readable = exports;
-exports.Writable = __webpack_require__(55);
-exports.Duplex = __webpack_require__(14);
-exports.Transform = __webpack_require__(57);
-exports.PassThrough = __webpack_require__(130);
+exports.Writable = __webpack_require__(57);
+exports.Duplex = __webpack_require__(15);
+exports.Transform = __webpack_require__(59);
+exports.PassThrough = __webpack_require__(131);
 
 
 /***/ }),
@@ -5726,6 +5726,207 @@ exports.PassThrough = __webpack_require__(130);
 
 /***/ }),
 /* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.validateKeys = exports.iota = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+exports.bytesFromHandle = bytesFromHandle;
+exports.offsetHash = offsetHash;
+exports.addStopperTryte = addStopperTryte;
+exports.parseMessage = parseMessage;
+exports.encrypt = encrypt;
+exports.encryptString = encryptString;
+exports.encryptBytes = encryptBytes;
+exports.encryptMetadata = encryptMetadata;
+exports.decrypt = decrypt;
+exports.decryptBytes = decryptBytes;
+exports.decryptString = decryptString;
+exports.decryptMetadata = decryptMetadata;
+exports.getVersion = getVersion;
+exports.versionTrytes = versionTrytes;
+
+var _iotaLib = __webpack_require__(134);
+
+var _iotaLib2 = _interopRequireDefault(_iotaLib);
+
+var _cipher = __webpack_require__(36);
+
+var _cipher2 = _interopRequireDefault(_cipher);
+
+var _md = __webpack_require__(26);
+
+var _md2 = _interopRequireDefault(_md);
+
+var _util = __webpack_require__(2);
+
+var _util2 = _interopRequireDefault(_util);
+
+var _encryption = __webpack_require__(38);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var CURRENT_VERSION = 1;
+var STOPPER_TRYTE = "A";
+var IV_BYTE_LENGTH = 16;
+var TAG_BYTE_LENGTH = 16;
+var TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
+
+var iota = exports.iota = new _iotaLib2.default();
+var Forge = { cipher: _cipher2.default, md: _md2.default, util: _util2.default };
+
+function bytesFromHandle(handle) {
+  return Forge.md.sha256.create().update(handle, "utf8").digest();
+}
+
+// Offset hashes for IXI Oyster.findGeneratedSignatures
+// Pass genesisHash, absolute offset (0 = first file chunk)
+// Alternatively pass last hash, relative offset, to save cycles
+function offsetHash(hashStr, offset) {
+  var obfuscatedHash = void 0;
+  var hash = Forge.util.createBuffer(Forge.util.binary.hex.decode(hashStr)).bytes();
+
+  do {
+    var _hashChain = (0, _encryption.hashChain)(hash);
+
+    var _hashChain2 = _slicedToArray(_hashChain, 2);
+
+    obfuscatedHash = _hashChain2[0];
+    hash = _hashChain2[1];
+  } while (offset-- > 0);
+
+  return Forge.util.binary.hex.encode(hash);
+}
+
+function addStopperTryte(trytes) {
+  return trytes + STOPPER_TRYTE;
+}
+
+function parseMessage(trytes) {
+  return trytes.substring(0, trytes.lastIndexOf(STOPPER_TRYTE));
+}
+
+// Encryption to trytes
+function encrypt(key, iv, binaryString) {
+  key.read = 0;
+  var cipher = Forge.cipher.createCipher("AES-GCM", key);
+
+  cipher.start({
+    iv: iv,
+    additionalData: "binary-encoded string",
+    tagLength: TAG_BIT_LENGTH
+  });
+
+  cipher.update(binaryString);
+  cipher.finish();
+
+  var ivTrytes = iota.utils.toTrytes(iv);
+  var tagTrytes = iota.utils.toTrytes(cipher.mode.tag.bytes());
+  var trytes = iota.utils.toTrytes(cipher.output.bytes());
+
+  return trytes + tagTrytes + ivTrytes;
+}
+
+function encryptString(key, iv, string, encoding) {
+  var buf = Forge.util.createBuffer(string, encoding || "utf8");
+  return encrypt(key, iv, buf);
+}
+
+function encryptBytes(key, iv, bytes) {
+  return encrypt(key, iv, Forge.util.createBuffer(bytes));
+}
+
+function encryptMetadata(metadata, key) {
+  var iv = (0, _encryption.deriveNonce)(key, 0);
+  var trytes = encryptString(key, iv, JSON.stringify(metadata), "utf8");
+  return addStopperTryte(versionTrytes() + trytes);
+}
+
+// Decryption from trytes
+function decrypt(key, byteBuffer) {
+  key.read = 0;
+  var byteStr = byteBuffer.bytes();
+  var tag = byteStr.substr(-TAG_BYTE_LENGTH - IV_BYTE_LENGTH, TAG_BYTE_LENGTH);
+  var iv = byteStr.substr(-IV_BYTE_LENGTH);
+  var end = byteStr.length - TAG_BYTE_LENGTH - IV_BYTE_LENGTH;
+  var msg = byteStr.substr(0, end);
+  var decipher = Forge.cipher.createDecipher("AES-GCM", key);
+
+  decipher.start({
+    iv: iv,
+    additionalData: "binary-encoded string",
+    tagLength: TAG_BIT_LENGTH,
+    tag: tag
+  });
+  decipher.update(new Forge.util.ByteBuffer(msg, "binary"));
+
+  if (decipher.finish()) {
+    return decipher.output;
+  } else {
+    return false;
+  }
+}
+
+function decryptBytes(key, byteBuffer) {
+  var output = decrypt(key, byteBuffer);
+  if (output) {
+    return Forge.util.binary.raw.decode(output.bytes());
+  } else {
+    return false;
+  }
+}
+
+function decryptString(key, byteBuffer, encoding) {
+  var output = decrypt(key, byteBuffer);
+  if (output) {
+    return output.toString(encoding || "utf8");
+  } else {
+    return false;
+  }
+}
+
+function decryptMetadata(key, signature) {
+  var trytes = parseMessage(signature);
+  var byteStr = iota.utils.fromTrytes(trytes);
+  var byteBuffer = Forge.util.createBuffer(byteStr, "binary");
+  var version = getVersion(byteBuffer);
+  var metadata = JSON.parse(decryptString(key, byteBuffer.compact()));
+
+  return { version: version, metadata: metadata };
+}
+
+function getVersion(byteBuffer) {
+  var bytes = Forge.util.binary.raw.decode(byteBuffer.getBytes(4));
+  return new DataView(bytes.buffer).getUint32(0);
+}
+
+function versionTrytes() {
+  var typedVersion = new DataView(new ArrayBuffer(4));
+  typedVersion.setUint32(0, CURRENT_VERSION);
+  var buf = new Forge.util.ByteBuffer(typedVersion.buffer);
+  return iota.utils.toTrytes(buf.bytes());
+}
+
+var validateKeys = exports.validateKeys = function validateKeys(obj, keys) {
+  // TODO: Smarter validation.
+  var invalidKeys = keys.filter(function (key) {
+    return !obj.hasOwnProperty(key);
+  });
+
+  if (invalidKeys.length > 0) {
+    throw "Missing required keys: " + invalidKeys.join(", ");
+  }
+};
+
+/***/ }),
+/* 12 */
 /***/ (function(module, exports) {
 
 /**
@@ -6193,7 +6394,7 @@ module.exports = {
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -6326,7 +6527,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -6592,7 +6793,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6626,7 +6827,7 @@ module.exports = {
 
 /*<replacement>*/
 
-var pna = __webpack_require__(26);
+var pna = __webpack_require__(27);
 /*</replacement>*/
 
 /*<replacement>*/
@@ -6641,12 +6842,12 @@ var objectKeys = Object.keys || function (obj) {
 module.exports = Duplex;
 
 /*<replacement>*/
-var util = __webpack_require__(18);
-util.inherits = __webpack_require__(19);
+var util = __webpack_require__(21);
+util.inherits = __webpack_require__(22);
 /*</replacement>*/
 
-var Readable = __webpack_require__(52);
-var Writable = __webpack_require__(55);
+var Readable = __webpack_require__(54);
+var Writable = __webpack_require__(57);
 
 util.inherits(Duplex, Readable);
 
@@ -6729,19 +6930,346 @@ Duplex.prototype._destroy = function (err, cb) {
 };
 
 /***/ }),
-/* 15 */
+/* 16 */
+/***/ (function(module, exports) {
+
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+function EventEmitter() {
+  this._events = this._events || {};
+  this._maxListeners = this._maxListeners || undefined;
+}
+module.exports = EventEmitter;
+
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
+
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._maxListeners = undefined;
+
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+EventEmitter.defaultMaxListeners = 10;
+
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!isNumber(n) || n < 0 || isNaN(n))
+    throw TypeError('n must be a positive number');
+  this._maxListeners = n;
+  return this;
+};
+
+EventEmitter.prototype.emit = function(type) {
+  var er, handler, len, args, i, listeners;
+
+  if (!this._events)
+    this._events = {};
+
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events.error ||
+        (isObject(this._events.error) && !this._events.error.length)) {
+      er = arguments[1];
+      if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
+      }
+    }
+  }
+
+  handler = this._events[type];
+
+  if (isUndefined(handler))
+    return false;
+
+  if (isFunction(handler)) {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        args = Array.prototype.slice.call(arguments, 1);
+        handler.apply(this, args);
+    }
+  } else if (isObject(handler)) {
+    args = Array.prototype.slice.call(arguments, 1);
+    listeners = handler.slice();
+    len = listeners.length;
+    for (i = 0; i < len; i++)
+      listeners[i].apply(this, args);
+  }
+
+  return true;
+};
+
+EventEmitter.prototype.addListener = function(type, listener) {
+  var m;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events)
+    this._events = {};
+
+  // To avoid recursion in the case that type === "newListener"! Before
+  // adding it to the listeners, first emit "newListener".
+  if (this._events.newListener)
+    this.emit('newListener', type,
+              isFunction(listener.listener) ?
+              listener.listener : listener);
+
+  if (!this._events[type])
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  else if (isObject(this._events[type]))
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  else
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  var fired = false;
+
+  function g() {
+    this.removeListener(type, g);
+
+    if (!fired) {
+      fired = true;
+      listener.apply(this, arguments);
+    }
+  }
+
+  g.listener = listener;
+  this.on(type, g);
+
+  return this;
+};
+
+// emits a 'removeListener' event iff the listener was removed
+EventEmitter.prototype.removeListener = function(type, listener) {
+  var list, position, length, i;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events || !this._events[type])
+    return this;
+
+  list = this._events[type];
+  length = list.length;
+  position = -1;
+
+  if (list === listener ||
+      (isFunction(list.listener) && list.listener === listener)) {
+    delete this._events[type];
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0)
+      return this;
+
+    if (list.length === 1) {
+      list.length = 0;
+      delete this._events[type];
+    } else {
+      list.splice(position, 1);
+    }
+
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
+
+  if (!this._events)
+    return this;
+
+  // not listening for removeListener, no need to emit
+  if (!this._events.removeListener) {
+    if (arguments.length === 0)
+      this._events = {};
+    else if (this._events[type])
+      delete this._events[type];
+    return this;
+  }
+
+  // emit removeListener for all listeners on all events
+  if (arguments.length === 0) {
+    for (key in this._events) {
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
+
+  listeners = this._events[type];
+
+  if (isFunction(listeners)) {
+    this.removeListener(type, listeners);
+  } else if (listeners) {
+    // LIFO order
+    while (listeners.length)
+      this.removeListener(type, listeners[listeners.length - 1]);
+  }
+  delete this._events[type];
+
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
+
+EventEmitter.prototype.listenerCount = function(type) {
+  if (this._events) {
+    var evlistener = this._events[type];
+
+    if (isFunction(evlistener))
+      return 1;
+    else if (evlistener)
+      return evlistener.length;
+  }
+  return 0;
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  return emitter.listenerCount(type);
+};
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+
+
+/***/ }),
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var inputValidator  =   __webpack_require__(11);
-var makeRequest     =   __webpack_require__(40);
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _datamap = __webpack_require__(67);
+
+var _datamap2 = _interopRequireDefault(_datamap);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = _datamap2.default;
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var inputValidator  =   __webpack_require__(12);
+var makeRequest     =   __webpack_require__(42);
 var Curl            =   __webpack_require__(8);
-var Kerl            =   __webpack_require__(16);
+var Kerl            =   __webpack_require__(19);
 var Converter       =   __webpack_require__(5);
-var Signing         =   __webpack_require__(23);
-var CryptoJS        =   __webpack_require__(42);
+var Signing         =   __webpack_require__(24);
+var CryptoJS        =   __webpack_require__(44);
 var ascii           =   __webpack_require__(35);
-var extractJson     =   __webpack_require__(97);
-var BigNumber       =   __webpack_require__(98);
+var extractJson     =   __webpack_require__(98);
+var BigNumber       =   __webpack_require__(99);
 
 
 /**
@@ -7206,13 +7734,13 @@ module.exports = {
 
 
 /***/ }),
-/* 16 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var CryptoJS = __webpack_require__(42);
+var CryptoJS = __webpack_require__(44);
 var Converter = __webpack_require__(5);
 var Curl = __webpack_require__(8);
-var WConverter = __webpack_require__(95);
+var WConverter = __webpack_require__(96);
 
 var BIT_HASH_LENGTH = 384;
 
@@ -7302,7 +7830,7 @@ module.exports = Kerl;
 
 
 /***/ }),
-/* 17 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7316,9 +7844,9 @@ module.exports = Kerl;
 
 
 
-var base64 = __webpack_require__(102)
-var ieee754 = __webpack_require__(103)
-var isArray = __webpack_require__(46)
+var base64 = __webpack_require__(103)
+var ieee754 = __webpack_require__(104)
+var isArray = __webpack_require__(48)
 
 exports.Buffer = Buffer
 exports.SlowBuffer = SlowBuffer
@@ -9099,7 +9627,7 @@ function isnan (val) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(6)))
 
 /***/ }),
-/* 18 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(Buffer) {// Copyright Joyent, Inc. and other Node contributors.
@@ -9210,10 +9738,10 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(17).Buffer))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(20).Buffer))
 
 /***/ }),
-/* 19 */
+/* 22 */
 /***/ (function(module, exports) {
 
 if (typeof Object.create === 'function') {
@@ -9242,517 +9770,7 @@ if (typeof Object.create === 'function') {
 
 
 /***/ }),
-/* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.validateKeys = exports.iota = undefined;
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-exports.bytesFromHandle = bytesFromHandle;
-exports.offsetHash = offsetHash;
-exports.addStopperTryte = addStopperTryte;
-exports.parseMessage = parseMessage;
-exports.encrypt = encrypt;
-exports.encryptString = encryptString;
-exports.encryptBytes = encryptBytes;
-exports.encryptMetadata = encryptMetadata;
-exports.decrypt = decrypt;
-exports.decryptBytes = decryptBytes;
-exports.decryptString = decryptString;
-exports.decryptMetadata = decryptMetadata;
-exports.getVersion = getVersion;
-exports.versionTrytes = versionTrytes;
-
-var _iotaLib = __webpack_require__(133);
-
-var _iotaLib2 = _interopRequireDefault(_iotaLib);
-
-var _cipher = __webpack_require__(36);
-
-var _cipher2 = _interopRequireDefault(_cipher);
-
-var _md = __webpack_require__(25);
-
-var _md2 = _interopRequireDefault(_md);
-
-var _util = __webpack_require__(2);
-
-var _util2 = _interopRequireDefault(_util);
-
-var _encryption = __webpack_require__(38);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var Forge = { cipher: _cipher2.default, md: _md2.default, util: _util2.default };
-
-var CURRENT_VERSION = 1;
-var STOPPER_TRYTE = "A";
-var IV_BYTE_LENGTH = 16;
-var TAG_BYTE_LENGTH = 16;
-var TAG_BIT_LENGTH = TAG_BYTE_LENGTH * 8;
-
-var iota = exports.iota = new _iotaLib2.default();
-
-function bytesFromHandle(handle) {
-  return Forge.md.sha256.create().update(handle, "utf8").digest();
-}
-
-// Offset hashes for IXI Oyster.findGeneratedSignatures
-// Pass genesisHash, absolute offset (0 = first file chunk)
-// Alternatively pass last hash, relative offset, to save cycles
-function offsetHash(hashStr, offset) {
-  var obfuscatedHash = void 0;
-  var hash = Forge.util.createBuffer(Forge.util.binary.hex.decode(hashStr)).bytes();
-
-  do {
-    var _hashChain = (0, _encryption.hashChain)(hash);
-
-    var _hashChain2 = _slicedToArray(_hashChain, 2);
-
-    obfuscatedHash = _hashChain2[0];
-    hash = _hashChain2[1];
-  } while (offset-- > 0);
-
-  return Forge.util.binary.hex.encode(hash);
-}
-
-function addStopperTryte(trytes) {
-  return trytes + STOPPER_TRYTE;
-}
-
-function parseMessage(trytes) {
-  return trytes.substring(0, trytes.lastIndexOf(STOPPER_TRYTE));
-}
-
-// Encryption to trytes
-function encrypt(key, iv, binaryString) {
-  key.read = 0;
-  var cipher = Forge.cipher.createCipher("AES-GCM", key);
-
-  cipher.start({
-    iv: iv,
-    additionalData: "binary-encoded string",
-    tagLength: TAG_BIT_LENGTH
-  });
-
-  cipher.update(binaryString);
-  cipher.finish();
-
-  var ivTrytes = iota.utils.toTrytes(iv);
-  var tagTrytes = iota.utils.toTrytes(cipher.mode.tag.bytes());
-  var trytes = iota.utils.toTrytes(cipher.output.bytes());
-
-  return trytes + tagTrytes + ivTrytes;
-}
-
-function encryptString(key, iv, string, encoding) {
-  var buf = Forge.util.createBuffer(string, encoding || "utf8");
-  return encrypt(key, iv, buf);
-}
-
-function encryptBytes(key, iv, bytes) {
-  return encrypt(key, iv, Forge.util.createBuffer(bytes));
-}
-
-function encryptMetadata(metadata, key) {
-  var iv = (0, _encryption.deriveNonce)(key, 0);
-  var trytes = encryptString(key, iv, JSON.stringify(metadata), "utf8");
-  return addStopperTryte(versionTrytes() + trytes);
-}
-
-// Decryption from trytes
-function decrypt(key, byteBuffer) {
-  key.read = 0;
-  var byteStr = byteBuffer.bytes();
-  var tag = byteStr.substr(-TAG_BYTE_LENGTH - IV_BYTE_LENGTH, TAG_BYTE_LENGTH);
-  var iv = byteStr.substr(-IV_BYTE_LENGTH);
-  var end = byteStr.length - TAG_BYTE_LENGTH - IV_BYTE_LENGTH;
-  var msg = byteStr.substr(0, end);
-  var decipher = Forge.cipher.createDecipher("AES-GCM", key);
-
-  decipher.start({
-    iv: iv,
-    additionalData: "binary-encoded string",
-    tagLength: TAG_BIT_LENGTH,
-    tag: tag
-  });
-  decipher.update(new Forge.util.ByteBuffer(msg, "binary"));
-
-  if (decipher.finish()) {
-    return decipher.output;
-  } else {
-    return false;
-  }
-}
-
-function decryptBytes(key, byteBuffer) {
-  var output = decrypt(key, byteBuffer);
-  if (output) {
-    return Forge.util.binary.raw.decode(output.bytes());
-  } else {
-    return false;
-  }
-}
-
-function decryptString(key, byteBuffer, encoding) {
-  var output = decrypt(key, byteBuffer);
-  if (output) {
-    return output.toString(encoding || "utf8");
-  } else {
-    return false;
-  }
-}
-
-function decryptMetadata(key, signature) {
-  var trytes = parseMessage(signature);
-  var byteStr = iota.utils.fromTrytes(trytes);
-  var byteBuffer = Forge.util.createBuffer(byteStr, "binary");
-  var version = getVersion(byteBuffer);
-  var metadata = JSON.parse(decryptString(key, byteBuffer.compact()));
-
-  return { version: version, metadata: metadata };
-}
-
-function getVersion(byteBuffer) {
-  var bytes = Forge.util.binary.raw.decode(byteBuffer.getBytes(4));
-  return new DataView(bytes.buffer).getUint32(0);
-}
-
-function versionTrytes() {
-  var typedVersion = new DataView(new ArrayBuffer(4));
-  typedVersion.setUint32(0, CURRENT_VERSION);
-  var buf = new Forge.util.ByteBuffer(typedVersion.buffer);
-  return iota.utils.toTrytes(buf.bytes());
-}
-
-var validateKeys = exports.validateKeys = function validateKeys(obj, keys) {
-  // TODO: Smarter validation.
-  var invalidKeys = keys.filter(function (key) {
-    return !obj.hasOwnProperty(key);
-  });
-
-  if (invalidKeys.length > 0) {
-    throw "Missing required keys: " + invalidKeys.join(", ");
-  }
-};
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports) {
-
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-function EventEmitter() {
-  this._events = this._events || {};
-  this._maxListeners = this._maxListeners || undefined;
-}
-module.exports = EventEmitter;
-
-// Backwards-compat with node 0.10.x
-EventEmitter.EventEmitter = EventEmitter;
-
-EventEmitter.prototype._events = undefined;
-EventEmitter.prototype._maxListeners = undefined;
-
-// By default EventEmitters will print a warning if more than 10 listeners are
-// added to it. This is a useful default which helps finding memory leaks.
-EventEmitter.defaultMaxListeners = 10;
-
-// Obviously not all Emitters should be limited to 10. This function allows
-// that to be increased. Set to zero for unlimited.
-EventEmitter.prototype.setMaxListeners = function(n) {
-  if (!isNumber(n) || n < 0 || isNaN(n))
-    throw TypeError('n must be a positive number');
-  this._maxListeners = n;
-  return this;
-};
-
-EventEmitter.prototype.emit = function(type) {
-  var er, handler, len, args, i, listeners;
-
-  if (!this._events)
-    this._events = {};
-
-  // If there is no 'error' event listener then throw.
-  if (type === 'error') {
-    if (!this._events.error ||
-        (isObject(this._events.error) && !this._events.error.length)) {
-      er = arguments[1];
-      if (er instanceof Error) {
-        throw er; // Unhandled 'error' event
-      } else {
-        // At least give some kind of context to the user
-        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
-        err.context = er;
-        throw err;
-      }
-    }
-  }
-
-  handler = this._events[type];
-
-  if (isUndefined(handler))
-    return false;
-
-  if (isFunction(handler)) {
-    switch (arguments.length) {
-      // fast cases
-      case 1:
-        handler.call(this);
-        break;
-      case 2:
-        handler.call(this, arguments[1]);
-        break;
-      case 3:
-        handler.call(this, arguments[1], arguments[2]);
-        break;
-      // slower
-      default:
-        args = Array.prototype.slice.call(arguments, 1);
-        handler.apply(this, args);
-    }
-  } else if (isObject(handler)) {
-    args = Array.prototype.slice.call(arguments, 1);
-    listeners = handler.slice();
-    len = listeners.length;
-    for (i = 0; i < len; i++)
-      listeners[i].apply(this, args);
-  }
-
-  return true;
-};
-
-EventEmitter.prototype.addListener = function(type, listener) {
-  var m;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events)
-    this._events = {};
-
-  // To avoid recursion in the case that type === "newListener"! Before
-  // adding it to the listeners, first emit "newListener".
-  if (this._events.newListener)
-    this.emit('newListener', type,
-              isFunction(listener.listener) ?
-              listener.listener : listener);
-
-  if (!this._events[type])
-    // Optimize the case of one listener. Don't need the extra array object.
-    this._events[type] = listener;
-  else if (isObject(this._events[type]))
-    // If we've already got an array, just append.
-    this._events[type].push(listener);
-  else
-    // Adding the second element, need to change to array.
-    this._events[type] = [this._events[type], listener];
-
-  // Check for listener leak
-  if (isObject(this._events[type]) && !this._events[type].warned) {
-    if (!isUndefined(this._maxListeners)) {
-      m = this._maxListeners;
-    } else {
-      m = EventEmitter.defaultMaxListeners;
-    }
-
-    if (m && m > 0 && this._events[type].length > m) {
-      this._events[type].warned = true;
-      console.error('(node) warning: possible EventEmitter memory ' +
-                    'leak detected. %d listeners added. ' +
-                    'Use emitter.setMaxListeners() to increase limit.',
-                    this._events[type].length);
-      if (typeof console.trace === 'function') {
-        // not supported in IE 10
-        console.trace();
-      }
-    }
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-
-EventEmitter.prototype.once = function(type, listener) {
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  var fired = false;
-
-  function g() {
-    this.removeListener(type, g);
-
-    if (!fired) {
-      fired = true;
-      listener.apply(this, arguments);
-    }
-  }
-
-  g.listener = listener;
-  this.on(type, g);
-
-  return this;
-};
-
-// emits a 'removeListener' event iff the listener was removed
-EventEmitter.prototype.removeListener = function(type, listener) {
-  var list, position, length, i;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events || !this._events[type])
-    return this;
-
-  list = this._events[type];
-  length = list.length;
-  position = -1;
-
-  if (list === listener ||
-      (isFunction(list.listener) && list.listener === listener)) {
-    delete this._events[type];
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-
-  } else if (isObject(list)) {
-    for (i = length; i-- > 0;) {
-      if (list[i] === listener ||
-          (list[i].listener && list[i].listener === listener)) {
-        position = i;
-        break;
-      }
-    }
-
-    if (position < 0)
-      return this;
-
-    if (list.length === 1) {
-      list.length = 0;
-      delete this._events[type];
-    } else {
-      list.splice(position, 1);
-    }
-
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.removeAllListeners = function(type) {
-  var key, listeners;
-
-  if (!this._events)
-    return this;
-
-  // not listening for removeListener, no need to emit
-  if (!this._events.removeListener) {
-    if (arguments.length === 0)
-      this._events = {};
-    else if (this._events[type])
-      delete this._events[type];
-    return this;
-  }
-
-  // emit removeListener for all listeners on all events
-  if (arguments.length === 0) {
-    for (key in this._events) {
-      if (key === 'removeListener') continue;
-      this.removeAllListeners(key);
-    }
-    this.removeAllListeners('removeListener');
-    this._events = {};
-    return this;
-  }
-
-  listeners = this._events[type];
-
-  if (isFunction(listeners)) {
-    this.removeListener(type, listeners);
-  } else if (listeners) {
-    // LIFO order
-    while (listeners.length)
-      this.removeListener(type, listeners[listeners.length - 1]);
-  }
-  delete this._events[type];
-
-  return this;
-};
-
-EventEmitter.prototype.listeners = function(type) {
-  var ret;
-  if (!this._events || !this._events[type])
-    ret = [];
-  else if (isFunction(this._events[type]))
-    ret = [this._events[type]];
-  else
-    ret = this._events[type].slice();
-  return ret;
-};
-
-EventEmitter.prototype.listenerCount = function(type) {
-  if (this._events) {
-    var evlistener = this._events[type];
-
-    if (isFunction(evlistener))
-      return 1;
-    else if (evlistener)
-      return evlistener.length;
-  }
-  return 0;
-};
-
-EventEmitter.listenerCount = function(emitter, type) {
-  return emitter.listenerCount(type);
-};
-
-function isFunction(arg) {
-  return typeof arg === 'function';
-}
-
-function isNumber(arg) {
-  return typeof arg === 'number';
-}
-
-function isObject(arg) {
-  return typeof arg === 'object' && arg !== null;
-}
-
-function isUndefined(arg) {
-  return arg === void 0;
-}
-
-
-/***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -10054,15 +10072,15 @@ function isUndefined(arg) {
 }));
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Curl = __webpack_require__(8);
-var Kerl = __webpack_require__(16);
+var Kerl = __webpack_require__(19);
 var Converter = __webpack_require__(5);
-var Bundle = __webpack_require__(24);
+var Bundle = __webpack_require__(25);
 var add = __webpack_require__(33);
-var oldSigning = __webpack_require__(96);
+var oldSigning = __webpack_require__(97);
 var errors = __webpack_require__(34);
 
 /**
@@ -10276,11 +10294,11 @@ module.exports = {
 
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Curl = __webpack_require__(8);
-var Kerl = __webpack_require__(16);
+var Kerl = __webpack_require__(19);
 var Converter = __webpack_require__(5);
 var tritAdd = __webpack_require__(33);
 
@@ -10459,7 +10477,7 @@ module.exports = Bundle;
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -10476,7 +10494,7 @@ forge.md.algorithms = forge.md.algorithms || {};
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10528,11 +10546,11 @@ function nextTick(fn, arg1, arg2, arg3) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(4)))
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* eslint-disable node/no-deprecated-api */
-var buffer = __webpack_require__(17)
+var buffer = __webpack_require__(20)
 var Buffer = buffer.Buffer
 
 // alternative to using Object.keys for old browsers
@@ -10596,7 +10614,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10611,11 +10629,11 @@ exports.createUploadSession = createUploadSession;
 exports.sendToBroker = sendToBroker;
 exports.sendChunksToBroker = sendChunksToBroker;
 
-var _axios = __webpack_require__(141);
+var _axios = __webpack_require__(142);
 
 var _axios2 = _interopRequireDefault(_axios);
 
-var _config = __webpack_require__(63);
+var _config = __webpack_require__(65);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -10749,25 +10767,6 @@ var confirmPaidPoll = exports.confirmPaidPoll = function confirmPaidPoll(host, s
 };
 
 /***/ }),
-/* 29 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _datamap = __webpack_require__(66);
-
-var _datamap2 = _interopRequireDefault(_datamap);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _datamap2.default;
-
-/***/ }),
 /* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -10824,7 +10823,7 @@ exports._unrefActive = exports.active = function(item) {
 };
 
 // setimmediate attaches itself to the global object
-__webpack_require__(68);
+__webpack_require__(69);
 // On some exotic environments, it's not clear which object `setimmediate` was
 // able to install onto.  Search each possibility in the same order as the
 // `setimmediate` library.
@@ -11605,7 +11604,7 @@ BlockCipher.prototype.finish = function(pad) {
 /* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var root = __webpack_require__(112);
+var root = __webpack_require__(113);
 
 /** Built-in value references. */
 var Symbol = root.Symbol;
@@ -11634,11 +11633,11 @@ exports.genesisHash = genesisHash;
 exports.obfuscatedGenesisHash = obfuscatedGenesisHash;
 exports.createHandle = createHandle;
 
-var _md = __webpack_require__(25);
+var _md = __webpack_require__(26);
 
 var _md2 = _interopRequireDefault(_md);
 
-var _random = __webpack_require__(47);
+var _random = __webpack_require__(49);
 
 var _random2 = _interopRequireDefault(_random);
 
@@ -11720,7 +11719,7 @@ function createHandle(filename) {
 /* WEBPACK VAR INJECTION */(function(process) {
 
 var utils = __webpack_require__(3);
-var normalizeHeaderName = __webpack_require__(145);
+var normalizeHeaderName = __webpack_require__(146);
 
 var DEFAULT_CONTENT_TYPE = {
   'Content-Type': 'application/x-www-form-urlencoded'
@@ -11736,10 +11735,10 @@ function getDefaultAdapter() {
   var adapter;
   if (typeof XMLHttpRequest !== 'undefined') {
     // For browsers use XHR adapter
-    adapter = __webpack_require__(59);
+    adapter = __webpack_require__(61);
   } else if (typeof process !== 'undefined') {
     // For node use HTTP adapter
-    adapter = __webpack_require__(59);
+    adapter = __webpack_require__(61);
   }
   return adapter;
 }
@@ -11820,8 +11819,440 @@ module.exports = defaults;
 /* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var require;var async = __webpack_require__(41);
-var errors = __webpack_require__(70);
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getMetadata = exports.pollMetadata = exports.pollIotaProgress = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _datamapGenerator = __webpack_require__(17);
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
+
+var _backend = __webpack_require__(29);
+
+var _util = __webpack_require__(11);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var clamp = function clamp(num, min, max) {
+  return Math.min(Math.max(num, min), max);
+};
+
+var selectPollingIndexes = function selectPollingIndexes(addresses, numPollingAddresses, bundleSize) {
+  // What this if is checking for is basically medium-sized uploads
+  // which would have been better off with the old random index selection.
+  // For those uploads, pick indexes the old way.
+  if (addresses.length < (bundleSize + bundleSize / 2) / 2 * numPollingAddresses) {
+    var indexArray = [0];
+    while (addresses.length - 1 > indexArray[indexArray.length - 1]) {
+      indexArray = indexArray.concat(Math.min.apply(Math, [indexArray[indexArray.length - 1] + Math.floor(Math.random() * (bundleSize / 2)) + bundleSize / 2, addresses.length - 1]));
+    }
+    if (indexArray.length === 2) {
+      //make sure there's always at least 3 addresses
+      indexArray.splice(1, 0, Math.floor(addresses.length / 2));
+    }
+    return indexArray;
+  } else {
+    var offset = addresses.length / (numPollingAddresses - 1);
+
+    var indexes = [];
+    for (var i = 0; i <= numPollingAddresses - 2; i++) {
+      indexes.push(Math.floor(i * offset));
+    }
+    indexes.push(addresses.length - 1);
+
+    return indexes;
+  }
+};
+
+/**
+ * IOTA Polling (Copied from webinterface)
+ */
+
+var skinnyQueryTransactions = function skinnyQueryTransactions(iotaProvider, addresses) {
+  return new Promise(function (resolve, reject) {
+    iotaProvider.api.findTransactions({ addresses: addresses }, function (error, transactionHashes) {
+      if (error) {
+        console.log("IOTA ERROR: ", error);
+      }
+      resolve(transactionHashes);
+    });
+  });
+};
+
+var checkUploadPercentage = function checkUploadPercentage(itoaProvider, addresses, indexes) {
+  return new Promise(function (resolve, reject) {
+    var promises = [];
+
+    promises.push(new Promise(function (resolve, reject) {
+      skinnyQueryTransactions(itoaProvider, [addresses[indexes[0]]]).then(function (transactions) {
+        resolve({ removeIndex: transactions.length > 0 });
+      });
+    }));
+
+    if (indexes.length > 1) {
+      promises.push(new Promise(function (resolve, reject) {
+        skinnyQueryTransactions(itoaProvider, [addresses[indexes[indexes.length - 1]]]).then(function (transactions) {
+          resolve({ removeIndex: transactions.length > 0 });
+        });
+      }));
+    }
+
+    return Promise.all(promises).then(function (indexResults) {
+      var _indexResults = _slicedToArray(indexResults, 2),
+          front = _indexResults[0],
+          back = _indexResults[1];
+
+      if (front.removeIndex) indexes.shift();
+      if (back && back.removeIndex) indexes.pop();
+
+      return resolve(indexes);
+    });
+  });
+};
+
+/**
+ * Public
+ */
+
+// TODO: Make these configurable?
+var MIN_PROG = 0.0;
+var POLL_INTERVAL = 4000;
+var BUNDLE_SIZE = 100;
+var NUM_POLLING_ADDRESSES = 301;
+
+// This is copied and pasted from backend.js
+var setIntervalAndExecute = function setIntervalAndExecute(fn, t) {
+  fn();
+  return setInterval(fn, t);
+};
+
+var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(datamap, iotaProvider, progCb) {
+  return new Promise(function (resolve, reject) {
+    var addresses = Object.values(datamap);
+    var indexes = selectPollingIndexes(addresses, NUM_POLLING_ADDRESSES, BUNDLE_SIZE);
+    var indexesLen = indexes.length;
+
+    var poll = setIntervalAndExecute(function () {
+      checkUploadPercentage(iotaProvider, addresses, indexes).then(function (idxs) {
+        // Uh oh, race condition.
+        indexes = idxs;
+
+        // Emit progress.
+        var prog = clamp(1 - idxs.length / indexesLen, MIN_PROG, 1.0) * 100;
+        progCb(prog);
+
+        // Include a small epsilon for floating point errors.
+        if (prog >= 99.0) {
+          clearInterval(poll);
+          return resolve();
+        }
+      }).catch(function (err) {
+        clearInterval(poll);
+        return reject(err);
+      });
+    }, POLL_INTERVAL);
+  });
+};
+
+var pollMetadata = exports.pollMetadata = function pollMetadata(handle, iotaProviders) {
+  return new Promise(function (resolve, reject) {
+    var poll = setIntervalAndExecute(function () {
+      getMetadata(handle, iotaProviders).then(function (res) {
+        clearInterval(poll);
+        resolve(res);
+      })
+      // TODO: Continue only if "File does not exist" error.
+      // TODO: Timeout if this takes too long?
+      .catch(console.log); // No-op. Waits for meta to attach.
+    }, POLL_INTERVAL);
+  });
+};
+
+var getMetadata = exports.getMetadata = function getMetadata(handle, iotaProviders) {
+  return new Promise(function (resolve, reject) {
+    var genesisHash = _datamapGenerator2.default.genesisHash(handle);
+    var queries = Promise.all(iotaProviders.map(function (provider) {
+      return new Promise(function (resolve, reject) {
+        (0, _backend.queryGeneratedSignatures)(provider, genesisHash, 1).then(function (signatures) {
+          return resolve({ provider: provider, signatures: signatures });
+        }, reject);
+      });
+    }));
+
+    return queries.then(function (result) {
+      var _ref = result.find(function (res) {
+        return !!res.signatures.data[0];
+      }) || {},
+          provider = _ref.provider,
+          signatures = _ref.signatures;
+
+      var signature = signatures ? signatures.data[0] : null;
+
+      if (signature === null) reject(new Error("File does not exist."));
+
+      var _decryptMetadata = (0, _util.decryptMetadata)((0, _util.bytesFromHandle)(handle), signature),
+          version = _decryptMetadata.version,
+          metadata = _decryptMetadata.metadata;
+
+      resolve({ provider: provider, metadata: metadata, version: version });
+    }).catch(reject);
+  });
+};
+
+/***/ }),
+/* 41 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.EVENTS = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _events = __webpack_require__(16);
+
+var _datamapGenerator = __webpack_require__(17);
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
+
+var _fileChunkStream = __webpack_require__(126);
+
+var _fileChunkStream2 = _interopRequireDefault(_fileChunkStream);
+
+var _bufferSourceStream = __webpack_require__(132);
+
+var _bufferSourceStream2 = _interopRequireDefault(_bufferSourceStream);
+
+var _encryptStream = __webpack_require__(133);
+
+var _encryptStream2 = _interopRequireDefault(_encryptStream);
+
+var _uploadStream = __webpack_require__(141);
+
+var _uploadStream2 = _interopRequireDefault(_uploadStream);
+
+var _util = __webpack_require__(11);
+
+var _encryption = __webpack_require__(38);
+
+var _backend = __webpack_require__(29);
+
+var _fileProcessor = __webpack_require__(161);
+
+var _iota = __webpack_require__(40);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var CHUNK_BYTE_SIZE = 1024;
+var DEFAULT_OPTIONS = Object.freeze({
+  filename: "",
+  encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
+});
+
+var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
+
+var EVENTS = exports.EVENTS = Object.freeze({
+  INVOICE: "invoice",
+  PAYMENT_PENDING: "payment-pending",
+  PAYMENT_CONFIRMED: "payment-confirmed",
+  // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
+  RETRIEVED: "retrieved",
+  UPLOAD_PROGRESS: "upload-progress",
+  FINISH: "finish",
+  ERROR: "error"
+});
+
+// TODO: Figure out which ivars are actually needed vs. just locally scoped.
+// Then convert all ivars to local consts
+
+var Upload = function (_EventEmitter) {
+  _inherits(Upload, _EventEmitter);
+
+  function Upload(filename, size, options) {
+    _classCallCheck(this, Upload);
+
+    var opts = Object.assign({}, DEFAULT_OPTIONS, options);
+    (0, _util.validateKeys)(opts, REQUIRED_OPTS);
+
+    var chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
+    var totalChunks = chunkCount + 1;
+
+    var _this = _possibleConstructorReturn(this, (Upload.__proto__ || Object.getPrototypeOf(Upload)).call(this));
+
+    _this.startUpload = _this.startUpload.bind(_this);
+    _this.propagateError = _this.propagateError.bind(_this);
+
+    _this.alpha = opts.alpha;
+    _this.beta = opts.beta;
+    _this.epochs = opts.epochs;
+    _this.iotaProviders = [opts.iotaProvider];
+    _this.options = opts;
+    _this.filename = filename;
+    _this.handle = (0, _encryption.createHandle)(filename);
+    _this.metadata = (0, _fileProcessor.createMetaData)(filename, chunkCount);
+    _this.genesisHash = (0, _encryption.genesisHash)(_this.handle);
+    _this.key = (0, _util.bytesFromHandle)(_this.handle);
+    _this.numberOfChunks = totalChunks;
+
+    // hack to stub brokers for testing.
+    var createUploadSessionFn = _this.options.createUploadSession || _backend.createUploadSession;
+
+    _this.uploadSession = createUploadSessionFn(size, _this.genesisHash, totalChunks, _this.alpha, _this.beta, _this.epochs).then(_this.startUpload.bind(_this)).catch(_this.propagateError.bind(_this));
+    return _this;
+  }
+
+  // File object (browser)
+
+
+  _createClass(Upload, [{
+    key: "startUpload",
+    value: function startUpload(session) {
+      var _this2 = this;
+
+      if (!!this.options.testEnv) {
+        // TODO: Actually implement these.
+        // Stubbing for now to work on integration.
+
+        this.emit(EVENTS.INVOICE, session.invoice);
+        this.emit(EVENTS.PAYMENT_PENDING);
+
+        // This is currently what the client expects, not sure if this
+        // payload makes sense to be emitted here...
+        // TODO: Better stubs and mocks.
+        this.emit(EVENTS.PAYMENT_CONFIRMED, {
+          filename: this.filename,
+          handle: this.handle,
+          numberOfChunks: this.numberOfChunks
+        });
+
+        this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
+
+        this.emit(EVENTS.FINISH);
+        return;
+      }
+
+      var sessIdA = session.alphaSessionId;
+      var sessIdB = session.betaSessionId;
+      var invoice = session.invoice || null;
+      var host = this.alpha;
+      var metadata = (0, _util.encryptMetadata)(this.metadata, this.key);
+      var _options = this.options,
+          sourceStream = _options.sourceStream,
+          sourceData = _options.sourceData,
+          sourceOptions = _options.sourceOptions;
+
+
+      this.emit(EVENTS.INVOICE, invoice);
+
+      // Wait for payment.
+      (0, _backend.confirmPendingPoll)(host, sessIdA).then(function () {
+        _this2.emit(EVENTS.PAYMENT_PENDING);
+        return (0, _backend.confirmPaidPoll)(host, sessIdA);
+      }).then(function () {
+        _this2.emit(EVENTS.PAYMENT_CONFIRMED, {
+          filename: _this2.filename,
+          handle: _this2.handle,
+          numberOfChunks: _this2.numberOfChunks
+        });
+
+        _this2.sourceStream = new sourceStream(sourceData, sourceOptions || {});
+        _this2.encryptStream = new _encryptStream2.default(_this2.handle);
+        _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
+
+        _this2.sourceStream.pipe(_this2.encryptStream).pipe(_this2.uploadStream).on("finish", function () {
+          (0, _iota.pollMetadata)(_this2.handle, _this2.iotaProviders).then(function () {
+            _this2.emit(EVENTS.RETRIEVED, {
+              target: _this2,
+              handle: _this2.handle,
+              numberOfChunks: _this2.numberOfChunks,
+              metadata: _this2.metadata
+            });
+
+            _this2.pollUploadProgress(_this2.handle);
+          });
+        });
+
+        _this2.sourceStream.on("error", _this2.propagateError);
+        _this2.encryptStream.on("error", _this2.propagateError);
+        _this2.uploadStream.on("error", _this2.propagateError);
+      }).catch(this.propagateError.bind(this));
+    }
+  }, {
+    key: "propagateError",
+    value: function propagateError(error) {
+      this.emit(EVENTS.ERROR, error);
+    }
+  }, {
+    key: "pollUploadProgress",
+    value: function pollUploadProgress(handle) {
+      var _this3 = this;
+
+      var genHash = _datamapGenerator2.default.genesisHash(handle);
+      var datamap = _datamapGenerator2.default.generate(genHash, this.numberOfChunks - 1);
+
+      (0, _iota.pollIotaProgress)(datamap, this.iotaProviders, function (prog) {
+        _this3.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
+      }).then(function () {
+        _this3.emit(EVENTS.FINISH, {
+          target: _this3,
+          handle: _this3.handle,
+          numberOfChunks: _this3.numberOfChunks,
+          metadata: _this3.metadata
+        });
+      });
+    }
+  }], [{
+    key: "fromFile",
+    value: function fromFile(file) {
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+      var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
+      var opts = Object.assign(options, source);
+
+      return new Upload(file.name, file.size, opts);
+    }
+
+    // Uint8Array or node buffer
+
+  }, {
+    key: "fromData",
+    value: function fromData(buffer, filename) {
+      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+      var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
+      var opts = Object.assign(options, source);
+
+      return new Upload(filename, buffer.length, opts);
+    }
+  }]);
+
+  return Upload;
+}(_events.EventEmitter);
+
+exports.default = Upload;
+
+/***/ }),
+/* 42 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var require;var async = __webpack_require__(43);
+var errors = __webpack_require__(71);
 
 function xmlHttpRequest() {
   if (typeof XMLHttpRequest !== 'undefined') {
@@ -11829,7 +12260,7 @@ function xmlHttpRequest() {
   }
   pretendingNotToRequire = require;
   var module = 'xmlhttprequest';
-  var request = __webpack_require__(71)(module).XMLHttpRequest;
+  var request = __webpack_require__(72)(module).XMLHttpRequest;
   return new request();
 }
 
@@ -12142,7 +12573,7 @@ module.exports = makeRequest;
 
 
 /***/ }),
-/* 41 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(setImmediate, process, global, module) {(function (global, factory) {
@@ -17740,16 +18171,16 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(30).setImmediate, __webpack_require__(4), __webpack_require__(6), __webpack_require__(69)(module)))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(30).setImmediate, __webpack_require__(4), __webpack_require__(6), __webpack_require__(70)(module)))
 
 /***/ }),
-/* 42 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(22), __webpack_require__(72), __webpack_require__(73), __webpack_require__(12), __webpack_require__(13), __webpack_require__(31), __webpack_require__(43), __webpack_require__(74), __webpack_require__(44), __webpack_require__(75), __webpack_require__(76), __webpack_require__(77), __webpack_require__(32), __webpack_require__(78), __webpack_require__(10), __webpack_require__(1), __webpack_require__(79), __webpack_require__(80), __webpack_require__(81), __webpack_require__(82), __webpack_require__(83), __webpack_require__(84), __webpack_require__(85), __webpack_require__(86), __webpack_require__(87), __webpack_require__(88), __webpack_require__(89), __webpack_require__(90), __webpack_require__(91), __webpack_require__(92), __webpack_require__(93), __webpack_require__(94));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(23), __webpack_require__(73), __webpack_require__(74), __webpack_require__(13), __webpack_require__(14), __webpack_require__(31), __webpack_require__(45), __webpack_require__(75), __webpack_require__(46), __webpack_require__(76), __webpack_require__(77), __webpack_require__(78), __webpack_require__(32), __webpack_require__(79), __webpack_require__(10), __webpack_require__(1), __webpack_require__(80), __webpack_require__(81), __webpack_require__(82), __webpack_require__(83), __webpack_require__(84), __webpack_require__(85), __webpack_require__(86), __webpack_require__(87), __webpack_require__(88), __webpack_require__(89), __webpack_require__(90), __webpack_require__(91), __webpack_require__(92), __webpack_require__(93), __webpack_require__(94), __webpack_require__(95));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -17759,7 +18190,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 }));
 
 /***/ }),
-/* 43 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -17956,13 +18387,13 @@ Object.defineProperty(exports, '__esModule', { value: true });
 }));
 
 /***/ }),
-/* 44 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(22));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(23));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -18277,7 +18708,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 }));
 
 /***/ }),
-/* 45 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18334,7 +18765,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 46 */
+/* 48 */
 /***/ (function(module, exports) {
 
 var toString = {}.toString;
@@ -18345,7 +18776,7 @@ module.exports = Array.isArray || function (arr) {
 
 
 /***/ }),
-/* 47 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -18364,9 +18795,9 @@ module.exports = Array.isArray || function (arr) {
  * Copyright (c) 2009-2014 Digital Bazaar, Inc.
  */
 var forge = __webpack_require__(7);
-__webpack_require__(105);
-__webpack_require__(48);
-__webpack_require__(107);
+__webpack_require__(106);
+__webpack_require__(50);
+__webpack_require__(108);
 __webpack_require__(2);
 
 (function() {
@@ -18542,7 +18973,7 @@ module.exports = forge.random;
 
 
 /***/ }),
-/* 48 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -18555,7 +18986,7 @@ module.exports = forge.random;
  * Copyright (c) 2010-2015 Digital Bazaar, Inc.
  */
 var forge = __webpack_require__(7);
-__webpack_require__(25);
+__webpack_require__(26);
 __webpack_require__(2);
 
 var sha256 = module.exports = forge.sha256 = forge.sha256 || {};
@@ -18875,13 +19306,13 @@ function _update(s, w, bytes) {
 
 
 /***/ }),
-/* 49 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(37),
-    arrayMap = __webpack_require__(114),
-    isArray = __webpack_require__(115),
-    isSymbol = __webpack_require__(50);
+    arrayMap = __webpack_require__(115),
+    isArray = __webpack_require__(116),
+    isSymbol = __webpack_require__(52);
 
 /** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0;
@@ -18918,11 +19349,11 @@ module.exports = baseToString;
 
 
 /***/ }),
-/* 50 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var baseGetTag = __webpack_require__(116),
-    isObjectLike = __webpack_require__(119);
+var baseGetTag = __webpack_require__(117),
+    isObjectLike = __webpack_require__(120);
 
 /** `Object#toString` result references. */
 var symbolTag = '[object Symbol]';
@@ -18953,10 +19384,10 @@ module.exports = isSymbol;
 
 
 /***/ }),
-/* 51 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var baseToString = __webpack_require__(49);
+var baseToString = __webpack_require__(51);
 
 /**
  * Converts `value` to a string. An empty string is returned for `null`
@@ -18987,7 +19418,7 @@ module.exports = toString;
 
 
 /***/ }),
-/* 52 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19016,13 +19447,13 @@ module.exports = toString;
 
 /*<replacement>*/
 
-var pna = __webpack_require__(26);
+var pna = __webpack_require__(27);
 /*</replacement>*/
 
 module.exports = Readable;
 
 /*<replacement>*/
-var isArray = __webpack_require__(46);
+var isArray = __webpack_require__(48);
 /*</replacement>*/
 
 /*<replacement>*/
@@ -19032,7 +19463,7 @@ var Duplex;
 Readable.ReadableState = ReadableState;
 
 /*<replacement>*/
-var EE = __webpack_require__(21).EventEmitter;
+var EE = __webpack_require__(16).EventEmitter;
 
 var EElistenerCount = function (emitter, type) {
   return emitter.listeners(type).length;
@@ -19040,12 +19471,12 @@ var EElistenerCount = function (emitter, type) {
 /*</replacement>*/
 
 /*<replacement>*/
-var Stream = __webpack_require__(53);
+var Stream = __webpack_require__(55);
 /*</replacement>*/
 
 /*<replacement>*/
 
-var Buffer = __webpack_require__(27).Buffer;
+var Buffer = __webpack_require__(28).Buffer;
 var OurUint8Array = global.Uint8Array || function () {};
 function _uint8ArrayToBuffer(chunk) {
   return Buffer.from(chunk);
@@ -19057,12 +19488,12 @@ function _isUint8Array(obj) {
 /*</replacement>*/
 
 /*<replacement>*/
-var util = __webpack_require__(18);
-util.inherits = __webpack_require__(19);
+var util = __webpack_require__(21);
+util.inherits = __webpack_require__(22);
 /*</replacement>*/
 
 /*<replacement>*/
-var debugUtil = __webpack_require__(126);
+var debugUtil = __webpack_require__(127);
 var debug = void 0;
 if (debugUtil && debugUtil.debuglog) {
   debug = debugUtil.debuglog('stream');
@@ -19071,8 +19502,8 @@ if (debugUtil && debugUtil.debuglog) {
 }
 /*</replacement>*/
 
-var BufferList = __webpack_require__(127);
-var destroyImpl = __webpack_require__(54);
+var BufferList = __webpack_require__(128);
+var destroyImpl = __webpack_require__(56);
 var StringDecoder;
 
 util.inherits(Readable, Stream);
@@ -19092,7 +19523,7 @@ function prependListener(emitter, event, fn) {
 }
 
 function ReadableState(options, stream) {
-  Duplex = Duplex || __webpack_require__(14);
+  Duplex = Duplex || __webpack_require__(15);
 
   options = options || {};
 
@@ -19162,14 +19593,14 @@ function ReadableState(options, stream) {
   this.decoder = null;
   this.encoding = null;
   if (options.encoding) {
-    if (!StringDecoder) StringDecoder = __webpack_require__(56).StringDecoder;
+    if (!StringDecoder) StringDecoder = __webpack_require__(58).StringDecoder;
     this.decoder = new StringDecoder(options.encoding);
     this.encoding = options.encoding;
   }
 }
 
 function Readable(options) {
-  Duplex = Duplex || __webpack_require__(14);
+  Duplex = Duplex || __webpack_require__(15);
 
   if (!(this instanceof Readable)) return new Readable(options);
 
@@ -19318,7 +19749,7 @@ Readable.prototype.isPaused = function () {
 
 // backwards compatibility.
 Readable.prototype.setEncoding = function (enc) {
-  if (!StringDecoder) StringDecoder = __webpack_require__(56).StringDecoder;
+  if (!StringDecoder) StringDecoder = __webpack_require__(58).StringDecoder;
   this._readableState.decoder = new StringDecoder(enc);
   this._readableState.encoding = enc;
   return this;
@@ -20013,14 +20444,14 @@ function indexOf(xs, x) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(6), __webpack_require__(4)))
 
 /***/ }),
-/* 53 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(21).EventEmitter;
+module.exports = __webpack_require__(16).EventEmitter;
 
 
 /***/ }),
-/* 54 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20028,7 +20459,7 @@ module.exports = __webpack_require__(21).EventEmitter;
 
 /*<replacement>*/
 
-var pna = __webpack_require__(26);
+var pna = __webpack_require__(27);
 /*</replacement>*/
 
 // undocumented cb() API, needed for core, not for public API
@@ -20100,7 +20531,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 55 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20133,7 +20564,7 @@ module.exports = {
 
 /*<replacement>*/
 
-var pna = __webpack_require__(26);
+var pna = __webpack_require__(27);
 /*</replacement>*/
 
 module.exports = Writable;
@@ -20170,23 +20601,23 @@ var Duplex;
 Writable.WritableState = WritableState;
 
 /*<replacement>*/
-var util = __webpack_require__(18);
-util.inherits = __webpack_require__(19);
+var util = __webpack_require__(21);
+util.inherits = __webpack_require__(22);
 /*</replacement>*/
 
 /*<replacement>*/
 var internalUtil = {
-  deprecate: __webpack_require__(129)
+  deprecate: __webpack_require__(130)
 };
 /*</replacement>*/
 
 /*<replacement>*/
-var Stream = __webpack_require__(53);
+var Stream = __webpack_require__(55);
 /*</replacement>*/
 
 /*<replacement>*/
 
-var Buffer = __webpack_require__(27).Buffer;
+var Buffer = __webpack_require__(28).Buffer;
 var OurUint8Array = global.Uint8Array || function () {};
 function _uint8ArrayToBuffer(chunk) {
   return Buffer.from(chunk);
@@ -20197,14 +20628,14 @@ function _isUint8Array(obj) {
 
 /*</replacement>*/
 
-var destroyImpl = __webpack_require__(54);
+var destroyImpl = __webpack_require__(56);
 
 util.inherits(Writable, Stream);
 
 function nop() {}
 
 function WritableState(options, stream) {
-  Duplex = Duplex || __webpack_require__(14);
+  Duplex = Duplex || __webpack_require__(15);
 
   options = options || {};
 
@@ -20354,7 +20785,7 @@ if (typeof Symbol === 'function' && Symbol.hasInstance && typeof Function.protot
 }
 
 function Writable(options) {
-  Duplex = Duplex || __webpack_require__(14);
+  Duplex = Duplex || __webpack_require__(15);
 
   // Writable ctor is applied to Duplexes, too.
   // `realHasInstance` is necessary because using plain `instanceof`
@@ -20794,7 +21225,7 @@ Writable.prototype._destroy = function (err, cb) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(4), __webpack_require__(30).setImmediate, __webpack_require__(6)))
 
 /***/ }),
-/* 56 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20823,7 +21254,7 @@ Writable.prototype._destroy = function (err, cb) {
 
 /*<replacement>*/
 
-var Buffer = __webpack_require__(27).Buffer;
+var Buffer = __webpack_require__(28).Buffer;
 /*</replacement>*/
 
 var isEncoding = Buffer.isEncoding || function (encoding) {
@@ -21096,7 +21527,7 @@ function simpleEnd(buf) {
 }
 
 /***/ }),
-/* 57 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21167,11 +21598,11 @@ function simpleEnd(buf) {
 
 module.exports = Transform;
 
-var Duplex = __webpack_require__(14);
+var Duplex = __webpack_require__(15);
 
 /*<replacement>*/
-var util = __webpack_require__(18);
-util.inherits = __webpack_require__(19);
+var util = __webpack_require__(21);
+util.inherits = __webpack_require__(22);
 /*</replacement>*/
 
 util.inherits(Transform, Duplex);
@@ -21316,7 +21747,7 @@ function done(stream, er, data) {
 }
 
 /***/ }),
-/* 58 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21334,19 +21765,19 @@ module.exports = function bind(fn, thisArg) {
 
 
 /***/ }),
-/* 59 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var utils = __webpack_require__(3);
-var settle = __webpack_require__(146);
-var buildURL = __webpack_require__(148);
-var parseHeaders = __webpack_require__(149);
-var isURLSameOrigin = __webpack_require__(150);
-var createError = __webpack_require__(60);
-var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(151);
+var settle = __webpack_require__(147);
+var buildURL = __webpack_require__(149);
+var parseHeaders = __webpack_require__(150);
+var isURLSameOrigin = __webpack_require__(151);
+var createError = __webpack_require__(62);
+var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(152);
 
 module.exports = function xhrAdapter(config) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -21443,7 +21874,7 @@ module.exports = function xhrAdapter(config) {
     // This is only done if running in a standard browser environment.
     // Specifically not if we're in a web worker, or react-native.
     if (utils.isStandardBrowserEnv()) {
-      var cookies = __webpack_require__(152);
+      var cookies = __webpack_require__(153);
 
       // Add xsrf header
       var xsrfValue = (config.withCredentials || isURLSameOrigin(config.url)) && config.xsrfCookieName ?
@@ -21521,13 +21952,13 @@ module.exports = function xhrAdapter(config) {
 
 
 /***/ }),
-/* 60 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var enhanceError = __webpack_require__(147);
+var enhanceError = __webpack_require__(148);
 
 /**
  * Create an Error with the specified message, config, error code, request and response.
@@ -21546,7 +21977,7 @@ module.exports = function createError(message, config, code, request, response) 
 
 
 /***/ }),
-/* 61 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21558,7 +21989,7 @@ module.exports = function isCancel(value) {
 
 
 /***/ }),
-/* 62 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21584,7 +22015,7 @@ module.exports = Cancel;
 
 
 /***/ }),
-/* 63 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21632,7 +22063,7 @@ var FILE = exports.FILE = Object.freeze({
 var INCLUDE_TREASURE_OFFSETS = exports.INCLUDE_TREASURE_OFFSETS = true;
 
 /***/ }),
-/* 64 */
+/* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21642,253 +22073,24 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _upload = __webpack_require__(65);
+var _upload = __webpack_require__(41);
 
 var _upload2 = _interopRequireDefault(_upload);
 
-var _download = __webpack_require__(162);
+var _uploadProgress = __webpack_require__(162);
+
+var _uploadProgress2 = _interopRequireDefault(_uploadProgress);
+
+var _download = __webpack_require__(163);
 
 var _download2 = _interopRequireDefault(_download);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = { Upload: _upload2.default, Download: _download2.default };
+exports.default = { Upload: _upload2.default, UploadProgress: _uploadProgress2.default, Download: _download2.default };
 
 /***/ }),
-/* 65 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.EVENTS = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _events = __webpack_require__(21);
-
-var _datamapGenerator = __webpack_require__(29);
-
-var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
-
-var _fileChunkStream = __webpack_require__(125);
-
-var _fileChunkStream2 = _interopRequireDefault(_fileChunkStream);
-
-var _bufferSourceStream = __webpack_require__(131);
-
-var _bufferSourceStream2 = _interopRequireDefault(_bufferSourceStream);
-
-var _encryptStream = __webpack_require__(132);
-
-var _encryptStream2 = _interopRequireDefault(_encryptStream);
-
-var _uploadStream = __webpack_require__(140);
-
-var _uploadStream2 = _interopRequireDefault(_uploadStream);
-
-var _encryption = __webpack_require__(38);
-
-var _backend = __webpack_require__(28);
-
-var _fileProcessor = __webpack_require__(160);
-
-var _util = __webpack_require__(20);
-
-var _iota = __webpack_require__(161);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var CHUNK_BYTE_SIZE = 1024;
-var DEFAULT_OPTIONS = Object.freeze({
-  filename: "",
-  encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
-});
-
-var REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
-
-var EVENTS = exports.EVENTS = Object.freeze({
-  INVOICE: "invoice",
-  PAYMENT_PENDING: "payment-pending",
-  PAYMENT_CONFIRMED: "payment-confirmed",
-  // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
-  RETRIEVED: "retrieved",
-  UPLOAD_PROGRESS: "upload-progress",
-  FINISH: "finish",
-  ERROR: "error"
-});
-
-// TODO: Figure out which ivars are actually needed vs. just locally scoped.
-// Then convert all ivars to local consts
-
-var Upload = function (_EventEmitter) {
-  _inherits(Upload, _EventEmitter);
-
-  function Upload(filename, size, options) {
-    _classCallCheck(this, Upload);
-
-    var opts = Object.assign({}, DEFAULT_OPTIONS, options);
-    (0, _util.validateKeys)(opts, REQUIRED_OPTS);
-
-    var chunkCount = Math.ceil(size / CHUNK_BYTE_SIZE);
-    var totalChunks = chunkCount + 1;
-
-    var _this = _possibleConstructorReturn(this, (Upload.__proto__ || Object.getPrototypeOf(Upload)).call(this));
-
-    _this.startUpload = _this.startUpload.bind(_this);
-    _this.propagateError = _this.propagateError.bind(_this);
-
-    _this.alpha = opts.alpha;
-    _this.beta = opts.beta;
-    _this.epochs = opts.epochs;
-    _this.iotaProvider = opts.iotaProvider;
-    _this.options = opts;
-    _this.filename = filename;
-    _this.handle = (0, _encryption.createHandle)(filename);
-    _this.metadata = (0, _fileProcessor.createMetaData)(filename, chunkCount);
-    _this.genesisHash = (0, _encryption.genesisHash)(_this.handle);
-    _this.key = (0, _util.bytesFromHandle)(_this.handle);
-    _this.numberOfChunks = totalChunks;
-
-    // hack to stub brokers for testing.
-    var createUploadSessionFn = _this.options.createUploadSession || _backend.createUploadSession;
-
-    _this.uploadSession = createUploadSessionFn(size, _this.genesisHash, totalChunks, _this.alpha, _this.beta, _this.epochs).then(_this.startUpload.bind(_this)).catch(_this.propagateError.bind(_this));
-    return _this;
-  }
-
-  // File object (browser)
-
-
-  _createClass(Upload, [{
-    key: "startUpload",
-    value: function startUpload(session) {
-      var _this2 = this;
-
-      if (!!this.options.testEnv) {
-        // TODO: Actually implement these.
-        // Stubbing for now to work on integration.
-
-        this.emit(EVENTS.INVOICE, session.invoice);
-        this.emit(EVENTS.PAYMENT_PENDING);
-
-        // This is currently what the client expects, not sure if this
-        // payload makes sense to be emitted here...
-        // TODO: Better stubs and mocks.
-        this.emit(EVENTS.PAYMENT_CONFIRMED, {
-          filename: this.filename,
-          handle: this.handle,
-          numberOfChunks: this.numberOfChunks
-        });
-
-        this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
-
-        this.emit(EVENTS.FINISH);
-        return;
-      }
-
-      var sessIdA = session.alphaSessionId;
-      var sessIdB = session.betaSessionId;
-      var invoice = session.invoice || null;
-      var host = this.alpha;
-      var metadata = (0, _util.encryptMetadata)(this.metadata, this.key);
-      var _options = this.options,
-          sourceStream = _options.sourceStream,
-          sourceData = _options.sourceData,
-          sourceOptions = _options.sourceOptions;
-
-
-      this.emit(EVENTS.INVOICE, invoice);
-
-      // Wait for payment.
-      (0, _backend.confirmPendingPoll)(host, sessIdA).then(function () {
-        _this2.emit(EVENTS.PAYMENT_PENDING);
-        return (0, _backend.confirmPaidPoll)(host, sessIdA);
-      }).then(function () {
-        _this2.emit(EVENTS.PAYMENT_CONFIRMED, {
-          filename: _this2.filename,
-          handle: _this2.handle,
-          numberOfChunks: _this2.numberOfChunks
-        });
-
-        _this2.sourceStream = new sourceStream(sourceData, sourceOptions || {});
-        _this2.encryptStream = new _encryptStream2.default(_this2.handle);
-        _this2.uploadStream = new _uploadStream2.default(metadata, _this2.genesisHash, _this2.metadata.numberOfChunks, _this2.alpha, _this2.beta, sessIdA, sessIdB);
-
-        _this2.sourceStream.pipe(_this2.encryptStream).pipe(_this2.uploadStream).on("finish", function () {
-          var genHash = _datamapGenerator2.default.genesisHash(_this2.handle);
-          var datamap = _datamapGenerator2.default.generate(genHash, _this2.numberOfChunks - 1);
-
-          _this2.emit(EVENTS.RETRIEVED, {
-            target: _this2,
-            handle: _this2.handle,
-            numberOfChunks: _this2.numberOfChunks,
-            metadata: _this2.metadata
-          });
-
-          (0, _iota.pollIotaProgress)(datamap, _this2.iotaProvider, function (prog) {
-            _this2.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-          }).then(function () {
-            _this2.emit(EVENTS.FINISH, {
-              target: _this2,
-              handle: _this2.handle,
-              numberOfChunks: _this2.numberOfChunks,
-              metadata: _this2.metadata
-            });
-          });
-        });
-
-        _this2.sourceStream.on("error", _this2.propagateError);
-        _this2.encryptStream.on("error", _this2.propagateError);
-        _this2.uploadStream.on("error", _this2.propagateError);
-      }).catch(this.propagateError.bind(this));
-    }
-  }, {
-    key: "propagateError",
-    value: function propagateError(error) {
-      this.emit(EVENTS.ERROR, error);
-    }
-  }], [{
-    key: "fromFile",
-    value: function fromFile(file) {
-      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-      var source = { sourceData: file, sourceStream: _fileChunkStream2.default };
-      var opts = Object.assign(options, source);
-
-      return new Upload(file.name, file.size, opts);
-    }
-
-    // Uint8Array or node buffer
-
-  }, {
-    key: "fromData",
-    value: function fromData(buffer, filename) {
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-      var source = { sourceData: buffer, sourceStream: _bufferSourceStream2.default };
-      var opts = Object.assign(options, source);
-
-      return new Upload(filename, buffer.length, opts);
-    }
-  }]);
-
-  return Upload;
-}(_events.EventEmitter);
-
-exports.default = Upload;
-
-/***/ }),
-/* 66 */
+/* 67 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21901,15 +22103,15 @@ exports.generate = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-var _iota = __webpack_require__(67);
+var _iota = __webpack_require__(68);
 
 var _iota2 = _interopRequireDefault(_iota);
 
-var _encryption = __webpack_require__(99);
+var _encryption = __webpack_require__(100);
 
 var _encryption2 = _interopRequireDefault(_encryption);
 
-var _config = __webpack_require__(45);
+var _config = __webpack_require__(47);
 
 var _util = __webpack_require__(2);
 
@@ -22007,7 +22209,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 67 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22017,11 +22219,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _utils = __webpack_require__(15);
+var _utils = __webpack_require__(18);
 
 var _utils2 = _interopRequireDefault(_utils);
 
-var _index = __webpack_require__(45);
+var _index = __webpack_require__(47);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -22035,7 +22237,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 68 */
+/* 69 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -22228,7 +22430,7 @@ exports.default = {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(6), __webpack_require__(4)))
 
 /***/ }),
-/* 69 */
+/* 70 */
 /***/ (function(module, exports) {
 
 module.exports = function(module) {
@@ -22256,7 +22458,7 @@ module.exports = function(module) {
 
 
 /***/ }),
-/* 70 */
+/* 71 */
 /***/ (function(module, exports) {
 
 
@@ -22275,7 +22477,7 @@ module.exports = {
 
 
 /***/ }),
-/* 71 */
+/* 72 */
 /***/ (function(module, exports) {
 
 function webpackEmptyContext(req) {
@@ -22286,10 +22488,10 @@ function webpackEmptyContext(req) {
 webpackEmptyContext.keys = function() { return []; };
 webpackEmptyContext.resolve = webpackEmptyContext;
 module.exports = webpackEmptyContext;
-webpackEmptyContext.id = 71;
+webpackEmptyContext.id = 72;
 
 /***/ }),
-/* 72 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -22363,7 +22565,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 73 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -22510,13 +22712,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 74 */
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(43));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(45));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -22588,13 +22790,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 75 */
+/* 76 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(22), __webpack_require__(44));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(23), __webpack_require__(46));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -22669,13 +22871,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 76 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(22));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(23));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -22990,7 +23192,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 77 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -23255,7 +23457,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 78 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23398,7 +23600,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 79 */
+/* 80 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23474,7 +23676,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 80 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23530,7 +23732,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 81 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23644,7 +23846,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 82 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23696,7 +23898,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 83 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23734,7 +23936,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 84 */
+/* 85 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23781,7 +23983,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 85 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23823,7 +24025,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 86 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23861,7 +24063,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 87 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23904,7 +24106,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 88 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23932,7 +24134,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 89 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -23996,13 +24198,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 90 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(12), __webpack_require__(13), __webpack_require__(10), __webpack_require__(1));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(13), __webpack_require__(14), __webpack_require__(10), __webpack_require__(1));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -24226,13 +24428,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 91 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(12), __webpack_require__(13), __webpack_require__(10), __webpack_require__(1));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(13), __webpack_require__(14), __webpack_require__(10), __webpack_require__(1));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -24994,13 +25196,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 92 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(12), __webpack_require__(13), __webpack_require__(10), __webpack_require__(1));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(13), __webpack_require__(14), __webpack_require__(10), __webpack_require__(1));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -25131,13 +25333,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 93 */
+/* 94 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(12), __webpack_require__(13), __webpack_require__(10), __webpack_require__(1));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(13), __webpack_require__(14), __webpack_require__(10), __webpack_require__(1));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -25321,13 +25523,13 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 94 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(12), __webpack_require__(13), __webpack_require__(10), __webpack_require__(1));
+		module.exports = exports = factory(__webpack_require__(0), __webpack_require__(13), __webpack_require__(14), __webpack_require__(10), __webpack_require__(1));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -25509,7 +25711,7 @@ webpackEmptyContext.id = 71;
 }));
 
 /***/ }),
-/* 95 */
+/* 96 */
 /***/ (function(module, exports) {
 
 var INT_LENGTH = 12;
@@ -25807,12 +26009,12 @@ module.exports = {
 
 
 /***/ }),
-/* 96 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Curl = __webpack_require__(8);
 var Converter = __webpack_require__(5);
-var Bundle = __webpack_require__(24);
+var Bundle = __webpack_require__(25);
 var add = __webpack_require__(33);
 
 /**
@@ -26022,11 +26224,11 @@ module.exports = {
 
 
 /***/ }),
-/* 97 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ascii = __webpack_require__(35);
-var inputValidator = __webpack_require__(11);
+var inputValidator = __webpack_require__(12);
 
 /**
 *   extractJson takes a bundle as input and from the signatureMessageFragments extracts the correct JSON
@@ -26126,7 +26328,7 @@ module.exports = extractJson;
 
 
 /***/ }),
-/* 98 */
+/* 99 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_RESULT__;/*! bignumber.js v4.1.0 https://github.com/MikeMcl/bignumber.js/LICENCE */
@@ -28860,7 +29062,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/*! bignumber.js v4.1.0 https://github.com/Mik
 
 
 /***/ }),
-/* 99 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -28875,21 +29077,21 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // curl.init() during the unit tests
 
 
-var _jsSha = __webpack_require__(100);
+var _jsSha = __webpack_require__(101);
 
 var _util = __webpack_require__(2);
 
 var _util2 = _interopRequireDefault(_util);
 
-var _random = __webpack_require__(47);
+var _random = __webpack_require__(49);
 
 var _random2 = _interopRequireDefault(_random);
 
-var _sha = __webpack_require__(109);
+var _sha = __webpack_require__(110);
 
 var _sha2 = _interopRequireDefault(_sha);
 
-var _sha3 = __webpack_require__(48);
+var _sha3 = __webpack_require__(50);
 
 var _sha4 = _interopRequireDefault(_sha3);
 
@@ -28901,11 +29103,11 @@ var _asciiToTrytes = __webpack_require__(35);
 
 var _asciiToTrytes2 = _interopRequireDefault(_asciiToTrytes);
 
-var _startsWith = __webpack_require__(110);
+var _startsWith = __webpack_require__(111);
 
 var _startsWith2 = _interopRequireDefault(_startsWith);
 
-var _replace = __webpack_require__(124);
+var _replace = __webpack_require__(125);
 
 var _replace2 = _interopRequireDefault(_replace);
 
@@ -29106,7 +29308,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 100 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process, global) {var __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -29135,7 +29337,7 @@ exports.default = {
     root = self;
   }
   var COMMON_JS = !root.JS_SHA3_NO_COMMON_JS && typeof module === 'object' && module.exports;
-  var AMD = "function" === 'function' && __webpack_require__(101);
+  var AMD = "function" === 'function' && __webpack_require__(102);
   var ARRAY_BUFFER = !root.JS_SHA3_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
   var HEX_CHARS = '0123456789abcdef'.split('');
   var SHAKE_PADDING = [31, 7936, 2031616, 520093696];
@@ -29769,7 +29971,7 @@ exports.default = {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(4), __webpack_require__(6)))
 
 /***/ }),
-/* 101 */
+/* 102 */
 /***/ (function(module, exports) {
 
 /* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {/* globals __webpack_amd_options__ */
@@ -29778,7 +29980,7 @@ module.exports = __webpack_amd_options__;
 /* WEBPACK VAR INJECTION */}.call(this, {}))
 
 /***/ }),
-/* 102 */
+/* 103 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -29936,7 +30138,7 @@ function fromByteArray (uint8) {
 
 
 /***/ }),
-/* 103 */
+/* 104 */
 /***/ (function(module, exports) {
 
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -30026,7 +30228,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 
 
 /***/ }),
-/* 104 */
+/* 105 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(Buffer) {/**
@@ -30216,10 +30418,10 @@ function _encodeWithByteBuffer(input, alphabet) {
   return output;
 }
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(17).Buffer))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(20).Buffer))
 
 /***/ }),
-/* 105 */
+/* 106 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -30241,7 +30443,7 @@ function _encodeWithByteBuffer(input, alphabet) {
  */
 var forge = __webpack_require__(7);
 __webpack_require__(36);
-__webpack_require__(106);
+__webpack_require__(107);
 __webpack_require__(2);
 
 /* AES API */
@@ -31316,7 +31518,7 @@ function _createCipher(options) {
 
 
 /***/ }),
-/* 106 */
+/* 107 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -32309,7 +32511,7 @@ function from64To32(num) {
 
 
 /***/ }),
-/* 107 */
+/* 108 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process) {/**
@@ -32329,7 +32531,7 @@ __webpack_require__(2);
 var _crypto = null;
 if(forge.util.isNodejs && !forge.options.usePureJavaScript &&
   !process.versions['node-webkit']) {
-  _crypto = __webpack_require__(108);
+  _crypto = __webpack_require__(109);
 }
 
 /* PRNG API */
@@ -32736,13 +32938,13 @@ prng.create = function(plugin) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(4)))
 
 /***/ }),
-/* 108 */
+/* 109 */
 /***/ (function(module, exports) {
 
 /* (ignored) */
 
 /***/ }),
-/* 109 */
+/* 110 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -32758,7 +32960,7 @@ prng.create = function(plugin) {
  * Copyright (c) 2014-2015 Digital Bazaar, Inc.
  */
 var forge = __webpack_require__(7);
-__webpack_require__(25);
+__webpack_require__(26);
 __webpack_require__(2);
 
 var sha512 = module.exports = forge.sha512 = forge.sha512 || {};
@@ -33309,13 +33511,13 @@ function _update(s, w, bytes) {
 
 
 /***/ }),
-/* 110 */
+/* 111 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var baseClamp = __webpack_require__(111),
-    baseToString = __webpack_require__(49),
-    toInteger = __webpack_require__(120),
-    toString = __webpack_require__(51);
+var baseClamp = __webpack_require__(112),
+    baseToString = __webpack_require__(51),
+    toInteger = __webpack_require__(121),
+    toString = __webpack_require__(53);
 
 /**
  * Checks if `string` starts with the given target string.
@@ -33354,7 +33556,7 @@ module.exports = startsWith;
 
 
 /***/ }),
-/* 111 */
+/* 112 */
 /***/ (function(module, exports) {
 
 /**
@@ -33382,10 +33584,10 @@ module.exports = baseClamp;
 
 
 /***/ }),
-/* 112 */
+/* 113 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var freeGlobal = __webpack_require__(113);
+var freeGlobal = __webpack_require__(114);
 
 /** Detect free variable `self`. */
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
@@ -33397,7 +33599,7 @@ module.exports = root;
 
 
 /***/ }),
-/* 113 */
+/* 114 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {/** Detect free variable `global` from Node.js. */
@@ -33408,7 +33610,7 @@ module.exports = freeGlobal;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(6)))
 
 /***/ }),
-/* 114 */
+/* 115 */
 /***/ (function(module, exports) {
 
 /**
@@ -33435,7 +33637,7 @@ module.exports = arrayMap;
 
 
 /***/ }),
-/* 115 */
+/* 116 */
 /***/ (function(module, exports) {
 
 /**
@@ -33467,12 +33669,12 @@ module.exports = isArray;
 
 
 /***/ }),
-/* 116 */
+/* 117 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(37),
-    getRawTag = __webpack_require__(117),
-    objectToString = __webpack_require__(118);
+    getRawTag = __webpack_require__(118),
+    objectToString = __webpack_require__(119);
 
 /** `Object#toString` result references. */
 var nullTag = '[object Null]',
@@ -33501,7 +33703,7 @@ module.exports = baseGetTag;
 
 
 /***/ }),
-/* 117 */
+/* 118 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(37);
@@ -33553,7 +33755,7 @@ module.exports = getRawTag;
 
 
 /***/ }),
-/* 118 */
+/* 119 */
 /***/ (function(module, exports) {
 
 /** Used for built-in method references. */
@@ -33581,7 +33783,7 @@ module.exports = objectToString;
 
 
 /***/ }),
-/* 119 */
+/* 120 */
 /***/ (function(module, exports) {
 
 /**
@@ -33616,10 +33818,10 @@ module.exports = isObjectLike;
 
 
 /***/ }),
-/* 120 */
+/* 121 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var toFinite = __webpack_require__(121);
+var toFinite = __webpack_require__(122);
 
 /**
  * Converts `value` to an integer.
@@ -33658,10 +33860,10 @@ module.exports = toInteger;
 
 
 /***/ }),
-/* 121 */
+/* 122 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var toNumber = __webpack_require__(122);
+var toNumber = __webpack_require__(123);
 
 /** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0,
@@ -33706,11 +33908,11 @@ module.exports = toFinite;
 
 
 /***/ }),
-/* 122 */
+/* 123 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var isObject = __webpack_require__(123),
-    isSymbol = __webpack_require__(50);
+var isObject = __webpack_require__(124),
+    isSymbol = __webpack_require__(52);
 
 /** Used as references for various `Number` constants. */
 var NAN = 0 / 0;
@@ -33778,7 +33980,7 @@ module.exports = toNumber;
 
 
 /***/ }),
-/* 123 */
+/* 124 */
 /***/ (function(module, exports) {
 
 /**
@@ -33815,10 +34017,10 @@ module.exports = isObject;
 
 
 /***/ }),
-/* 124 */
+/* 125 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var toString = __webpack_require__(51);
+var toString = __webpack_require__(53);
 
 /**
  * Replaces matches for `pattern` in `string` with `replacement`.
@@ -33850,7 +34052,7 @@ module.exports = replace;
 
 
 /***/ }),
-/* 125 */
+/* 126 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -34044,13 +34246,13 @@ var FileChunkStream = function (_Readable) {
 exports.default = FileChunkStream;
 
 /***/ }),
-/* 126 */
+/* 127 */
 /***/ (function(module, exports) {
 
 /* (ignored) */
 
 /***/ }),
-/* 127 */
+/* 128 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -34058,8 +34260,8 @@ exports.default = FileChunkStream;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Buffer = __webpack_require__(27).Buffer;
-var util = __webpack_require__(128);
+var Buffer = __webpack_require__(28).Buffer;
+var util = __webpack_require__(129);
 
 function copyBuffer(src, target, offset) {
   src.copy(target, offset);
@@ -34135,13 +34337,13 @@ if (util && util.inspect && util.inspect.custom) {
 }
 
 /***/ }),
-/* 128 */
+/* 129 */
 /***/ (function(module, exports) {
 
 /* (ignored) */
 
 /***/ }),
-/* 129 */
+/* 130 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {
@@ -34215,7 +34417,7 @@ function config (name) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(6)))
 
 /***/ }),
-/* 130 */
+/* 131 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -34248,11 +34450,11 @@ function config (name) {
 
 module.exports = PassThrough;
 
-var Transform = __webpack_require__(57);
+var Transform = __webpack_require__(59);
 
 /*<replacement>*/
-var util = __webpack_require__(18);
-util.inherits = __webpack_require__(19);
+var util = __webpack_require__(21);
+util.inherits = __webpack_require__(22);
 /*</replacement>*/
 
 util.inherits(PassThrough, Transform);
@@ -34268,7 +34470,7 @@ PassThrough.prototype._transform = function (chunk, encoding, cb) {
 };
 
 /***/ }),
-/* 131 */
+/* 132 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -34399,7 +34601,7 @@ var BufferSourceStream = function (_Readable) {
 exports.default = BufferSourceStream;
 
 /***/ }),
-/* 132 */
+/* 133 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -34413,11 +34615,11 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _readableStream = __webpack_require__(9);
 
-var _datamapGenerator = __webpack_require__(29);
+var _datamapGenerator = __webpack_require__(17);
 
 var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
 
-var _util = __webpack_require__(20);
+var _util = __webpack_require__(11);
 
 var _encryption = __webpack_require__(38);
 
@@ -34467,13 +34669,13 @@ var EncryptStream = function (_Transform) {
 exports.default = EncryptStream;
 
 /***/ }),
-/* 133 */
+/* 134 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var utils = __webpack_require__(15);
-var makeRequest = __webpack_require__(40);
-var api = __webpack_require__(134);
-var Multisig = __webpack_require__(137);
+var utils = __webpack_require__(18);
+var makeRequest = __webpack_require__(42);
+var api = __webpack_require__(135);
+var Multisig = __webpack_require__(138);
 
 
 function IOTA(settings) {
@@ -34490,7 +34692,7 @@ function IOTA(settings) {
 IOTA.prototype.setSettings = function(settings) {
     // IF NO SETTINGS, SET DEFAULT TO localhost:14265
     settings = settings || {};
-    this.version = __webpack_require__(139).version;
+    this.version = __webpack_require__(140).version;
     this.host = settings.host || "http://localhost";
     this.port = settings.port || 14265;
     this.provider = settings.provider || this.host.replace(/\/$/, '') + ":" + this.port;
@@ -34508,7 +34710,7 @@ IOTA.prototype.setSettings = function(settings) {
     // this.mam
     // this.flash
     this.utils = utils;
-    this.valid = __webpack_require__(11);
+    this.valid = __webpack_require__(12);
     this.multisig = new Multisig(this._makeRequest);
 };
 
@@ -34527,18 +34729,18 @@ module.exports = IOTA;
 
 
 /***/ }),
-/* 134 */
+/* 135 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var apiCommands     =   __webpack_require__(135)
+var apiCommands     =   __webpack_require__(136)
 var errors          =   __webpack_require__(34);
-var inputValidator  =   __webpack_require__(11);
-var HMAC            =   __webpack_require__(136);
+var inputValidator  =   __webpack_require__(12);
+var HMAC            =   __webpack_require__(137);
 var Converter       =   __webpack_require__(5);
-var Signing         =   __webpack_require__(23);
-var Bundle          =   __webpack_require__(24);
-var Utils           =   __webpack_require__(15);
-var async           =   __webpack_require__(41);
+var Signing         =   __webpack_require__(24);
+var Bundle          =   __webpack_require__(25);
+var Utils           =   __webpack_require__(18);
+var async           =   __webpack_require__(43);
 
 'use strict';
 var nullHashTrytes = (new Array(244).join('9'));
@@ -36530,7 +36732,7 @@ module.exports = api
 
 
 /***/ }),
-/* 135 */
+/* 136 */
 /***/ (function(module, exports) {
 
 /**
@@ -36809,7 +37011,7 @@ module.exports = {
 
 
 /***/ }),
-/* 136 */
+/* 137 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Curl = __webpack_require__(8);
@@ -36841,18 +37043,18 @@ module.exports = hmac;
 
 
 /***/ }),
-/* 137 */
+/* 138 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Signing         =  __webpack_require__(23);
+var Signing         =  __webpack_require__(24);
 var Converter       =  __webpack_require__(5);
-var Kerl            =  __webpack_require__(16);
+var Kerl            =  __webpack_require__(19);
 var Curl            =  __webpack_require__(8);
-var Bundle          =  __webpack_require__(24);
-var Utils           =  __webpack_require__(15);
-var inputValidator  =  __webpack_require__(11);
+var Bundle          =  __webpack_require__(25);
+var Utils           =  __webpack_require__(18);
+var inputValidator  =  __webpack_require__(12);
 var errors          =  __webpack_require__(34);
-var Address         =  __webpack_require__(138);
+var Address         =  __webpack_require__(139);
 
 function Multisig(provider) {
 
@@ -37194,15 +37396,15 @@ module.exports = Multisig;
 
 
 /***/ }),
-/* 138 */
+/* 139 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Converter      =  __webpack_require__(5);
 var Curl           =  __webpack_require__(8);
-var Kerl           =  __webpack_require__(16);
-var Signing        =  __webpack_require__(23);
-var Utils          =  __webpack_require__(15);
-var inputValidator =  __webpack_require__(11);
+var Kerl           =  __webpack_require__(19);
+var Signing        =  __webpack_require__(24);
+var Utils          =  __webpack_require__(18);
+var inputValidator =  __webpack_require__(12);
 
 
 /**
@@ -37285,13 +37487,13 @@ module.exports = Address;
 
 
 /***/ }),
-/* 139 */
+/* 140 */
 /***/ (function(module) {
 
 module.exports = {"name":"iota.lib.js","version":"0.4.7","description":"Javascript Library for IOTA","main":"./lib/iota.js","scripts":{"build":"gulp","test":"mocha"},"author":{"name":"Dominik Schiener (IOTA Foundation)","website":"https://iota.org"},"keywords":["iota","tangle","library","browser","javascript","nodejs","API"],"license":"MIT","bugs":{"url":"https://github.com/iotaledger/iota.lib.js/issues"},"repository":{"type":"git","url":"https://github.com/iotaledger/iota.lib.js.git"},"dependencies":{"async":"^2.5.0","bignumber.js":"^4.1.0","crypto-js":"^3.1.9-1","xmlhttprequest":"^1.8.0"},"devDependencies":{"bower":">=1.8.0","browserify":">=14.1.0","chai":"^4.0.2","del":"^3.0.0","gulp":"^3.9.1","gulp-jshint":"^2.0.2","gulp-nsp":">=2.4.2","gulp-rename":">=1.2.2","gulp-replace":"^0.6.1","gulp-uglify":"^3.0.0","jshint":"^2.9.4","mocha":"^3.2.0","vinyl-buffer":"^1.0.0","vinyl-source-stream":"^1.1.0"}};
 
 /***/ }),
-/* 140 */
+/* 141 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37305,7 +37507,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _readableStream = __webpack_require__(9);
 
-var _backend = __webpack_require__(28);
+var _backend = __webpack_require__(29);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -37503,21 +37705,21 @@ exports.default = UploadStream;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(4)))
 
 /***/ }),
-/* 141 */
+/* 142 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(142);
+module.exports = __webpack_require__(143);
 
 /***/ }),
-/* 142 */
+/* 143 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var utils = __webpack_require__(3);
-var bind = __webpack_require__(58);
-var Axios = __webpack_require__(144);
+var bind = __webpack_require__(60);
+var Axios = __webpack_require__(145);
 var defaults = __webpack_require__(39);
 
 /**
@@ -37551,15 +37753,15 @@ axios.create = function create(instanceConfig) {
 };
 
 // Expose Cancel & CancelToken
-axios.Cancel = __webpack_require__(62);
-axios.CancelToken = __webpack_require__(158);
-axios.isCancel = __webpack_require__(61);
+axios.Cancel = __webpack_require__(64);
+axios.CancelToken = __webpack_require__(159);
+axios.isCancel = __webpack_require__(63);
 
 // Expose all/spread
 axios.all = function all(promises) {
   return Promise.all(promises);
 };
-axios.spread = __webpack_require__(159);
+axios.spread = __webpack_require__(160);
 
 module.exports = axios;
 
@@ -37568,7 +37770,7 @@ module.exports.default = axios;
 
 
 /***/ }),
-/* 143 */
+/* 144 */
 /***/ (function(module, exports) {
 
 /*!
@@ -37595,7 +37797,7 @@ function isSlowBuffer (obj) {
 
 
 /***/ }),
-/* 144 */
+/* 145 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37603,8 +37805,8 @@ function isSlowBuffer (obj) {
 
 var defaults = __webpack_require__(39);
 var utils = __webpack_require__(3);
-var InterceptorManager = __webpack_require__(153);
-var dispatchRequest = __webpack_require__(154);
+var InterceptorManager = __webpack_require__(154);
+var dispatchRequest = __webpack_require__(155);
 
 /**
  * Create a new instance of Axios
@@ -37681,7 +37883,7 @@ module.exports = Axios;
 
 
 /***/ }),
-/* 145 */
+/* 146 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37700,13 +37902,13 @@ module.exports = function normalizeHeaderName(headers, normalizedName) {
 
 
 /***/ }),
-/* 146 */
+/* 147 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var createError = __webpack_require__(60);
+var createError = __webpack_require__(62);
 
 /**
  * Resolve or reject a Promise based on response status.
@@ -37733,7 +37935,7 @@ module.exports = function settle(resolve, reject, response) {
 
 
 /***/ }),
-/* 147 */
+/* 148 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37761,7 +37963,7 @@ module.exports = function enhanceError(error, config, code, request, response) {
 
 
 /***/ }),
-/* 148 */
+/* 149 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37834,7 +38036,7 @@ module.exports = function buildURL(url, params, paramsSerializer) {
 
 
 /***/ }),
-/* 149 */
+/* 150 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37894,7 +38096,7 @@ module.exports = function parseHeaders(headers) {
 
 
 /***/ }),
-/* 150 */
+/* 151 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37969,7 +38171,7 @@ module.exports = (
 
 
 /***/ }),
-/* 151 */
+/* 152 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38012,7 +38214,7 @@ module.exports = btoa;
 
 
 /***/ }),
-/* 152 */
+/* 153 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38072,7 +38274,7 @@ module.exports = (
 
 
 /***/ }),
-/* 153 */
+/* 154 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38131,18 +38333,18 @@ module.exports = InterceptorManager;
 
 
 /***/ }),
-/* 154 */
+/* 155 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var utils = __webpack_require__(3);
-var transformData = __webpack_require__(155);
-var isCancel = __webpack_require__(61);
+var transformData = __webpack_require__(156);
+var isCancel = __webpack_require__(63);
 var defaults = __webpack_require__(39);
-var isAbsoluteURL = __webpack_require__(156);
-var combineURLs = __webpack_require__(157);
+var isAbsoluteURL = __webpack_require__(157);
+var combineURLs = __webpack_require__(158);
 
 /**
  * Throws a `Cancel` if cancellation has been requested.
@@ -38224,7 +38426,7 @@ module.exports = function dispatchRequest(config) {
 
 
 /***/ }),
-/* 155 */
+/* 156 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38251,7 +38453,7 @@ module.exports = function transformData(data, headers, fns) {
 
 
 /***/ }),
-/* 156 */
+/* 157 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38272,7 +38474,7 @@ module.exports = function isAbsoluteURL(url) {
 
 
 /***/ }),
-/* 157 */
+/* 158 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38293,13 +38495,13 @@ module.exports = function combineURLs(baseURL, relativeURL) {
 
 
 /***/ }),
-/* 158 */
+/* 159 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var Cancel = __webpack_require__(62);
+var Cancel = __webpack_require__(64);
 
 /**
  * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -38357,7 +38559,7 @@ module.exports = CancelToken;
 
 
 /***/ }),
-/* 159 */
+/* 160 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38391,7 +38593,7 @@ module.exports = function spread(callback) {
 
 
 /***/ }),
-/* 160 */
+/* 161 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38414,7 +38616,7 @@ function createMetaData(fileName, numberOfChunks) {
 }
 
 /***/ }),
-/* 161 */
+/* 162 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38424,131 +38626,97 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var clamp = function clamp(num, min, max) {
-  return Math.min(Math.max(num, min), max);
-};
+var _events = __webpack_require__(16);
 
-var selectPollingIndexes = function selectPollingIndexes(addresses, numPollingAddresses, bundleSize) {
-  // What this if is checking for is basically medium-sized uploads
-  // which would have been better off with the old random index selection.
-  // For those uploads, pick indexes the old way.
-  if (addresses.length < (bundleSize + bundleSize / 2) / 2 * numPollingAddresses) {
-    var indexArray = [0];
-    while (addresses.length - 1 > indexArray[indexArray.length - 1]) {
-      indexArray = indexArray.concat(Math.min.apply(Math, [indexArray[indexArray.length - 1] + Math.floor(Math.random() * (bundleSize / 2)) + bundleSize / 2, addresses.length - 1]));
-    }
-    if (indexArray.length === 2) {
-      //make sure there's always at least 3 addresses
-      indexArray.splice(1, 0, Math.floor(addresses.length / 2));
-    }
-    return indexArray;
-  } else {
-    var offset = addresses.length / (numPollingAddresses - 1);
+var _datamapGenerator = __webpack_require__(17);
 
-    var indexes = [];
-    for (var i = 0; i <= numPollingAddresses - 2; i++) {
-      indexes.push(Math.floor(i * offset));
-    }
-    indexes.push(addresses.length - 1);
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
 
-    return indexes;
+var _iota = __webpack_require__(40);
+
+var _upload = __webpack_require__(41);
+
+var _util = __webpack_require__(11);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var REQUIRED_OPTS = ["iotaProvider"];
+var DEFAULT_OPTIONS = Object.freeze({});
+
+var UploadProgress = function (_EventEmitter) {
+  _inherits(UploadProgress, _EventEmitter);
+
+  function UploadProgress(handle, options) {
+    _classCallCheck(this, UploadProgress);
+
+    var _this = _possibleConstructorReturn(this, (UploadProgress.__proto__ || Object.getPrototypeOf(UploadProgress)).call(this));
+
+    var opts = Object.assign({}, DEFAULT_OPTIONS, options);
+    (0, _util.validateKeys)(opts, REQUIRED_OPTS);
+
+    _this.handle = handle;
+    _this.options = opts;
+    _this.iotaProviders = [opts.iotaProvider];
+    _this.chunks = 0;
+
+    (0, _iota.getMetadata)(_this.handle, _this.iotaProviders).then(function (_ref) {
+      var metadata = _ref.metadata,
+          provider = _ref.provider;
+
+      _this.numberOfChunks = metadata.numberOfChunks;
+      _this.iotaProvider = provider;
+      _this.pollUploadProgress();
+    }).catch(function (err) {
+      _this.emit("error", err);
+    });
+    return _this;
   }
-};
 
-/**
- * IOTA Polling (Copied from webinterface)
- */
+  _createClass(UploadProgress, [{
+    key: "pollUploadProgress",
+    value: function pollUploadProgress() {
+      var _this2 = this;
 
-var skinnyQueryTransactions = function skinnyQueryTransactions(iotaProvider, addresses) {
-  return new Promise(function (resolve, reject) {
-    iotaProvider.api.findTransactions({ addresses: addresses }, function (error, transactionHashes) {
-      if (error) {
-        console.log("IOTA ERROR: ", error);
-      }
-      resolve(transactionHashes);
-    });
-  });
-};
+      var genesisHash = _datamapGenerator2.default.genesisHash(this.handle);
+      var datamap = _datamapGenerator2.default.generate(genesisHash, this.numberOfChunks - 1);
 
-var checkUploadPercentage = function checkUploadPercentage(itoaProvider, addresses, indexes) {
-  return new Promise(function (resolve, reject) {
-    var promises = [];
+      // HACK! Cleanup API so all functions expect either an array or 1 provider.
+      var iotaProvider = this.iotaProvider || this.iotaProviders[0];
 
-    promises.push(new Promise(function (resolve, reject) {
-      skinnyQueryTransactions(itoaProvider, [addresses[indexes[0]]]).then(function (transactions) {
-        resolve({ removeIndex: transactions.length > 0 });
-      });
-    }));
-
-    if (indexes.length > 1) {
-      promises.push(new Promise(function (resolve, reject) {
-        skinnyQueryTransactions(itoaProvider, [addresses[indexes[indexes.length - 1]]]).then(function (transactions) {
-          resolve({ removeIndex: transactions.length > 0 });
+      (0, _iota.pollIotaProgress)(datamap, iotaProvider, function (prog) {
+        _this2.emit(_upload.EVENTS.UPLOAD_PROGRESS, { progress: prog });
+      }).then(function () {
+        _this2.emit(_upload.EVENTS.FINISH, {
+          target: _this2,
+          handle: _this2.handle,
+          numberOfChunks: _this2.numberOfChunks,
+          metadata: _this2.metadata
         });
-      }));
-    }
-
-    return Promise.all(promises).then(function (indexResults) {
-      var _indexResults = _slicedToArray(indexResults, 2),
-          front = _indexResults[0],
-          back = _indexResults[1];
-
-      if (front.removeIndex) indexes.shift();
-      if (back && back.removeIndex) indexes.pop();
-
-      return resolve(indexes);
-    });
-  });
-};
-
-/**
- * Public
- */
-
-// TODO: Make these configurable?
-var MIN_PROG = 0.0;
-var POLL_INTERVAL = 4000;
-var BUNDLE_SIZE = 100;
-var NUM_POLLING_ADDRESSES = 301;
-
-// This is copied and pasted from backend.js
-var setIntervalAndExecute = function setIntervalAndExecute(fn, t) {
-  fn();
-  return setInterval(fn, t);
-};
-
-var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(datamap, iotaProvider, progCb) {
-  return new Promise(function (resolve, reject) {
-    var addresses = Object.values(datamap);
-    var indexes = selectPollingIndexes(addresses, NUM_POLLING_ADDRESSES, BUNDLE_SIZE);
-    var indexesLen = indexes.length;
-
-    var poll = setIntervalAndExecute(function () {
-      checkUploadPercentage(iotaProvider, addresses, indexes).then(function (idxs) {
-        // Uh oh, race condition.
-        indexes = idxs;
-
-        // Emit progress.
-        var prog = clamp(1 - idxs.length / indexesLen, MIN_PROG, 1.0) * 100;
-        progCb(prog);
-
-        // Include a small epsilon for floating point errors.
-        if (prog >= 99.0) {
-          clearInterval(poll);
-          return resolve();
-        }
-      }).catch(function (err) {
-        clearInterval(poll);
-        return reject(err);
       });
-    }, POLL_INTERVAL);
-  });
-};
+    }
+  }], [{
+    key: "streamUploadProgress",
+    value: function streamUploadProgress(handle, opts) {
+      console.log("Check upload progress on :", handle);
+      return new UploadProgress(handle, opts);
+    }
+  }]);
+
+  return UploadProgress;
+}(_events.EventEmitter);
+
+exports.default = UploadProgress;
 
 /***/ }),
-/* 162 */
+/* 163 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38561,31 +38729,31 @@ exports.EVENTS = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _events = __webpack_require__(21);
+var _events = __webpack_require__(16);
 
-var _decryptStream = __webpack_require__(163);
-
-var _decryptStream2 = _interopRequireDefault(_decryptStream);
-
-var _downloadStream = __webpack_require__(164);
-
-var _downloadStream2 = _interopRequireDefault(_downloadStream);
-
-var _filePreviewStream = __webpack_require__(165);
-
-var _filePreviewStream2 = _interopRequireDefault(_filePreviewStream);
-
-var _bufferTargetStream = __webpack_require__(170);
-
-var _bufferTargetStream2 = _interopRequireDefault(_bufferTargetStream);
-
-var _datamapGenerator = __webpack_require__(29);
+var _datamapGenerator = __webpack_require__(17);
 
 var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
 
-var _backend = __webpack_require__(28);
+var _decryptStream = __webpack_require__(164);
 
-var _util = __webpack_require__(20);
+var _decryptStream2 = _interopRequireDefault(_decryptStream);
+
+var _downloadStream = __webpack_require__(165);
+
+var _downloadStream2 = _interopRequireDefault(_downloadStream);
+
+var _filePreviewStream = __webpack_require__(166);
+
+var _filePreviewStream2 = _interopRequireDefault(_filePreviewStream);
+
+var _bufferTargetStream = __webpack_require__(171);
+
+var _bufferTargetStream2 = _interopRequireDefault(_bufferTargetStream);
+
+var _iota = __webpack_require__(40);
+
+var _util = __webpack_require__(11);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -38622,52 +38790,23 @@ var Download = function (_EventEmitter) {
     _this.genesisHash = _datamapGenerator2.default.genesisHash(handle);
     _this.key = (0, _util.bytesFromHandle)(handle);
 
-    _this.getMetadata(opts.iotaProviders).then(_this.startDownload).catch(_this.propagateError);
+    (0, _iota.getMetadata)(handle, opts.iotaProviders).then(function (_ref) {
+      var metadata = _ref.metadata,
+          provider = _ref.provider;
+
+      _this.iotaProvider = provider;
+      _this.metadata = metadata;
+      _this.emit("metadata", metadata);
+
+      _this.startDownload(metadata);
+    }).catch(_this.propagateError);
     return _this;
   }
 
   _createClass(Download, [{
-    key: "getMetadata",
-    value: function getMetadata(iotaProviders) {
-      var _this2 = this;
-
-      var queries = Promise.all(iotaProviders.map(function (provider) {
-        return new Promise(function (resolve, reject) {
-          (0, _backend.queryGeneratedSignatures)(provider, _this2.genesisHash, 1).then(function (signatures) {
-            return resolve({ provider: provider, signatures: signatures });
-          }, reject);
-        });
-      }));
-
-      return queries.then(function (result) {
-        var _result$find = result.find(function (res) {
-          return !!res.signatures.data[0];
-        }),
-            provider = _result$find.provider,
-            signatures = _result$find.signatures;
-
-        var signature = signatures ? signatures.data[0] : null;
-
-        if (signature === null) {
-          throw new Error("File does not exist.");
-        }
-
-        var _decryptMetadata = (0, _util.decryptMetadata)(_this2.key, signature),
-            version = _decryptMetadata.version,
-            metadata = _decryptMetadata.metadata;
-
-        _this2.iotaProvider = provider;
-        _this2.metadata = metadata;
-        _this2.emit("metadata", metadata);
-        return Promise.resolve(metadata);
-      }).catch(function (error) {
-        throw error;
-      });
-    }
-  }, {
     key: "startDownload",
     value: function startDownload(metadata) {
-      var _this3 = this;
+      var _this2 = this;
 
       var _options = this.options,
           targetStream = _options.targetStream,
@@ -38681,15 +38820,15 @@ var Download = function (_EventEmitter) {
       this.targetStream = new targetStream(metadata, targetOptions || {});
 
       this.downloadStream.pipe(this.decryptStream).pipe(this.targetStream).on("finish", function () {
-        _this3.emit(EVENTS.FINISH, {
-          target: _this3,
-          metadata: _this3.metadata,
-          result: _this3.targetStream.result
+        _this2.emit(EVENTS.FINISH, {
+          target: _this2,
+          metadata: _this2.metadata,
+          result: _this2.targetStream.result
         });
       });
 
       this.downloadStream.on("progress", function (progress) {
-        _this3.emit(EVENTS.DOWNLOAD_PROGRESS, { progress: progress });
+        _this2.emit(EVENTS.DOWNLOAD_PROGRESS, { progress: progress });
       });
 
       this.downloadStream.on("error", this.propagateError);
@@ -38729,7 +38868,7 @@ var Download = function (_EventEmitter) {
 exports.default = Download;
 
 /***/ }),
-/* 163 */
+/* 164 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38747,7 +38886,7 @@ var _util2 = _interopRequireDefault(_util);
 
 var _readableStream = __webpack_require__(9);
 
-var _util3 = __webpack_require__(20);
+var _util3 = __webpack_require__(11);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -38760,6 +38899,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Forge = { util: _util2.default };
 
 var ByteBuffer = Forge.util.ByteBuffer;
+
 var DEFAULT_OPTIONS = Object.freeze({
   binaryMode: false,
   objectMode: true
@@ -38814,7 +38954,7 @@ var DecryptStream = function (_Transform) {
 exports.default = DecryptStream;
 
 /***/ }),
-/* 164 */
+/* 165 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -38828,11 +38968,11 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _readableStream = __webpack_require__(9);
 
-var _util = __webpack_require__(20);
+var _util = __webpack_require__(11);
 
-var _backend = __webpack_require__(28);
+var _backend = __webpack_require__(29);
 
-var _config = __webpack_require__(63);
+var _config = __webpack_require__(65);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -39001,7 +39141,7 @@ var DownloadStream = function (_Readable) {
 exports.default = DownloadStream;
 
 /***/ }),
-/* 165 */
+/* 166 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -39015,7 +39155,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _readableStream = __webpack_require__(9);
 
-var _mime = __webpack_require__(166);
+var _mime = __webpack_require__(167);
 
 var _mime2 = _interopRequireDefault(_mime);
 
@@ -39067,18 +39207,18 @@ var FilePreviewStream = function (_Writable) {
 exports.default = FilePreviewStream;
 
 /***/ }),
-/* 166 */
+/* 167 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var Mime = __webpack_require__(167);
-module.exports = new Mime(__webpack_require__(168), __webpack_require__(169));
+var Mime = __webpack_require__(168);
+module.exports = new Mime(__webpack_require__(169), __webpack_require__(170));
 
 
 /***/ }),
-/* 167 */
+/* 168 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -39174,19 +39314,19 @@ module.exports = Mime;
 
 
 /***/ }),
-/* 168 */
+/* 169 */
 /***/ (function(module) {
 
 module.exports = {"application/andrew-inset":["ez"],"application/applixware":["aw"],"application/atom+xml":["atom"],"application/atomcat+xml":["atomcat"],"application/atomsvc+xml":["atomsvc"],"application/bdoc":["bdoc"],"application/ccxml+xml":["ccxml"],"application/cdmi-capability":["cdmia"],"application/cdmi-container":["cdmic"],"application/cdmi-domain":["cdmid"],"application/cdmi-object":["cdmio"],"application/cdmi-queue":["cdmiq"],"application/cu-seeme":["cu"],"application/dash+xml":["mpd"],"application/davmount+xml":["davmount"],"application/docbook+xml":["dbk"],"application/dssc+der":["dssc"],"application/dssc+xml":["xdssc"],"application/ecmascript":["ecma"],"application/emma+xml":["emma"],"application/epub+zip":["epub"],"application/exi":["exi"],"application/font-tdpfr":["pfr"],"application/font-woff":["woff"],"application/geo+json":["geojson"],"application/gml+xml":["gml"],"application/gpx+xml":["gpx"],"application/gxf":["gxf"],"application/gzip":["gz"],"application/hjson":["hjson"],"application/hyperstudio":["stk"],"application/inkml+xml":["ink","inkml"],"application/ipfix":["ipfix"],"application/java-archive":["jar","war","ear"],"application/java-serialized-object":["ser"],"application/java-vm":["class"],"application/javascript":["js","mjs"],"application/json":["json","map"],"application/json5":["json5"],"application/jsonml+json":["jsonml"],"application/ld+json":["jsonld"],"application/lost+xml":["lostxml"],"application/mac-binhex40":["hqx"],"application/mac-compactpro":["cpt"],"application/mads+xml":["mads"],"application/manifest+json":["webmanifest"],"application/marc":["mrc"],"application/marcxml+xml":["mrcx"],"application/mathematica":["ma","nb","mb"],"application/mathml+xml":["mathml"],"application/mbox":["mbox"],"application/mediaservercontrol+xml":["mscml"],"application/metalink+xml":["metalink"],"application/metalink4+xml":["meta4"],"application/mets+xml":["mets"],"application/mods+xml":["mods"],"application/mp21":["m21","mp21"],"application/mp4":["mp4s","m4p"],"application/msword":["doc","dot"],"application/mxf":["mxf"],"application/octet-stream":["bin","dms","lrf","mar","so","dist","distz","pkg","bpk","dump","elc","deploy","exe","dll","deb","dmg","iso","img","msi","msp","msm","buffer"],"application/oda":["oda"],"application/oebps-package+xml":["opf"],"application/ogg":["ogx"],"application/omdoc+xml":["omdoc"],"application/onenote":["onetoc","onetoc2","onetmp","onepkg"],"application/oxps":["oxps"],"application/patch-ops-error+xml":["xer"],"application/pdf":["pdf"],"application/pgp-encrypted":["pgp"],"application/pgp-signature":["asc","sig"],"application/pics-rules":["prf"],"application/pkcs10":["p10"],"application/pkcs7-mime":["p7m","p7c"],"application/pkcs7-signature":["p7s"],"application/pkcs8":["p8"],"application/pkix-attr-cert":["ac"],"application/pkix-cert":["cer"],"application/pkix-crl":["crl"],"application/pkix-pkipath":["pkipath"],"application/pkixcmp":["pki"],"application/pls+xml":["pls"],"application/postscript":["ai","eps","ps"],"application/pskc+xml":["pskcxml"],"application/raml+yaml":["raml"],"application/rdf+xml":["rdf"],"application/reginfo+xml":["rif"],"application/relax-ng-compact-syntax":["rnc"],"application/resource-lists+xml":["rl"],"application/resource-lists-diff+xml":["rld"],"application/rls-services+xml":["rs"],"application/rpki-ghostbusters":["gbr"],"application/rpki-manifest":["mft"],"application/rpki-roa":["roa"],"application/rsd+xml":["rsd"],"application/rss+xml":["rss"],"application/rtf":["rtf"],"application/sbml+xml":["sbml"],"application/scvp-cv-request":["scq"],"application/scvp-cv-response":["scs"],"application/scvp-vp-request":["spq"],"application/scvp-vp-response":["spp"],"application/sdp":["sdp"],"application/set-payment-initiation":["setpay"],"application/set-registration-initiation":["setreg"],"application/shf+xml":["shf"],"application/smil+xml":["smi","smil"],"application/sparql-query":["rq"],"application/sparql-results+xml":["srx"],"application/srgs":["gram"],"application/srgs+xml":["grxml"],"application/sru+xml":["sru"],"application/ssdl+xml":["ssdl"],"application/ssml+xml":["ssml"],"application/tei+xml":["tei","teicorpus"],"application/thraud+xml":["tfi"],"application/timestamped-data":["tsd"],"application/voicexml+xml":["vxml"],"application/wasm":["wasm"],"application/widget":["wgt"],"application/winhlp":["hlp"],"application/wsdl+xml":["wsdl"],"application/wspolicy+xml":["wspolicy"],"application/xaml+xml":["xaml"],"application/xcap-diff+xml":["xdf"],"application/xenc+xml":["xenc"],"application/xhtml+xml":["xhtml","xht"],"application/xml":["xml","xsl","xsd","rng"],"application/xml-dtd":["dtd"],"application/xop+xml":["xop"],"application/xproc+xml":["xpl"],"application/xslt+xml":["xslt"],"application/xspf+xml":["xspf"],"application/xv+xml":["mxml","xhvml","xvml","xvm"],"application/yang":["yang"],"application/yin+xml":["yin"],"application/zip":["zip"],"audio/3gpp":["*3gpp"],"audio/adpcm":["adp"],"audio/basic":["au","snd"],"audio/midi":["mid","midi","kar","rmi"],"audio/mp3":["*mp3"],"audio/mp4":["m4a","mp4a"],"audio/mpeg":["mpga","mp2","mp2a","mp3","m2a","m3a"],"audio/ogg":["oga","ogg","spx"],"audio/s3m":["s3m"],"audio/silk":["sil"],"audio/wav":["wav"],"audio/wave":["*wav"],"audio/webm":["weba"],"audio/xm":["xm"],"font/collection":["ttc"],"font/otf":["otf"],"font/ttf":["ttf"],"font/woff":["*woff"],"font/woff2":["woff2"],"image/apng":["apng"],"image/bmp":["bmp"],"image/cgm":["cgm"],"image/g3fax":["g3"],"image/gif":["gif"],"image/ief":["ief"],"image/jp2":["jp2","jpg2"],"image/jpeg":["jpeg","jpg","jpe"],"image/jpm":["jpm"],"image/jpx":["jpx","jpf"],"image/ktx":["ktx"],"image/png":["png"],"image/sgi":["sgi"],"image/svg+xml":["svg","svgz"],"image/tiff":["tiff","tif"],"image/webp":["webp"],"message/disposition-notification":["disposition-notification"],"message/global":["u8msg"],"message/global-delivery-status":["u8dsn"],"message/global-disposition-notification":["u8mdn"],"message/global-headers":["u8hdr"],"message/rfc822":["eml","mime"],"model/gltf+json":["gltf"],"model/gltf-binary":["glb"],"model/iges":["igs","iges"],"model/mesh":["msh","mesh","silo"],"model/vrml":["wrl","vrml"],"model/x3d+binary":["x3db","x3dbz"],"model/x3d+vrml":["x3dv","x3dvz"],"model/x3d+xml":["x3d","x3dz"],"text/cache-manifest":["appcache","manifest"],"text/calendar":["ics","ifb"],"text/coffeescript":["coffee","litcoffee"],"text/css":["css"],"text/csv":["csv"],"text/html":["html","htm","shtml"],"text/jade":["jade"],"text/jsx":["jsx"],"text/less":["less"],"text/markdown":["markdown","md"],"text/mathml":["mml"],"text/n3":["n3"],"text/plain":["txt","text","conf","def","list","log","in","ini"],"text/richtext":["rtx"],"text/rtf":["*rtf"],"text/sgml":["sgml","sgm"],"text/shex":["shex"],"text/slim":["slim","slm"],"text/stylus":["stylus","styl"],"text/tab-separated-values":["tsv"],"text/troff":["t","tr","roff","man","me","ms"],"text/turtle":["ttl"],"text/uri-list":["uri","uris","urls"],"text/vcard":["vcard"],"text/vtt":["vtt"],"text/xml":["*xml"],"text/yaml":["yaml","yml"],"video/3gpp":["3gp","3gpp"],"video/3gpp2":["3g2"],"video/h261":["h261"],"video/h263":["h263"],"video/h264":["h264"],"video/jpeg":["jpgv"],"video/jpm":["*jpm","jpgm"],"video/mj2":["mj2","mjp2"],"video/mp2t":["ts"],"video/mp4":["mp4","mp4v","mpg4"],"video/mpeg":["mpeg","mpg","mpe","m1v","m2v"],"video/ogg":["ogv"],"video/quicktime":["qt","mov"],"video/webm":["webm"]};
 
 /***/ }),
-/* 169 */
+/* 170 */
 /***/ (function(module) {
 
 module.exports = {"application/prs.cww":["cww"],"application/vnd.3gpp.pic-bw-large":["plb"],"application/vnd.3gpp.pic-bw-small":["psb"],"application/vnd.3gpp.pic-bw-var":["pvb"],"application/vnd.3gpp2.tcap":["tcap"],"application/vnd.3m.post-it-notes":["pwn"],"application/vnd.accpac.simply.aso":["aso"],"application/vnd.accpac.simply.imp":["imp"],"application/vnd.acucobol":["acu"],"application/vnd.acucorp":["atc","acutc"],"application/vnd.adobe.air-application-installer-package+zip":["air"],"application/vnd.adobe.formscentral.fcdt":["fcdt"],"application/vnd.adobe.fxp":["fxp","fxpl"],"application/vnd.adobe.xdp+xml":["xdp"],"application/vnd.adobe.xfdf":["xfdf"],"application/vnd.ahead.space":["ahead"],"application/vnd.airzip.filesecure.azf":["azf"],"application/vnd.airzip.filesecure.azs":["azs"],"application/vnd.amazon.ebook":["azw"],"application/vnd.americandynamics.acc":["acc"],"application/vnd.amiga.ami":["ami"],"application/vnd.android.package-archive":["apk"],"application/vnd.anser-web-certificate-issue-initiation":["cii"],"application/vnd.anser-web-funds-transfer-initiation":["fti"],"application/vnd.antix.game-component":["atx"],"application/vnd.apple.installer+xml":["mpkg"],"application/vnd.apple.mpegurl":["m3u8"],"application/vnd.apple.pkpass":["pkpass"],"application/vnd.aristanetworks.swi":["swi"],"application/vnd.astraea-software.iota":["iota"],"application/vnd.audiograph":["aep"],"application/vnd.blueice.multipass":["mpm"],"application/vnd.bmi":["bmi"],"application/vnd.businessobjects":["rep"],"application/vnd.chemdraw+xml":["cdxml"],"application/vnd.chipnuts.karaoke-mmd":["mmd"],"application/vnd.cinderella":["cdy"],"application/vnd.claymore":["cla"],"application/vnd.cloanto.rp9":["rp9"],"application/vnd.clonk.c4group":["c4g","c4d","c4f","c4p","c4u"],"application/vnd.cluetrust.cartomobile-config":["c11amc"],"application/vnd.cluetrust.cartomobile-config-pkg":["c11amz"],"application/vnd.commonspace":["csp"],"application/vnd.contact.cmsg":["cdbcmsg"],"application/vnd.cosmocaller":["cmc"],"application/vnd.crick.clicker":["clkx"],"application/vnd.crick.clicker.keyboard":["clkk"],"application/vnd.crick.clicker.palette":["clkp"],"application/vnd.crick.clicker.template":["clkt"],"application/vnd.crick.clicker.wordbank":["clkw"],"application/vnd.criticaltools.wbs+xml":["wbs"],"application/vnd.ctc-posml":["pml"],"application/vnd.cups-ppd":["ppd"],"application/vnd.curl.car":["car"],"application/vnd.curl.pcurl":["pcurl"],"application/vnd.dart":["dart"],"application/vnd.data-vision.rdz":["rdz"],"application/vnd.dece.data":["uvf","uvvf","uvd","uvvd"],"application/vnd.dece.ttml+xml":["uvt","uvvt"],"application/vnd.dece.unspecified":["uvx","uvvx"],"application/vnd.dece.zip":["uvz","uvvz"],"application/vnd.denovo.fcselayout-link":["fe_launch"],"application/vnd.dna":["dna"],"application/vnd.dolby.mlp":["mlp"],"application/vnd.dpgraph":["dpg"],"application/vnd.dreamfactory":["dfac"],"application/vnd.ds-keypoint":["kpxx"],"application/vnd.dvb.ait":["ait"],"application/vnd.dvb.service":["svc"],"application/vnd.dynageo":["geo"],"application/vnd.ecowin.chart":["mag"],"application/vnd.enliven":["nml"],"application/vnd.epson.esf":["esf"],"application/vnd.epson.msf":["msf"],"application/vnd.epson.quickanime":["qam"],"application/vnd.epson.salt":["slt"],"application/vnd.epson.ssf":["ssf"],"application/vnd.eszigno3+xml":["es3","et3"],"application/vnd.ezpix-album":["ez2"],"application/vnd.ezpix-package":["ez3"],"application/vnd.fdf":["fdf"],"application/vnd.fdsn.mseed":["mseed"],"application/vnd.fdsn.seed":["seed","dataless"],"application/vnd.flographit":["gph"],"application/vnd.fluxtime.clip":["ftc"],"application/vnd.framemaker":["fm","frame","maker","book"],"application/vnd.frogans.fnc":["fnc"],"application/vnd.frogans.ltf":["ltf"],"application/vnd.fsc.weblaunch":["fsc"],"application/vnd.fujitsu.oasys":["oas"],"application/vnd.fujitsu.oasys2":["oa2"],"application/vnd.fujitsu.oasys3":["oa3"],"application/vnd.fujitsu.oasysgp":["fg5"],"application/vnd.fujitsu.oasysprs":["bh2"],"application/vnd.fujixerox.ddd":["ddd"],"application/vnd.fujixerox.docuworks":["xdw"],"application/vnd.fujixerox.docuworks.binder":["xbd"],"application/vnd.fuzzysheet":["fzs"],"application/vnd.genomatix.tuxedo":["txd"],"application/vnd.geogebra.file":["ggb"],"application/vnd.geogebra.tool":["ggt"],"application/vnd.geometry-explorer":["gex","gre"],"application/vnd.geonext":["gxt"],"application/vnd.geoplan":["g2w"],"application/vnd.geospace":["g3w"],"application/vnd.gmx":["gmx"],"application/vnd.google-apps.document":["gdoc"],"application/vnd.google-apps.presentation":["gslides"],"application/vnd.google-apps.spreadsheet":["gsheet"],"application/vnd.google-earth.kml+xml":["kml"],"application/vnd.google-earth.kmz":["kmz"],"application/vnd.grafeq":["gqf","gqs"],"application/vnd.groove-account":["gac"],"application/vnd.groove-help":["ghf"],"application/vnd.groove-identity-message":["gim"],"application/vnd.groove-injector":["grv"],"application/vnd.groove-tool-message":["gtm"],"application/vnd.groove-tool-template":["tpl"],"application/vnd.groove-vcard":["vcg"],"application/vnd.hal+xml":["hal"],"application/vnd.handheld-entertainment+xml":["zmm"],"application/vnd.hbci":["hbci"],"application/vnd.hhe.lesson-player":["les"],"application/vnd.hp-hpgl":["hpgl"],"application/vnd.hp-hpid":["hpid"],"application/vnd.hp-hps":["hps"],"application/vnd.hp-jlyt":["jlt"],"application/vnd.hp-pcl":["pcl"],"application/vnd.hp-pclxl":["pclxl"],"application/vnd.hydrostatix.sof-data":["sfd-hdstx"],"application/vnd.ibm.minipay":["mpy"],"application/vnd.ibm.modcap":["afp","listafp","list3820"],"application/vnd.ibm.rights-management":["irm"],"application/vnd.ibm.secure-container":["sc"],"application/vnd.iccprofile":["icc","icm"],"application/vnd.igloader":["igl"],"application/vnd.immervision-ivp":["ivp"],"application/vnd.immervision-ivu":["ivu"],"application/vnd.insors.igm":["igm"],"application/vnd.intercon.formnet":["xpw","xpx"],"application/vnd.intergeo":["i2g"],"application/vnd.intu.qbo":["qbo"],"application/vnd.intu.qfx":["qfx"],"application/vnd.ipunplugged.rcprofile":["rcprofile"],"application/vnd.irepository.package+xml":["irp"],"application/vnd.is-xpr":["xpr"],"application/vnd.isac.fcs":["fcs"],"application/vnd.jam":["jam"],"application/vnd.jcp.javame.midlet-rms":["rms"],"application/vnd.jisp":["jisp"],"application/vnd.joost.joda-archive":["joda"],"application/vnd.kahootz":["ktz","ktr"],"application/vnd.kde.karbon":["karbon"],"application/vnd.kde.kchart":["chrt"],"application/vnd.kde.kformula":["kfo"],"application/vnd.kde.kivio":["flw"],"application/vnd.kde.kontour":["kon"],"application/vnd.kde.kpresenter":["kpr","kpt"],"application/vnd.kde.kspread":["ksp"],"application/vnd.kde.kword":["kwd","kwt"],"application/vnd.kenameaapp":["htke"],"application/vnd.kidspiration":["kia"],"application/vnd.kinar":["kne","knp"],"application/vnd.koan":["skp","skd","skt","skm"],"application/vnd.kodak-descriptor":["sse"],"application/vnd.las.las+xml":["lasxml"],"application/vnd.llamagraphics.life-balance.desktop":["lbd"],"application/vnd.llamagraphics.life-balance.exchange+xml":["lbe"],"application/vnd.lotus-1-2-3":["123"],"application/vnd.lotus-approach":["apr"],"application/vnd.lotus-freelance":["pre"],"application/vnd.lotus-notes":["nsf"],"application/vnd.lotus-organizer":["org"],"application/vnd.lotus-screencam":["scm"],"application/vnd.lotus-wordpro":["lwp"],"application/vnd.macports.portpkg":["portpkg"],"application/vnd.mcd":["mcd"],"application/vnd.medcalcdata":["mc1"],"application/vnd.mediastation.cdkey":["cdkey"],"application/vnd.mfer":["mwf"],"application/vnd.mfmp":["mfm"],"application/vnd.micrografx.flo":["flo"],"application/vnd.micrografx.igx":["igx"],"application/vnd.mif":["mif"],"application/vnd.mobius.daf":["daf"],"application/vnd.mobius.dis":["dis"],"application/vnd.mobius.mbk":["mbk"],"application/vnd.mobius.mqy":["mqy"],"application/vnd.mobius.msl":["msl"],"application/vnd.mobius.plc":["plc"],"application/vnd.mobius.txf":["txf"],"application/vnd.mophun.application":["mpn"],"application/vnd.mophun.certificate":["mpc"],"application/vnd.mozilla.xul+xml":["xul"],"application/vnd.ms-artgalry":["cil"],"application/vnd.ms-cab-compressed":["cab"],"application/vnd.ms-excel":["xls","xlm","xla","xlc","xlt","xlw"],"application/vnd.ms-excel.addin.macroenabled.12":["xlam"],"application/vnd.ms-excel.sheet.binary.macroenabled.12":["xlsb"],"application/vnd.ms-excel.sheet.macroenabled.12":["xlsm"],"application/vnd.ms-excel.template.macroenabled.12":["xltm"],"application/vnd.ms-fontobject":["eot"],"application/vnd.ms-htmlhelp":["chm"],"application/vnd.ms-ims":["ims"],"application/vnd.ms-lrm":["lrm"],"application/vnd.ms-officetheme":["thmx"],"application/vnd.ms-outlook":["msg"],"application/vnd.ms-pki.seccat":["cat"],"application/vnd.ms-pki.stl":["stl"],"application/vnd.ms-powerpoint":["ppt","pps","pot"],"application/vnd.ms-powerpoint.addin.macroenabled.12":["ppam"],"application/vnd.ms-powerpoint.presentation.macroenabled.12":["pptm"],"application/vnd.ms-powerpoint.slide.macroenabled.12":["sldm"],"application/vnd.ms-powerpoint.slideshow.macroenabled.12":["ppsm"],"application/vnd.ms-powerpoint.template.macroenabled.12":["potm"],"application/vnd.ms-project":["mpp","mpt"],"application/vnd.ms-word.document.macroenabled.12":["docm"],"application/vnd.ms-word.template.macroenabled.12":["dotm"],"application/vnd.ms-works":["wps","wks","wcm","wdb"],"application/vnd.ms-wpl":["wpl"],"application/vnd.ms-xpsdocument":["xps"],"application/vnd.mseq":["mseq"],"application/vnd.musician":["mus"],"application/vnd.muvee.style":["msty"],"application/vnd.mynfc":["taglet"],"application/vnd.neurolanguage.nlu":["nlu"],"application/vnd.nitf":["ntf","nitf"],"application/vnd.noblenet-directory":["nnd"],"application/vnd.noblenet-sealer":["nns"],"application/vnd.noblenet-web":["nnw"],"application/vnd.nokia.n-gage.data":["ngdat"],"application/vnd.nokia.n-gage.symbian.install":["n-gage"],"application/vnd.nokia.radio-preset":["rpst"],"application/vnd.nokia.radio-presets":["rpss"],"application/vnd.novadigm.edm":["edm"],"application/vnd.novadigm.edx":["edx"],"application/vnd.novadigm.ext":["ext"],"application/vnd.oasis.opendocument.chart":["odc"],"application/vnd.oasis.opendocument.chart-template":["otc"],"application/vnd.oasis.opendocument.database":["odb"],"application/vnd.oasis.opendocument.formula":["odf"],"application/vnd.oasis.opendocument.formula-template":["odft"],"application/vnd.oasis.opendocument.graphics":["odg"],"application/vnd.oasis.opendocument.graphics-template":["otg"],"application/vnd.oasis.opendocument.image":["odi"],"application/vnd.oasis.opendocument.image-template":["oti"],"application/vnd.oasis.opendocument.presentation":["odp"],"application/vnd.oasis.opendocument.presentation-template":["otp"],"application/vnd.oasis.opendocument.spreadsheet":["ods"],"application/vnd.oasis.opendocument.spreadsheet-template":["ots"],"application/vnd.oasis.opendocument.text":["odt"],"application/vnd.oasis.opendocument.text-master":["odm"],"application/vnd.oasis.opendocument.text-template":["ott"],"application/vnd.oasis.opendocument.text-web":["oth"],"application/vnd.olpc-sugar":["xo"],"application/vnd.oma.dd2+xml":["dd2"],"application/vnd.openofficeorg.extension":["oxt"],"application/vnd.openxmlformats-officedocument.presentationml.presentation":["pptx"],"application/vnd.openxmlformats-officedocument.presentationml.slide":["sldx"],"application/vnd.openxmlformats-officedocument.presentationml.slideshow":["ppsx"],"application/vnd.openxmlformats-officedocument.presentationml.template":["potx"],"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":["xlsx"],"application/vnd.openxmlformats-officedocument.spreadsheetml.template":["xltx"],"application/vnd.openxmlformats-officedocument.wordprocessingml.document":["docx"],"application/vnd.openxmlformats-officedocument.wordprocessingml.template":["dotx"],"application/vnd.osgeo.mapguide.package":["mgp"],"application/vnd.osgi.dp":["dp"],"application/vnd.osgi.subsystem":["esa"],"application/vnd.palm":["pdb","pqa","oprc"],"application/vnd.pawaafile":["paw"],"application/vnd.pg.format":["str"],"application/vnd.pg.osasli":["ei6"],"application/vnd.picsel":["efif"],"application/vnd.pmi.widget":["wg"],"application/vnd.pocketlearn":["plf"],"application/vnd.powerbuilder6":["pbd"],"application/vnd.previewsystems.box":["box"],"application/vnd.proteus.magazine":["mgz"],"application/vnd.publishare-delta-tree":["qps"],"application/vnd.pvi.ptid1":["ptid"],"application/vnd.quark.quarkxpress":["qxd","qxt","qwd","qwt","qxl","qxb"],"application/vnd.realvnc.bed":["bed"],"application/vnd.recordare.musicxml":["mxl"],"application/vnd.recordare.musicxml+xml":["musicxml"],"application/vnd.rig.cryptonote":["cryptonote"],"application/vnd.rim.cod":["cod"],"application/vnd.rn-realmedia":["rm"],"application/vnd.rn-realmedia-vbr":["rmvb"],"application/vnd.route66.link66+xml":["link66"],"application/vnd.sailingtracker.track":["st"],"application/vnd.seemail":["see"],"application/vnd.sema":["sema"],"application/vnd.semd":["semd"],"application/vnd.semf":["semf"],"application/vnd.shana.informed.formdata":["ifm"],"application/vnd.shana.informed.formtemplate":["itp"],"application/vnd.shana.informed.interchange":["iif"],"application/vnd.shana.informed.package":["ipk"],"application/vnd.simtech-mindmapper":["twd","twds"],"application/vnd.smaf":["mmf"],"application/vnd.smart.teacher":["teacher"],"application/vnd.solent.sdkm+xml":["sdkm","sdkd"],"application/vnd.spotfire.dxp":["dxp"],"application/vnd.spotfire.sfs":["sfs"],"application/vnd.stardivision.calc":["sdc"],"application/vnd.stardivision.draw":["sda"],"application/vnd.stardivision.impress":["sdd"],"application/vnd.stardivision.math":["smf"],"application/vnd.stardivision.writer":["sdw","vor"],"application/vnd.stardivision.writer-global":["sgl"],"application/vnd.stepmania.package":["smzip"],"application/vnd.stepmania.stepchart":["sm"],"application/vnd.sun.wadl+xml":["wadl"],"application/vnd.sun.xml.calc":["sxc"],"application/vnd.sun.xml.calc.template":["stc"],"application/vnd.sun.xml.draw":["sxd"],"application/vnd.sun.xml.draw.template":["std"],"application/vnd.sun.xml.impress":["sxi"],"application/vnd.sun.xml.impress.template":["sti"],"application/vnd.sun.xml.math":["sxm"],"application/vnd.sun.xml.writer":["sxw"],"application/vnd.sun.xml.writer.global":["sxg"],"application/vnd.sun.xml.writer.template":["stw"],"application/vnd.sus-calendar":["sus","susp"],"application/vnd.svd":["svd"],"application/vnd.symbian.install":["sis","sisx"],"application/vnd.syncml+xml":["xsm"],"application/vnd.syncml.dm+wbxml":["bdm"],"application/vnd.syncml.dm+xml":["xdm"],"application/vnd.tao.intent-module-archive":["tao"],"application/vnd.tcpdump.pcap":["pcap","cap","dmp"],"application/vnd.tmobile-livetv":["tmo"],"application/vnd.trid.tpt":["tpt"],"application/vnd.triscape.mxs":["mxs"],"application/vnd.trueapp":["tra"],"application/vnd.ufdl":["ufd","ufdl"],"application/vnd.uiq.theme":["utz"],"application/vnd.umajin":["umj"],"application/vnd.unity":["unityweb"],"application/vnd.uoml+xml":["uoml"],"application/vnd.vcx":["vcx"],"application/vnd.visio":["vsd","vst","vss","vsw"],"application/vnd.visionary":["vis"],"application/vnd.vsf":["vsf"],"application/vnd.wap.wbxml":["wbxml"],"application/vnd.wap.wmlc":["wmlc"],"application/vnd.wap.wmlscriptc":["wmlsc"],"application/vnd.webturbo":["wtb"],"application/vnd.wolfram.player":["nbp"],"application/vnd.wordperfect":["wpd"],"application/vnd.wqd":["wqd"],"application/vnd.wt.stf":["stf"],"application/vnd.xara":["xar"],"application/vnd.xfdl":["xfdl"],"application/vnd.yamaha.hv-dic":["hvd"],"application/vnd.yamaha.hv-script":["hvs"],"application/vnd.yamaha.hv-voice":["hvp"],"application/vnd.yamaha.openscoreformat":["osf"],"application/vnd.yamaha.openscoreformat.osfpvg+xml":["osfpvg"],"application/vnd.yamaha.smaf-audio":["saf"],"application/vnd.yamaha.smaf-phrase":["spf"],"application/vnd.yellowriver-custom-menu":["cmp"],"application/vnd.zul":["zir","zirz"],"application/vnd.zzazz.deck+xml":["zaz"],"application/x-7z-compressed":["7z"],"application/x-abiword":["abw"],"application/x-ace-compressed":["ace"],"application/x-apple-diskimage":["*dmg"],"application/x-arj":["arj"],"application/x-authorware-bin":["aab","x32","u32","vox"],"application/x-authorware-map":["aam"],"application/x-authorware-seg":["aas"],"application/x-bcpio":["bcpio"],"application/x-bdoc":["*bdoc"],"application/x-bittorrent":["torrent"],"application/x-blorb":["blb","blorb"],"application/x-bzip":["bz"],"application/x-bzip2":["bz2","boz"],"application/x-cbr":["cbr","cba","cbt","cbz","cb7"],"application/x-cdlink":["vcd"],"application/x-cfs-compressed":["cfs"],"application/x-chat":["chat"],"application/x-chess-pgn":["pgn"],"application/x-chrome-extension":["crx"],"application/x-cocoa":["cco"],"application/x-conference":["nsc"],"application/x-cpio":["cpio"],"application/x-csh":["csh"],"application/x-debian-package":["*deb","udeb"],"application/x-dgc-compressed":["dgc"],"application/x-director":["dir","dcr","dxr","cst","cct","cxt","w3d","fgd","swa"],"application/x-doom":["wad"],"application/x-dtbncx+xml":["ncx"],"application/x-dtbook+xml":["dtb"],"application/x-dtbresource+xml":["res"],"application/x-dvi":["dvi"],"application/x-envoy":["evy"],"application/x-eva":["eva"],"application/x-font-bdf":["bdf"],"application/x-font-ghostscript":["gsf"],"application/x-font-linux-psf":["psf"],"application/x-font-pcf":["pcf"],"application/x-font-snf":["snf"],"application/x-font-type1":["pfa","pfb","pfm","afm"],"application/x-freearc":["arc"],"application/x-futuresplash":["spl"],"application/x-gca-compressed":["gca"],"application/x-glulx":["ulx"],"application/x-gnumeric":["gnumeric"],"application/x-gramps-xml":["gramps"],"application/x-gtar":["gtar"],"application/x-hdf":["hdf"],"application/x-httpd-php":["php"],"application/x-install-instructions":["install"],"application/x-iso9660-image":["*iso"],"application/x-java-archive-diff":["jardiff"],"application/x-java-jnlp-file":["jnlp"],"application/x-latex":["latex"],"application/x-lua-bytecode":["luac"],"application/x-lzh-compressed":["lzh","lha"],"application/x-makeself":["run"],"application/x-mie":["mie"],"application/x-mobipocket-ebook":["prc","mobi"],"application/x-ms-application":["application"],"application/x-ms-shortcut":["lnk"],"application/x-ms-wmd":["wmd"],"application/x-ms-wmz":["wmz"],"application/x-ms-xbap":["xbap"],"application/x-msaccess":["mdb"],"application/x-msbinder":["obd"],"application/x-mscardfile":["crd"],"application/x-msclip":["clp"],"application/x-msdos-program":["*exe"],"application/x-msdownload":["*exe","*dll","com","bat","*msi"],"application/x-msmediaview":["mvb","m13","m14"],"application/x-msmetafile":["wmf","*wmz","emf","emz"],"application/x-msmoney":["mny"],"application/x-mspublisher":["pub"],"application/x-msschedule":["scd"],"application/x-msterminal":["trm"],"application/x-mswrite":["wri"],"application/x-netcdf":["nc","cdf"],"application/x-ns-proxy-autoconfig":["pac"],"application/x-nzb":["nzb"],"application/x-perl":["pl","pm"],"application/x-pilot":["*prc","*pdb"],"application/x-pkcs12":["p12","pfx"],"application/x-pkcs7-certificates":["p7b","spc"],"application/x-pkcs7-certreqresp":["p7r"],"application/x-rar-compressed":["rar"],"application/x-redhat-package-manager":["rpm"],"application/x-research-info-systems":["ris"],"application/x-sea":["sea"],"application/x-sh":["sh"],"application/x-shar":["shar"],"application/x-shockwave-flash":["swf"],"application/x-silverlight-app":["xap"],"application/x-sql":["sql"],"application/x-stuffit":["sit"],"application/x-stuffitx":["sitx"],"application/x-subrip":["srt"],"application/x-sv4cpio":["sv4cpio"],"application/x-sv4crc":["sv4crc"],"application/x-t3vm-image":["t3"],"application/x-tads":["gam"],"application/x-tar":["tar"],"application/x-tcl":["tcl","tk"],"application/x-tex":["tex"],"application/x-tex-tfm":["tfm"],"application/x-texinfo":["texinfo","texi"],"application/x-tgif":["obj"],"application/x-ustar":["ustar"],"application/x-virtualbox-hdd":["hdd"],"application/x-virtualbox-ova":["ova"],"application/x-virtualbox-ovf":["ovf"],"application/x-virtualbox-vbox":["vbox"],"application/x-virtualbox-vbox-extpack":["vbox-extpack"],"application/x-virtualbox-vdi":["vdi"],"application/x-virtualbox-vhd":["vhd"],"application/x-virtualbox-vmdk":["vmdk"],"application/x-wais-source":["src"],"application/x-web-app-manifest+json":["webapp"],"application/x-x509-ca-cert":["der","crt","pem"],"application/x-xfig":["fig"],"application/x-xliff+xml":["xlf"],"application/x-xpinstall":["xpi"],"application/x-xz":["xz"],"application/x-zmachine":["z1","z2","z3","z4","z5","z6","z7","z8"],"audio/vnd.dece.audio":["uva","uvva"],"audio/vnd.digital-winds":["eol"],"audio/vnd.dra":["dra"],"audio/vnd.dts":["dts"],"audio/vnd.dts.hd":["dtshd"],"audio/vnd.lucent.voice":["lvp"],"audio/vnd.ms-playready.media.pya":["pya"],"audio/vnd.nuera.ecelp4800":["ecelp4800"],"audio/vnd.nuera.ecelp7470":["ecelp7470"],"audio/vnd.nuera.ecelp9600":["ecelp9600"],"audio/vnd.rip":["rip"],"audio/x-aac":["aac"],"audio/x-aiff":["aif","aiff","aifc"],"audio/x-caf":["caf"],"audio/x-flac":["flac"],"audio/x-m4a":["*m4a"],"audio/x-matroska":["mka"],"audio/x-mpegurl":["m3u"],"audio/x-ms-wax":["wax"],"audio/x-ms-wma":["wma"],"audio/x-pn-realaudio":["ram","ra"],"audio/x-pn-realaudio-plugin":["rmp"],"audio/x-realaudio":["*ra"],"audio/x-wav":["*wav"],"chemical/x-cdx":["cdx"],"chemical/x-cif":["cif"],"chemical/x-cmdf":["cmdf"],"chemical/x-cml":["cml"],"chemical/x-csml":["csml"],"chemical/x-xyz":["xyz"],"image/prs.btif":["btif"],"image/vnd.adobe.photoshop":["psd"],"image/vnd.dece.graphic":["uvi","uvvi","uvg","uvvg"],"image/vnd.djvu":["djvu","djv"],"image/vnd.dvb.subtitle":["*sub"],"image/vnd.dwg":["dwg"],"image/vnd.dxf":["dxf"],"image/vnd.fastbidsheet":["fbs"],"image/vnd.fpx":["fpx"],"image/vnd.fst":["fst"],"image/vnd.fujixerox.edmics-mmr":["mmr"],"image/vnd.fujixerox.edmics-rlc":["rlc"],"image/vnd.ms-modi":["mdi"],"image/vnd.ms-photo":["wdp"],"image/vnd.net-fpx":["npx"],"image/vnd.wap.wbmp":["wbmp"],"image/vnd.xiff":["xif"],"image/x-3ds":["3ds"],"image/x-cmu-raster":["ras"],"image/x-cmx":["cmx"],"image/x-freehand":["fh","fhc","fh4","fh5","fh7"],"image/x-icon":["ico"],"image/x-jng":["jng"],"image/x-mrsid-image":["sid"],"image/x-ms-bmp":["*bmp"],"image/x-pcx":["pcx"],"image/x-pict":["pic","pct"],"image/x-portable-anymap":["pnm"],"image/x-portable-bitmap":["pbm"],"image/x-portable-graymap":["pgm"],"image/x-portable-pixmap":["ppm"],"image/x-rgb":["rgb"],"image/x-tga":["tga"],"image/x-xbitmap":["xbm"],"image/x-xpixmap":["xpm"],"image/x-xwindowdump":["xwd"],"message/vnd.wfa.wsc":["wsc"],"model/vnd.collada+xml":["dae"],"model/vnd.dwf":["dwf"],"model/vnd.gdl":["gdl"],"model/vnd.gtw":["gtw"],"model/vnd.mts":["mts"],"model/vnd.vtu":["vtu"],"text/prs.lines.tag":["dsc"],"text/vnd.curl":["curl"],"text/vnd.curl.dcurl":["dcurl"],"text/vnd.curl.mcurl":["mcurl"],"text/vnd.curl.scurl":["scurl"],"text/vnd.dvb.subtitle":["sub"],"text/vnd.fly":["fly"],"text/vnd.fmi.flexstor":["flx"],"text/vnd.graphviz":["gv"],"text/vnd.in3d.3dml":["3dml"],"text/vnd.in3d.spot":["spot"],"text/vnd.sun.j2me.app-descriptor":["jad"],"text/vnd.wap.wml":["wml"],"text/vnd.wap.wmlscript":["wmls"],"text/x-asm":["s","asm"],"text/x-c":["c","cc","cxx","cpp","h","hh","dic"],"text/x-component":["htc"],"text/x-fortran":["f","for","f77","f90"],"text/x-handlebars-template":["hbs"],"text/x-java-source":["java"],"text/x-lua":["lua"],"text/x-markdown":["mkd"],"text/x-nfo":["nfo"],"text/x-opml":["opml"],"text/x-org":["*org"],"text/x-pascal":["p","pas"],"text/x-processing":["pde"],"text/x-sass":["sass"],"text/x-scss":["scss"],"text/x-setext":["etx"],"text/x-sfv":["sfv"],"text/x-suse-ymp":["ymp"],"text/x-uuencode":["uu"],"text/x-vcalendar":["vcs"],"text/x-vcard":["vcf"],"video/vnd.dece.hd":["uvh","uvvh"],"video/vnd.dece.mobile":["uvm","uvvm"],"video/vnd.dece.pd":["uvp","uvvp"],"video/vnd.dece.sd":["uvs","uvvs"],"video/vnd.dece.video":["uvv","uvvv"],"video/vnd.dvb.file":["dvb"],"video/vnd.fvt":["fvt"],"video/vnd.mpegurl":["mxu","m4u"],"video/vnd.ms-playready.media.pyv":["pyv"],"video/vnd.uvvu.mp4":["uvu","uvvu"],"video/vnd.vivo":["viv"],"video/x-f4v":["f4v"],"video/x-fli":["fli"],"video/x-flv":["flv"],"video/x-m4v":["m4v"],"video/x-matroska":["mkv","mk3d","mks"],"video/x-mng":["mng"],"video/x-ms-asf":["asf","asx"],"video/x-ms-vob":["vob"],"video/x-ms-wm":["wm"],"video/x-ms-wmv":["wmv"],"video/x-ms-wmx":["wmx"],"video/x-ms-wvx":["wvx"],"video/x-msvideo":["avi"],"video/x-sgi-movie":["movie"],"video/x-smv":["smv"],"x-conference/x-cooltalk":["ice"]};
 
 /***/ }),
-/* 170 */
+/* 171 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -39244,7 +39384,7 @@ var FilePreviewStream = function (_Writable) {
 }(_readableStream.Writable);
 
 exports.default = FilePreviewStream;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(17).Buffer))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(20).Buffer))
 
 /***/ })
 /******/ ]);

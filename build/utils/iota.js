@@ -3,8 +3,19 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.getMetadata = exports.pollMetadata = exports.pollIotaProgress = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _datamapGenerator = require("datamap-generator");
+
+var _datamapGenerator2 = _interopRequireDefault(_datamapGenerator);
+
+var _backend = require("./backend");
+
+var _util = require("../util");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var clamp = function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
@@ -124,5 +135,50 @@ var pollIotaProgress = exports.pollIotaProgress = function pollIotaProgress(data
         return reject(err);
       });
     }, POLL_INTERVAL);
+  });
+};
+
+var pollMetadata = exports.pollMetadata = function pollMetadata(handle, iotaProviders) {
+  return new Promise(function (resolve, reject) {
+    var poll = setIntervalAndExecute(function () {
+      getMetadata(handle, iotaProviders).then(function (res) {
+        clearInterval(poll);
+        resolve(res);
+      })
+      // TODO: Continue only if "File does not exist" error.
+      // TODO: Timeout if this takes too long?
+      .catch(console.log); // No-op. Waits for meta to attach.
+    }, POLL_INTERVAL);
+  });
+};
+
+var getMetadata = exports.getMetadata = function getMetadata(handle, iotaProviders) {
+  return new Promise(function (resolve, reject) {
+    var genesisHash = _datamapGenerator2.default.genesisHash(handle);
+    var queries = Promise.all(iotaProviders.map(function (provider) {
+      return new Promise(function (resolve, reject) {
+        (0, _backend.queryGeneratedSignatures)(provider, genesisHash, 1).then(function (signatures) {
+          return resolve({ provider: provider, signatures: signatures });
+        }, reject);
+      });
+    }));
+
+    return queries.then(function (result) {
+      var _ref = result.find(function (res) {
+        return !!res.signatures.data[0];
+      }) || {},
+          provider = _ref.provider,
+          signatures = _ref.signatures;
+
+      var signature = signatures ? signatures.data[0] : null;
+
+      if (signature === null) reject(new Error("File does not exist."));
+
+      var _decryptMetadata = (0, _util.decryptMetadata)((0, _util.bytesFromHandle)(handle), signature),
+          version = _decryptMetadata.version,
+          metadata = _decryptMetadata.metadata;
+
+      resolve({ provider: provider, metadata: metadata, version: version });
+    }).catch(reject);
   });
 };
