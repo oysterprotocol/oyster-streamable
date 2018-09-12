@@ -2,11 +2,11 @@
   "name": "oyster-streamable",
   "version": "2.0.5",
   "description": "Arbitrary size interface for the Oyster network",
-  "main": "dist/index.js",
+  "main": "build/index.js",
   "files": [
-    "dist/"
+    "build/"
   ],
-  "browser": "dist/index.js",
+  "browser": "dist/oyster-streamable.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,8 @@
     "url": "https://github.com/oysterprotocol/oyster-streamable.git"
   },
   "scripts": {
-    "build": "babel src --presets babel-preset-env --out-dir dist",
+    "build": "babel src --presets babel-preset-env --out-dir build",
+    "bundle": "webpack",
     "prepublishOnly": "yarn && yarn build",
     "pretty": "prettier --write \"src/**/*.js\"",
     "test": "jest",
@@ -43,10 +44,14 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-jest": "^23.0.1",
+    "babel-loader": "^7.1.5",
     "babel-preset-env": "^1.7.0",
     "husky": "^1.0.0-rc.9",
     "jest": "^23.1.0",
     "prettier": "^1.13.5",
-    "regenerator-runtime": "^0.11.1"
+    "regenerator-runtime": "^0.11.1",
+    "webpack": "^4.16.5",
+    "webpack-bundle-analyzer": "^2.13.1",
+    "webpack-cli": "^3.1.0"
   }
 }
