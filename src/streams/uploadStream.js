@@ -121,9 +121,9 @@ export default class UploadStream extends Writable {
 
     let upload;
     if (batch.order === CHUNK_ORDER_ASC) {
-      upload = sendToBroker(this.alpha, this.sessIdA, batch.chunks);
+      upload = sendToS3(this.sessIdA, batch.chunks);
     } else {
-      upload = sendToBroker(this.beta, this.sessIdB, batch.chunks);
+      upload = sendToS3(this.sessIdB, batch.chunks);
     }
 
     upload
