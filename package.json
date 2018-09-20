@@ -33,6 +33,7 @@
     ]
   },
   "dependencies": {
+    "aws-sdk": "^2.318.0",
     "axios": "^0.18.0",
     "datamap-generator": "^1.0.8",
     "iota.lib.js": "^0.4.7",
