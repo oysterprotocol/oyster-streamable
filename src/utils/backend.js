@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API, IOTA_API } from "../config";
+import s3 from "../s3";
 
 const CURRENT_VERSION = 1;
 const SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH;
@@ -83,6 +84,18 @@ export function createUploadSession(
 export function sendToBroker(broker, sessId, chunks) {
   const endpoint = `${broker}${SESSIONS_PATH}/${sessId}`;
   return sendChunksToBroker(endpoint, chunks);
+}
+
+export function sendToS3(bucket, subBucket, chunks) {
+  new Promise((resolve, reject) => {
+    const firstChunk = chunks[0];
+    const params = {
+      Bucket: `oyster-uploads/${bucket}/${subBucket}`,
+      Key: `${firstChunk.id}.json`,
+      Body: JSON.stringify(chunks)
+    };
+    s3.upload(params, {}, (err, data) => (!!err ? reject(err) : resolve(data)));
+  });
 }
 
 export function sendChunksToBroker(brokerUrl, chunks) {
