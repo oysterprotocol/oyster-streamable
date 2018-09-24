@@ -20,6 +20,14 @@ test("util bytesFromHandle", () => {
   expect(util.bytesFromHandle(handle)).toEqual(expected);
 });
 
+test("util s3FolderFromGenesisHash", () => {
+  const expected = Forge.md.sha256
+    .create()
+    .update(handle, "utf8")
+    .digest();
+  expect(util.s3FolderFromGenesisHash(handle)).toEqual(expected);
+});
+
 // TODO
 test("util offsetHash", () => {
   //const expected = "aa";

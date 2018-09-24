@@ -22,6 +22,13 @@ export function bytesFromHandle(handle) {
     .digest();
 }
 
+export function s3FolderFromGenesisHash(genesisHash) {
+  return Forge.md.sha256
+    .create()
+    .update(genesisHash, "utf8")
+    .digest();
+}
+
 // Offset hashes for IXI Oyster.findGeneratedSignatures
 // Pass genesisHash, absolute offset (0 = first file chunk)
 // Alternatively pass last hash, relative offset, to save cycles
