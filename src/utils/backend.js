@@ -87,7 +87,7 @@ export function sendToBroker(broker, sessId, chunks) {
 }
 
 export function sendToS3(bucket, subBucket, chunks) {
-  new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const firstChunk = chunks[0];
     const params = {
       Bucket: `oyster-uploads/${bucket}/${subBucket}`,
