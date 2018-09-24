@@ -63,13 +63,13 @@ const skinnyQueryTransactions = (iotaProvider, addresses) =>
     );
   });
 
-const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
+const checkUploadPercentage = (iotaProvider, addresses, indexes) => {
   return new Promise((resolve, reject) => {
     let promises = [];
 
     promises.push(
       new Promise((resolve, reject) => {
-        skinnyQueryTransactions(itoaProvider, [addresses[indexes[0]]]).then(
+        skinnyQueryTransactions(iotaProvider, [addresses[indexes[0]]]).then(
           transactions => {
             resolve({ removeIndex: transactions.length > 0 });
           }
