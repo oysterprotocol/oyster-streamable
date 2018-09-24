@@ -1,5 +1,5 @@
 import { Writable } from "readable-stream";
-import { sendToBroker } from "../utils/backend";
+import { sendToS3 } from "../utils/backend";
 
 const CHUNK_ORDER_ASC = 1;
 const CHUNK_ORDER_DESC = 2;
@@ -124,9 +124,9 @@ export default class UploadStream extends Writable {
 
     let upload;
     if (batch.order === CHUNK_ORDER_ASC) {
-      upload = sendToS3(this.sessIdA, ALPHA_BUCKET, batch.chunks);
+      upload = sendToS3(this.genesisHash, ALPHA_BUCKET, batch.chunks);
     } else {
-      upload = sendToS3(this.sessIdB, BETA_BUCKET, batch.chunks);
+      upload = sendToS3(this.genesisHash, BETA_BUCKET, batch.chunks);
     }
 
     upload
