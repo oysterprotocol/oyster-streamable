@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API, IOTA_API } from "../config";
+import { s3FolderFromGenesisHash } from "../util";
 import s3 from "../s3";
 
 const CURRENT_VERSION = 1;
@@ -86,12 +87,15 @@ export function sendToBroker(broker, sessId, chunks) {
   return sendChunksToBroker(endpoint, chunks);
 }
 
-export function sendToS3(bucket, subBucket, chunks) {
+export function sendToS3(genesisHash, subBucket, chunks) {
   return new Promise((resolve, reject) => {
     const firstChunk = chunks[0];
+    const lastChunk = chunks[chunks.length - 1];
     const params = {
-      Bucket: `oyster-uploads/${bucket}/${subBucket}`,
-      Key: `${firstChunk.id}.json`,
+      Bucket: `oyster-uploads/${s3FolderFromGenesisHash(
+        genesisHash
+      )}/${subBucket}`,
+      Key: `${firstChunk.idx}-${lastChunk.idx}.json`,
       Body: JSON.stringify(chunks)
     };
     s3.upload(params, {}, (err, data) => (!!err ? reject(err) : resolve(data)));
