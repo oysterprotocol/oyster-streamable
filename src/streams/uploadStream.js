@@ -40,6 +40,7 @@ export default class UploadStream extends Writable {
     this.ongoingUploads = 0;
     this.chunksProcessed = 0;
     this.retries = 0;
+    this.progressCb = opts.progressCb || console.log;
     this.finishCallback = null;
   }
 
@@ -138,6 +139,11 @@ export default class UploadStream extends Writable {
   _afterUpload() {
     this.ongoingUploads--;
     this.chunksProcessed++;
+
+    // Emit progress
+    const prog = this.chunksProcessed / this.numChunks;
+    this.progressCb(prog);
+    console.log(prog);
 
     // Upload until done
     if (this.batchBuffer.length > 0) {
