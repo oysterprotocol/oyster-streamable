@@ -24,7 +24,8 @@ test("util s3FolderFromGenesisHash", () => {
   const expected = Forge.md.sha256
     .create()
     .update(handle, "utf8")
-    .digest();
+    .digest()
+    .toHex();
   expect(util.s3FolderFromGenesisHash(handle)).toEqual(expected);
 });
 
