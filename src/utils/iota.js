@@ -2,10 +2,7 @@ import Datamap from "datamap-generator";
 
 import { queryGeneratedSignatures } from "./backend";
 import { bytesFromHandle, decryptMetadata } from "../util";
-
-const clamp = (num, min, max) => {
-  return Math.min(Math.max(num, min), max);
-};
+import { clamp } from "../utils/math";
 
 const selectPollingIndexes = (addresses, numPollingAddresses, bundleSize) => {
   // What this if is checking for is basically medium-sized uploads

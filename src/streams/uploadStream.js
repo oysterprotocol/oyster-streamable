@@ -1,4 +1,6 @@
 import { Writable } from "readable-stream";
+
+import { clamp } from "../utils/math";
 import { sendToBroker } from "../utils/backend";
 
 const CHUNK_ORDER_ASC = 1;
@@ -141,7 +143,7 @@ export default class UploadStream extends Writable {
     this.chunksProcessed++;
 
     // Emit progress
-    const prog = this.chunksProcessed / this.numChunks;
+    const prog = clamp(this.chunksProcessed / this.numChunks, 0, 1);
     this.progressCb(prog);
     console.log(prog);
 
