@@ -8,7 +8,9 @@ import BufferTargetStream from "./streams/bufferTargetStream";
 import { getMetadata } from "./utils/iota";
 import { bytesFromHandle, validateKeys } from "./util";
 
-const DEFAULT_OPTIONS = Object.freeze({});
+const DEFAULT_OPTIONS = Object.freeze({
+  autoStart: true
+});
 const REQUIRED_OPTS = ["iotaProviders"];
 
 export const EVENTS = Object.freeze({
@@ -36,7 +38,7 @@ export default class Download extends EventEmitter {
         this.metadata = metadata;
         this.emit("metadata", metadata);
 
-        this.startDownload(metadata);
+        if (opts.targetStream && opts.autoStart) this.startDownload();
       })
       .catch(this.propagateError);
   }
@@ -55,14 +57,14 @@ export default class Download extends EventEmitter {
     return new Download(handle, opts);
   }
 
-  startDownload(metadata) {
+  startDownload() {
     const { targetStream, targetOptions } = this.options;
 
-    this.downloadStream = new DownloadStream(this.genesisHash, metadata, {
+    this.downloadStream = new DownloadStream(this.genesisHash, this.metadata, {
       iotaProvider: this.iotaProvider
     });
     this.decryptStream = new DecryptStream(this.key);
-    this.targetStream = new targetStream(metadata, targetOptions || {});
+    this.targetStream = new targetStream(this.metadata, targetOptions || {});
 
     this.downloadStream
       .pipe(this.decryptStream)
