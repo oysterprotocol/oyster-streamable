@@ -19,7 +19,8 @@ import { pollMetadata, pollIotaProgress } from "./utils/iota";
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
   filename: "",
-  encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE }
+  encryptStream: { chunkByteSize: CHUNK_BYTE_SIZE },
+  autoStart: true
 });
 
 const REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
@@ -73,9 +74,12 @@ export default class Upload extends EventEmitter {
       this.alpha,
       this.beta,
       this.epochs
-    )
-      .then(this.startUpload.bind(this))
-      .catch(this.propagateError.bind(this));
+    );
+
+    if (opts.autoStart)
+      this.uploadSession
+        .then(this.startUpload.bind(this))
+        .catch(this.propagateError.bind(this));
   }
 
   // File object (browser)
