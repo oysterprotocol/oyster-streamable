@@ -145,7 +145,6 @@ export default class UploadStream extends Writable {
     // Emit progress
     const prog = clamp(this.chunksProcessed / this.numChunks, 0, 1);
     this.progressCb(prog);
-    console.log(prog);
 
     // Upload until done
     if (this.batchBuffer.length > 0) {
