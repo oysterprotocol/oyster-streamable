@@ -143,7 +143,7 @@ export default class UploadStream extends Writable {
     this.chunksProcessed++;
 
     // Emit progress
-    const prog = clamp(this.chunksProcessed / this.numChunks, 0, 1);
+    const prog = clamp(this.chunksProcessed / this.numChunks, 0, 1) * 100;
     this.progressCb(prog);
 
     // Upload until done
