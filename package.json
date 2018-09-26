@@ -3,9 +3,7 @@
   "version": "2.0.5",
   "description": "Arbitrary size interface for the Oyster network",
   "main": "build/index.js",
-  "files": [
-    "build/"
-  ],
+  "files": ["build/"],
   "browser": "dist/oyster-streamable.js",
   "author": "Marcel Lindig <ml@nullpilot.de>",
   "license": "MIT",
@@ -27,10 +25,7 @@
     }
   },
   "jest": {
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "dist"
-    ]
+    "testPathIgnorePatterns": ["/node_modules/", "dist"]
   },
   "dependencies": {
     "aws-sdk": "^2.318.0",
