@@ -2,6 +2,7 @@ export const API = Object.freeze({
   // HOST: "http://localhost:8000",
   HOST: "https://broker-1.oysternodes.com",
   V2_UPLOAD_SESSIONS_PATH: ":3000/api/v2/upload-sessions",
+  V2_UPLOAD_SESSIONS_PATH: ":3000/api/v3/upload-sessions",
   CHUNKS_PER_REQUEST: 10
 });
 
