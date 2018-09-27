@@ -106,7 +106,7 @@ const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
 
 // TODO: Make these configurable?
 const MIN_PROG = 0.0;
-const POLL_INTERVAL = 4000;
+const POLL_INTERVAL = 2000;
 const BUNDLE_SIZE = 100;
 const NUM_POLLING_ADDRESSES = 301;
 
