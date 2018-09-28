@@ -48,6 +48,9 @@ const selectPollingIndexes = (addresses, numPollingAddresses, bundleSize) => {
  */
 
 const skinnyQueryTransactions = (iotaProvider, addresses) =>
+  iotaProvider &&
+  iotaProvider.api &&
+  iotaProvider.api.findTransactions &&
   new Promise((resolve, reject) => {
     iotaProvider.api.findTransactions(
       { addresses },
