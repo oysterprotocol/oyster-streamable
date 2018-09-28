@@ -29,8 +29,8 @@ export const EVENTS = Object.freeze({
   INVOICE: "invoice",
   PAYMENT_PENDING: "payment-pending",
   PAYMENT_CONFIRMED: "payment-confirmed",
-  // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
-  RETRIEVED: "retrieved",
+  CHUNKS_PROGRESS: "chunks-progress", // Progress for uploading chunks.
+  RETRIEVED: "retrieved", // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
   UPLOAD_PROGRESS: "upload-progress",
   FINISH: "finish",
   ERROR: "error"
@@ -143,6 +143,9 @@ export default class Upload extends EventEmitter {
           numberOfChunks: this.numberOfChunks
         });
 
+        const progressCb = progress =>
+          this.emit(EVENTS.CHUNKS_PROGRESS, { progress });
+
         this.sourceStream = new sourceStream(sourceData, sourceOptions || {});
         this.encryptStream = new EncryptStream(this.handle);
         this.uploadStream = new UploadStream(
@@ -152,7 +155,8 @@ export default class Upload extends EventEmitter {
           this.alpha,
           this.beta,
           sessIdA,
-          sessIdB
+          sessIdB,
+          { progressCb }
         );
 
         this.sourceStream
