@@ -1,3 +1,7 @@
+/**
+ * @module oyster-streamable
+ */
+
 import { EventEmitter } from "events";
 import Datamap from "datamap-generator";
 
@@ -39,7 +43,34 @@ export const EVENTS = Object.freeze({
 // TODO: Figure out which ivars are actually needed vs. just locally scoped.
 // Then convert all ivars to local consts
 
+/** Uploading files */
 export default class Upload extends EventEmitter {
+  /**
+   * @name Upload
+   * @depreciated
+   * @class
+
+   * @param { string } filename - the name of the file being uploaded
+   * @param { number } size - the size of the file
+   * @param { object } options - an options object
+   * @inner
+   * @example
+   * ```js
+   * import Oyster from 'oyster-streamable'
+   *
+   * const file = fileInput.files[0]
+   * const upload = new Oyster.Upload(file)
+   *
+   * upload.on('invoice', invoice => {
+   *   console.log(invoice)
+   *   // {address: "<ETH_ADDRESS>", cost: 20}
+   * })
+   * upload.on('finish', filedata => {
+   *   console.log(filedata)
+   *   // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}
+   * })
+   * ```
+   */
   constructor(filename, size, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
     validateKeys(opts, REQUIRED_OPTS);
