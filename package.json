@@ -18,12 +18,13 @@
     "bundle": "webpack",
     "prepublishOnly": "yarn && yarn build",
     "pretty": "prettier --write \"src/**/*.js\"",
+    "docs": "jsdoc2md -t README.hbs src/**/*.js > README.md",
     "test": "jest",
     "test:watch": "jest --watch --colors"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn pretty"
+      "pre-commit": "yarn pretty && yarn docs"
     }
   },
   "jest": {
@@ -48,6 +49,7 @@
     "babel-preset-env": "^1.7.0",
     "husky": "^1.0.0-rc.9",
     "jest": "^23.1.0",
+    "jsdoc-to-markdown": "^4.0.1",
     "prettier": "^1.13.5",
     "regenerator-runtime": "^0.11.1",
     "webpack": "^4.16.5",
