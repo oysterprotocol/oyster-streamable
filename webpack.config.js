@@ -14,7 +14,7 @@ const deepClone = a => {
 };
 
 const config = Object.freeze({
-  entry: "./build/index.js",
+  entry: "./src/index.js",
   resolve: {
     modules: ["node_modules"]
   },
