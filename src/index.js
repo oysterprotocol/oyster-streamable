@@ -3,10 +3,10 @@ import UploadProgress from "./uploadProgress";
 import Download from "./download";
 
 /**
- * Importing oyster-streamable
- *
  * @module oyster-streamable
  * @typicalname Oyster
+ *
+ * @description Importing oyster-streamable
  *
  * @example <caption>As an ES Module</caption>
  * ```js

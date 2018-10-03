@@ -45,6 +45,7 @@ export const EVENTS = Object.freeze({
 export default class Upload extends EventEmitter {
   /**
    * @constructor Upload
+   * @hideconstructor
    *
    * @memberof module:oyster-streamable
    */
@@ -53,9 +54,9 @@ export default class Upload extends EventEmitter {
    * @deprecated
    * @alias Upload
    *
-   * @param { String } filename - the name of the file being uploaded
-   * @param { Number } size - the size of the file
-   * @param { Object } options - the options for the upload
+   * @param {String} filename - the name of the file being uploaded
+   * @param {Number} size - the size of the file
+   * @param {Object} options - the options for the upload
    */
   constructor(filename, size, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
@@ -100,8 +101,8 @@ export default class Upload extends EventEmitter {
   }
 
   /**
-   * @memberof module:oyster-streamable.Upload
    * @static
+   * @memberof module:oyster-streamable.Upload
    *
    * @example <caption>From **File** object (browser)</caption>
    * ```js
@@ -141,8 +142,8 @@ export default class Upload extends EventEmitter {
   }
 
   /**
-   * @memberof module:oyster-streamable.Upload
    * @static
+   * @memberof module:oyster-streamable.Upload
    *
    * @example <caption>From **Buffer** object (node)</caption>
    * ```js
