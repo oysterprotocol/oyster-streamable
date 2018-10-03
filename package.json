@@ -19,6 +19,7 @@
     "prepublishOnly": "yarn && yarn build",
     "pretty": "prettier --write \"src/**/*.js\"",
     "docs": "jsdoc2md -t README.hbs src/**/*.js > README.md",
+    "inspect-docs": "jsdoc2md --json src/**/*.js",
     "test": "jest",
     "test:watch": "jest --watch --colors"
   },
