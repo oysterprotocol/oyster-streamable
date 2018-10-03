@@ -43,7 +43,7 @@ const selectPollingIndexes = (addresses, numPollingAddresses, bundleSize) => {
   }
 };
 
-/**
+/*
  * IOTA Polling (Copied from webinterface)
  */
 
@@ -100,7 +100,7 @@ const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
   });
 };
 
-/**
+/*
  * Public
  */
 
