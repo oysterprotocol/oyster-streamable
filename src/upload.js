@@ -130,7 +130,7 @@ export default class Upload extends EventEmitter {
    * @param {String} options.alpha - the endpoint for the alpha broker
    * @param {String} options.beta - the endpoint for the beta broker
    * @param {Number} options.epochs - the number of years to store the file
-   * @param {Boolean} [options.autoStart=true] - immediately start the Upload
+   * @param {Boolean} [options.autoStart=true] - immediately start the upload
    *
    * @returns {Upload}
    */
@@ -179,7 +179,7 @@ export default class Upload extends EventEmitter {
    * @param {String} options.alpha - the endpoint for the alpha broker
    * @param {String} options.beta - the endpoint for the beta broker
    * @param {Number} options.epochs - the number of years to store the file
-   * @param {Boolean} [options.autoStart=true] - immediately start the Upload
+   * @param {Boolean} [options.autoStart=true] - immediately start the upload
    *
    * @returns {Upload}
    */
