@@ -57,6 +57,10 @@ export default class Download extends EventEmitter {
    * @hideconstructor
    *
    * @memberof module:oyster-streamable
+   *
+   * @emits module:oyster-streamable.Download.EVENTS#METADATA
+   * @emits module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
+   * @emits module:oyster-streamable.Download.EVENTS#FINISH
    */
 
   /*
@@ -113,10 +117,6 @@ export default class Download extends EventEmitter {
    * })
    * ```
    *
-   * @emits module:oyster-streamable.Download.EVENTS#METADATA
-   * @emits module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
-   * @emits module:oyster-streamable.Download.EVENTS#FINISH
-   *
    * @param {String} handle - the handle of the file to download
    * @param {Object} options - the options for the download
    * @param {(Object[]|IOTA[])} options.iotaProviders - an array of IOTA initialization Objects or IOTA instances
@@ -153,10 +153,6 @@ export default class Download extends EventEmitter {
    *   // {file: Blob(), metadata: {…}, target: Download}
    * })
    * ```
-   *
-   * @emits module:oyster-streamable.Download.EVENTS#METADATA
-   * @emits module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
-   * @emits module:oyster-streamable.Download.EVENTS#FINISH
    *
    * @param {String} handle - the handle of the file to download
    * @param {Object} options - the options for the download

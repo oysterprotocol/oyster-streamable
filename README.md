@@ -54,6 +54,7 @@ window.Oyster = Oyster.default
 
 ### Oyster.Download
 **Kind**: static class of [<code>oyster-streamable</code>](#module_oyster-streamable)  
+**Emits**: [<code>METADATA</code>](#module_oyster-streamable.Download.EVENTS+event_METADATA), [<code>DOWNLOAD_PROGRESS</code>](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS), [<code>FINISH</code>](#module_oyster-streamable.Download.EVENTS+event_FINISH)  
 
 * [.Download](#module_oyster-streamable.Download)
     * [.EVENTS](#module_oyster-streamable.Download.EVENTS)
@@ -119,7 +120,6 @@ Fired when the file metadata has been reconstructed and is ready for use
 
 #### Download.toBuffer(handle, options) ⇒ <code>Download</code>
 **Kind**: static method of [<code>Download</code>](#module_oyster-streamable.Download)  
-**Emits**: [<code>METADATA</code>](#module_oyster-streamable.Download.EVENTS+event_METADATA), [<code>DOWNLOAD_PROGRESS</code>](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS), [<code>FINISH</code>](#module_oyster-streamable.Download.EVENTS+event_FINISH)  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -150,7 +150,6 @@ download.on('finish', filedata => {
 
 #### Download.toBlob(handle, options) ⇒ <code>Download</code>
 **Kind**: static method of [<code>Download</code>](#module_oyster-streamable.Download)  
-**Emits**: [<code>METADATA</code>](#module_oyster-streamable.Download.EVENTS+event_METADATA), [<code>DOWNLOAD_PROGRESS</code>](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS), [<code>FINISH</code>](#module_oyster-streamable.Download.EVENTS+event_FINISH)  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -181,6 +180,7 @@ download.on('finish', filedata => {
 
 ### Oyster.Upload
 **Kind**: static class of [<code>oyster-streamable</code>](#module_oyster-streamable)  
+**Emits**: [<code>INVOICE</code>](#module_oyster-streamable.Upload.EVENTS+event_INVOICE), [<code>CHUNKS_PROGRESS</code>](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS), [<code>UPLOAD_PROGRESS</code>](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS), [<code>FINISH</code>](#module_oyster-streamable.Upload.EVENTS+event_FINISH)  
 
 * [.Upload](#module_oyster-streamable.Upload)
     * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)

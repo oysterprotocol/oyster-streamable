@@ -84,6 +84,11 @@ export default class Upload extends EventEmitter {
    * @hideconstructor
    *
    * @memberof module:oyster-streamable
+   *
+   * @emits module:oyster-streamable.Upload.EVENTS#INVOICE
+   * @emits module:oyster-streamable.Upload.EVENTS#CHUNKS_PROGRESS
+   * @emits module:oyster-streamable.Upload.EVENTS#UPLOAD_PROGRESS
+   * @emits module:oyster-streamable.Upload.EVENTS#FINISH
    */
 
   /*
