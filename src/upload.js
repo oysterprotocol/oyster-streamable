@@ -108,9 +108,9 @@ export default class Upload extends EventEmitter {
    * ```js
    * const file = fileInput.files[0];
    * const upload = Oyster.Upload.fromFile(file, {
-   *   iotaProvider: { provider: '' },
-   *   alpha: '',
-   *   beta: '',
+   *   iotaProvider: { provider: 'https://poll.oysternodes.com:14265/' },
+   *   alpha: 'https://broker-1.oysternodes.com/',
+   *   beta: 'https://broker-2.oysternodes.com/',
    *   epochs: 1
    * });
    *
@@ -155,9 +155,9 @@ export default class Upload extends EventEmitter {
    *   if (err) throw err;
    *
    *   const upload = Oyster.Upload.fromData(data, filename, {
-   *     iotaProvider: { provider: '' },
-   *     alpha: '',
-   *     beta: '',
+   *     iotaProvider: { provider: 'https://poll.oysternodes.com:14265/' },
+   *     alpha: 'https://broker-1.oysternodes.com/',
+   *     beta: 'https://broker-2.oysternodes.com/',
    *     epochs: 1
    *   });
    *
