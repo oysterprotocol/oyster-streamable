@@ -15,71 +15,114 @@ with a few significant changes:
   - Download > Decryption > Blob
 
 ## API Reference
-oyster-streamable js interface for Oyster file storage
+<a name="module_oyster-streamable"></a>
 
-**Example**  
-```jsimport Oyster from 'oyster-streamable'```
+## oyster-streamable
+Importing oyster-streamable
+
+**Example** *(As an ES Module)*  
+```js
+import Oyster from 'oyster-streamable'
+```
+**Example** *(As a Node Module)*  
+```js
+const Oyster = require(`oyster-streamable`)
+```
+**Example** *(As a UMD Module)*  
+```js
+window.Oyster = Oyster.default
+```
 
 * [oyster-streamable](#module_oyster-streamable)
-    * [module.exports](#exp_module_oyster-streamable--module.exports) ⏏
-        * [~Upload](#module_oyster-streamable--module.exports..Upload)
-            * [new Upload(filename, size, options)](#new_module_oyster-streamable--module.exports..Upload_new)
+    * [.Upload](#module_oyster-streamable.Upload)
+        * [.fromFile(file, options)](#module_oyster-streamable.Upload.fromFile) ⇒ <code>Upload</code>
+        * [.fromData(buffer, filename, options)](#module_oyster-streamable.Upload.fromData) ⇒ <code>Upload</code>
 
-<a name="exp_module_oyster-streamable--module.exports"></a>
+<a name="module_oyster-streamable.Upload"></a>
 
-### module.exports ⏏
-Uploading files
+### Oyster.Upload
+**Kind**: static class of [<code>oyster-streamable</code>](#module_oyster-streamable)  
 
-**Kind**: Exported class  
-<a name="module_oyster-streamable--module.exports..Upload"></a>
+* [.Upload](#module_oyster-streamable.Upload)
+    * [.fromFile(file, options)](#module_oyster-streamable.Upload.fromFile) ⇒ <code>Upload</code>
+    * [.fromData(buffer, filename, options)](#module_oyster-streamable.Upload.fromData) ⇒ <code>Upload</code>
 
-#### module.exports~Upload
-**Kind**: inner class of [<code>module.exports</code>](#exp_module_oyster-streamable--module.exports)  
-**Depreciated**:   
-<a name="new_module_oyster-streamable--module.exports..Upload_new"></a>
+<a name="module_oyster-streamable.Upload.fromFile"></a>
 
-##### new Upload(filename, size, options)
+#### Upload.fromFile(file, options) ⇒ <code>Upload</code>
+**Kind**: static method of [<code>Upload</code>](#module_oyster-streamable.Upload)  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| filename | <code>string</code> | the name of the file being uploaded |
-| size | <code>number</code> | the size of the file |
-| options | <code>object</code> | an options object |
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| file | <code>File</code> |  | the file to upload |
+| options | <code>Object</code> |  | the options for the upload |
+| options.iotaProvider | <code>Object</code> \| <code>IOTA</code> |  | an IOTA initialization Object or IOTA instance |
+| options.alpha | <code>String</code> |  | the endpoint for the alpha broker |
+| options.beta | <code>String</code> |  | the endpoint for the beta broker |
+| options.epochs | <code>Number</code> |  | the number of years to store the file |
+| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the Upload |
 
-**Example**  
-```jsimport Oyster from 'oyster-streamable'const file = fileInput.files[0]const upload = new Oyster.Upload(file)upload.on('invoice', invoice => {  console.log(invoice)  // {address: "<ETH_ADDRESS>", cost: 20}})upload.on('finish', filedata => {  console.log(filedata)  // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}})```
+**Example** *(From **File** object (browser))*  
+```js
+const file = fileInput.files[0];
+const upload = Oyster.Upload.fromFile(file, {
+  iotaProvider: { provider: '' },
+  alpha: '',
+  beta: '',
+  epochs: 1
+});
 
-- - -
+upload.on('invoice', invoice => {
+  console.log(invoice)
+  // {address: "<ETH_ADDRESS>", cost: 20}
+});
+upload.on('finish', filedata => {
+  console.log(filedata)
+  // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}
+});
+```
+<a name="module_oyster-streamable.Upload.fromData"></a>
 
-<a name="module_oyster-streamable--module.exports..Upload"></a>
+#### Upload.fromData(buffer, filename, options) ⇒ <code>Upload</code>
+**Kind**: static method of [<code>Upload</code>](#module_oyster-streamable.Upload)  
 
-### module.exports~Upload
-**Kind**: inner class of [<code>module.exports</code>](#exp_module_oyster-streamable--module.exports)  
-**Depreciated**:   
-<a name="new_module_oyster-streamable--module.exports..Upload_new"></a>
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| buffer | <code>Buffer</code> |  | the data Buffer to upload |
+| filename | <code>String</code> |  | the name of the file |
+| options | <code>Object</code> |  | the options for the upload |
+| options.iotaProvider | <code>Object</code> \| <code>IOTA</code> |  | an IOTA initialization Object or IOTA instance |
+| options.alpha | <code>String</code> |  | the endpoint for the alpha broker |
+| options.beta | <code>String</code> |  | the endpoint for the beta broker |
+| options.epochs | <code>Number</code> |  | the number of years to store the file |
+| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the Upload |
 
-#### new Upload(filename, size, options)
+**Example** *(From **Buffer** object (node))*  
+```js
+const fs = require('fs');
+const path = './path/to/file';
+const filename = 'somefile.txt';
 
-| Param | Type | Description |
-| --- | --- | --- |
-| filename | <code>string</code> | the name of the file being uploaded |
-| size | <code>number</code> | the size of the file |
-| options | <code>object</code> | an options object |
+fs.readFile(`${path}/${filename}`, (err, data) => {
+  if (err) throw err;
 
-**Example**  
-```jsimport Oyster from 'oyster-streamable'const file = fileInput.files[0]const upload = new Oyster.Upload(file)upload.on('invoice', invoice => {  console.log(invoice)  // {address: "<ETH_ADDRESS>", cost: 20}})upload.on('finish', filedata => {  console.log(filedata)  // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}})```
-<a name="new_module_oyster-streamable--module.exports..Upload_new"></a>
+  const upload = Oyster.Upload.fromData(data, filename, {
+    iotaProvider: { provider: '' },
+    alpha: '',
+    beta: '',
+    epochs: 1
+  });
 
-### new Upload(filename, size, options)
-
-| Param | Type | Description |
-| --- | --- | --- |
-| filename | <code>string</code> | the name of the file being uploaded |
-| size | <code>number</code> | the size of the file |
-| options | <code>object</code> | an options object |
-
-**Example**  
-```jsimport Oyster from 'oyster-streamable'const file = fileInput.files[0]const upload = new Oyster.Upload(file)upload.on('invoice', invoice => {  console.log(invoice)  // {address: "<ETH_ADDRESS>", cost: 20}})upload.on('finish', filedata => {  console.log(filedata)  // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}})```
+  upload.on('invoice', invoice => {
+    console.log(invoice)
+    // {address: "<ETH_ADDRESS>", cost: 20}
+  });
+  upload.on('finish', filedata => {
+    console.log(filedata)
+    // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}
+  });
+});
+```
 
 * * *
 
