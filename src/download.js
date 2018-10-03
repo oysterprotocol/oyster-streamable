@@ -98,7 +98,8 @@ export default class Download extends EventEmitter {
    * ```js
    * const download = Oyster.Download.toBuffer(handle, {
    *   iotaProviders: [
-   *     { provider: '' }
+   *     { provider: 'https://poll.oysternodes.com:14265/' },
+   *     { provider: 'https://download.oysternodes.com:14265/' }
    *   ]
    * })
    *
@@ -138,7 +139,8 @@ export default class Download extends EventEmitter {
    * ```js
    * const download = Oyster.Download.toBlob(handle, {
    *   iotaProviders: [
-   *     { provider: '' }
+   *     { provider: 'https://poll.oysternodes.com:14265/' },
+   *     { provider: 'https://download.oysternodes.com:14265/' }
    *   ]
    * })
    *
