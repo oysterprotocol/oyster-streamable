@@ -13,39 +13,9 @@ const DEFAULT_OPTIONS = Object.freeze({
 });
 const REQUIRED_OPTS = ["iotaProviders"];
 
-/**
- * @static
- * @memberof module:oyster-streamable.Download
- * @alias EVENTS
- *
- * @description Events fired during the download lifecycle
- */
 export const EVENTS = Object.freeze({
-  /**
-   * @event module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
-   * @description Fired when a successful poll is performed while retrieving a file
-   *
-   * @property {Object} progress - a progress object
-   * @property {Number} progress.progress - the percentage of progress for the download
-   */
   DOWNLOAD_PROGRESS: "download-progress",
-  /**
-   * @event module:oyster-streamable.Download.EVENTS#FINISH
-   * @description Fired when the file has been reconstructed and is ready for use
-   *
-   * @property {(File|Buffer)} file - the file as an object as the target type of the download instance
-   * @property {Object} metadata - the metadata object associated with the file
-   */
-  FINISH: "finish",
-  /**
-   * @event module:oyster-streamable.Download.EVENTS#METADATA
-   * @description Fired when the file metadata has been reconstructed and is ready for use
-   *
-   * @property {String} fileName - the name of the file being downloaded
-   * @property {String} ext - the file extension of the file being downloaded
-   * @property {Number} numberOfChunks - the number of chunks that the file is stored in
-   */
-  METADATA: "metadata"
+  FINISH: "finish"
 });
 
 /**
@@ -113,10 +83,6 @@ export default class Download extends EventEmitter {
    * })
    * ```
    *
-   * @emits module:oyster-streamable.Download.EVENTS#METADATA
-   * @emits module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
-   * @emits module:oyster-streamable.Download.EVENTS#FINISH
-   *
    * @param {String} handle - the handle of the file to download
    * @param {Object} options - the options for the download
    * @param {(Object[]|IOTA[])} options.iotaProviders - an array of IOTA initialization Objects or IOTA instances
@@ -153,10 +119,6 @@ export default class Download extends EventEmitter {
    *   // {file: Blob(), metadata: {…}, target: Download}
    * })
    * ```
-   *
-   * @emits module:oyster-streamable.Download.EVENTS#METADATA
-   * @emits module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
-   * @emits module:oyster-streamable.Download.EVENTS#FINISH
    *
    * @param {String} handle - the handle of the file to download
    * @param {Object} options - the options for the download

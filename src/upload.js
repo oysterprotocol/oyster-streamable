@@ -25,49 +25,13 @@ const DEFAULT_OPTIONS = Object.freeze({
 
 const REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
 
-/**
- * @static
- * @memberof module:oyster-streamable.Upload
- * @alias EVENTS
- *
- * @description Events fired during the upload lifecycle
- */
 export const EVENTS = Object.freeze({
-  /**
-   * @event module:oyster-streamable.Upload.EVENTS#INVOICE
-   * @description Fired when an invoice is recieved from the broker node
-   *
-   * @property {String} handle - the handle of the file uploaded
-   * @property {String} address - an ethereum address to send the pearl to
-   * @property {Number} cost - the cost of the file upload
-   */
   INVOICE: "invoice",
   PAYMENT_PENDING: "payment-pending",
   PAYMENT_CONFIRMED: "payment-confirmed",
-  /**
-   * @event module:oyster-streamable.Upload.EVENTS#CHUNKS_PROGRESS
-   * @description Fired when a chunk is uploaded to the broker
-   *
-   * @property {Object} progress - a progress object
-   * @property {Number} progress.progress - the percentage of progress for the chunk upload
-   */
-  CHUNKS_PROGRESS: "chunks-progress",
+  CHUNKS_PROGRESS: "chunks-progress", // Progress for uploading chunks.
   RETRIEVED: "retrieved", // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
-  /**
-   * @event module:oyster-streamable.Upload.EVENTS#UPLOAD_PROGRESS
-   * @description Fired when a chunk is attached to the tangle
-   *
-   * @property {Object} progress - a progress object
-   * @property {Number} progress.progress - the percentage of progress for the chunk attachment
-   */
   UPLOAD_PROGRESS: "upload-progress",
-  /**
-   * @event module:oyster-streamable.Upload.EVENTS#FINISH
-   * @description Fired when the file has been completely attached to the tangle
-   *
-   * @property {String} handle - the handle of the file uploaded
-   * @property {Object} metadata - the metadata object associated with the file
-   */
   FINISH: "finish",
   ERROR: "error"
 });
@@ -144,9 +108,9 @@ export default class Upload extends EventEmitter {
    * ```js
    * const file = fileInput.files[0];
    * const upload = Oyster.Upload.fromFile(file, {
-   *   iotaProvider: { provider: 'https://poll.oysternodes.com:14265/' },
-   *   alpha: 'https://broker-1.oysternodes.com/',
-   *   beta: 'https://broker-2.oysternodes.com/',
+   *   iotaProvider: { provider: '' },
+   *   alpha: '',
+   *   beta: '',
    *   epochs: 1
    * });
    *
@@ -191,9 +155,9 @@ export default class Upload extends EventEmitter {
    *   if (err) throw err;
    *
    *   const upload = Oyster.Upload.fromData(data, filename, {
-   *     iotaProvider: { provider: 'https://poll.oysternodes.com:14265/' },
-   *     alpha: 'https://broker-1.oysternodes.com/',
-   *     beta: 'https://broker-2.oysternodes.com/',
+   *     iotaProvider: { provider: '' },
+   *     alpha: '',
+   *     beta: '',
    *     epochs: 1
    *   });
    *
