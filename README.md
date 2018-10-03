@@ -35,9 +35,18 @@ window.Oyster = Oyster.default
 
 * [oyster-streamable](#module_oyster-streamable)
     * [.Download](#module_oyster-streamable.Download)
+        * [.EVENTS](#module_oyster-streamable.Download.EVENTS)
+            * ["DOWNLOAD_PROGRESS"](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS)
+            * ["FINISH"](#module_oyster-streamable.Download.EVENTS+event_FINISH)
+            * ["METADATA"](#module_oyster-streamable.Download.EVENTS+event_METADATA)
         * [.toBuffer(handle, options)](#module_oyster-streamable.Download.toBuffer) ⇒ <code>Download</code>
         * [.toBlob(handle, options)](#module_oyster-streamable.Download.toBlob) ⇒ <code>Download</code>
     * [.Upload](#module_oyster-streamable.Upload)
+        * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
+            * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
+            * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+            * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
+            * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
         * [.fromFile(file, options)](#module_oyster-streamable.Upload.fromFile) ⇒ <code>Upload</code>
         * [.fromData(buffer, filename, options)](#module_oyster-streamable.Upload.fromData) ⇒ <code>Upload</code>
 
@@ -47,13 +56,70 @@ window.Oyster = Oyster.default
 **Kind**: static class of [<code>oyster-streamable</code>](#module_oyster-streamable)  
 
 * [.Download](#module_oyster-streamable.Download)
+    * [.EVENTS](#module_oyster-streamable.Download.EVENTS)
+        * ["DOWNLOAD_PROGRESS"](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS)
+        * ["FINISH"](#module_oyster-streamable.Download.EVENTS+event_FINISH)
+        * ["METADATA"](#module_oyster-streamable.Download.EVENTS+event_METADATA)
     * [.toBuffer(handle, options)](#module_oyster-streamable.Download.toBuffer) ⇒ <code>Download</code>
     * [.toBlob(handle, options)](#module_oyster-streamable.Download.toBlob) ⇒ <code>Download</code>
+
+<a name="module_oyster-streamable.Download.EVENTS"></a>
+
+#### Download.EVENTS
+Events fired during the download lifecycle
+
+**Kind**: static constant of [<code>Download</code>](#module_oyster-streamable.Download)  
+
+* [.EVENTS](#module_oyster-streamable.Download.EVENTS)
+    * ["DOWNLOAD_PROGRESS"](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS)
+    * ["FINISH"](#module_oyster-streamable.Download.EVENTS+event_FINISH)
+    * ["METADATA"](#module_oyster-streamable.Download.EVENTS+event_METADATA)
+
+<a name="module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS"></a>
+
+##### "DOWNLOAD_PROGRESS"
+Fired when a successful poll is performed while retrieving a file
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Download.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| progress | <code>Object</code> | a progress object |
+| progress.progress | <code>Number</code> | the percentage of progress for the download |
+
+<a name="module_oyster-streamable.Download.EVENTS+event_FINISH"></a>
+
+##### "FINISH"
+Fired when the file has been reconstructed and is ready for use
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Download.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| file | <code>File</code> \| <code>Buffer</code> | the file as an object as the target type of the download instance |
+| metadata | <code>Object</code> | the metadata object associated with the file |
+
+<a name="module_oyster-streamable.Download.EVENTS+event_METADATA"></a>
+
+##### "METADATA"
+Fired when the file metadata has been reconstructed and is ready for use
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Download.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| fileName | <code>String</code> | the name of the file being downloaded |
+| ext | <code>String</code> | the file extension of the file being downloaded |
+| numberOfChunks | <code>Number</code> | the number of chunks that the file is stored in |
 
 <a name="module_oyster-streamable.Download.toBuffer"></a>
 
 #### Download.toBuffer(handle, options) ⇒ <code>Download</code>
 **Kind**: static method of [<code>Download</code>](#module_oyster-streamable.Download)  
+**Emits**: [<code>METADATA</code>](#module_oyster-streamable.Download.EVENTS+event_METADATA), [<code>DOWNLOAD_PROGRESS</code>](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS), [<code>FINISH</code>](#module_oyster-streamable.Download.EVENTS+event_FINISH)  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -66,7 +132,8 @@ window.Oyster = Oyster.default
 ```js
 const download = Oyster.Download.toBuffer(handle, {
   iotaProviders: [
-    { provider: '' }
+    { provider: 'https://poll.oysternodes.com:14265/' },
+    { provider: 'https://download.oysternodes.com:14265/' }
   ]
 })
 
@@ -83,6 +150,7 @@ download.on('finish', filedata => {
 
 #### Download.toBlob(handle, options) ⇒ <code>Download</code>
 **Kind**: static method of [<code>Download</code>](#module_oyster-streamable.Download)  
+**Emits**: [<code>METADATA</code>](#module_oyster-streamable.Download.EVENTS+event_METADATA), [<code>DOWNLOAD_PROGRESS</code>](#module_oyster-streamable.Download.EVENTS+event_DOWNLOAD_PROGRESS), [<code>FINISH</code>](#module_oyster-streamable.Download.EVENTS+event_FINISH)  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -95,7 +163,8 @@ download.on('finish', filedata => {
 ```js
 const download = Oyster.Download.toBlob(handle, {
   iotaProviders: [
-    { provider: '' }
+    { provider: 'https://poll.oysternodes.com:14265/' },
+    { provider: 'https://download.oysternodes.com:14265/' }
   ]
 })
 
@@ -114,8 +183,79 @@ download.on('finish', filedata => {
 **Kind**: static class of [<code>oyster-streamable</code>](#module_oyster-streamable)  
 
 * [.Upload](#module_oyster-streamable.Upload)
+    * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
+        * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
+        * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+        * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
+        * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
     * [.fromFile(file, options)](#module_oyster-streamable.Upload.fromFile) ⇒ <code>Upload</code>
     * [.fromData(buffer, filename, options)](#module_oyster-streamable.Upload.fromData) ⇒ <code>Upload</code>
+
+<a name="module_oyster-streamable.Upload.EVENTS"></a>
+
+#### Upload.EVENTS
+Events fired during the upload lifecycle
+
+**Kind**: static constant of [<code>Upload</code>](#module_oyster-streamable.Upload)  
+
+* [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
+    * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
+    * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+    * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
+    * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_INVOICE"></a>
+
+##### "INVOICE"
+Fired when an invoice is recieved from the broker node
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| handle | <code>String</code> | the handle of the file uploaded |
+| address | <code>String</code> | an ethereum address to send the pearl to |
+| cost | <code>Number</code> | the cost of the file upload |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS"></a>
+
+##### "CHUNKS_PROGRESS"
+Fired when a chunk is uploaded to the broker
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| progress | <code>Object</code> | a progress object |
+| progress.progress | <code>Number</code> | the percentage of progress for the chunk upload |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS"></a>
+
+##### "UPLOAD_PROGRESS"
+Fired when a chunk is attached to the tangle
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| progress | <code>Object</code> | a progress object |
+| progress.progress | <code>Number</code> | the percentage of progress for the chunk attachment |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_FINISH"></a>
+
+##### "FINISH"
+Fired when the file has been completely attached to the tangle
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| handle | <code>String</code> | the handle of the file uploaded |
+| metadata | <code>Object</code> | the metadata object associated with the file |
 
 <a name="module_oyster-streamable.Upload.fromFile"></a>
 
@@ -136,9 +276,9 @@ download.on('finish', filedata => {
 ```js
 const file = fileInput.files[0];
 const upload = Oyster.Upload.fromFile(file, {
-  iotaProvider: { provider: '' },
-  alpha: '',
-  beta: '',
+  iotaProvider: { provider: 'https://poll.oysternodes.com:14265/' },
+  alpha: 'https://broker-1.oysternodes.com/',
+  beta: 'https://broker-2.oysternodes.com/',
   epochs: 1
 });
 
@@ -177,9 +317,9 @@ fs.readFile(`${path}/${filename}`, (err, data) => {
   if (err) throw err;
 
   const upload = Oyster.Upload.fromData(data, filename, {
-    iotaProvider: { provider: '' },
-    alpha: '',
-    beta: '',
+    iotaProvider: { provider: 'https://poll.oysternodes.com:14265/' },
+    alpha: 'https://broker-1.oysternodes.com/',
+    beta: 'https://broker-2.oysternodes.com/',
     epochs: 1
   });
 
