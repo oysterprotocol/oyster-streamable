@@ -1,7 +1,3 @@
-/**
- * @module oyster-streamable
- */
-
 import { EventEmitter } from "events";
 import Datamap from "datamap-generator";
 
@@ -43,33 +39,23 @@ export const EVENTS = Object.freeze({
 // TODO: Figure out which ivars are actually needed vs. just locally scoped.
 // Then convert all ivars to local consts
 
-/** Uploading files */
+/**
+ * Uploading files
+ */
 export default class Upload extends EventEmitter {
   /**
-   * @name Upload
-   * @depreciated
-   * @class
+   * @constructor Upload
+   *
+   * @memberof module:oyster-streamable
+   */
 
-   * @param { string } filename - the name of the file being uploaded
-   * @param { number } size - the size of the file
-   * @param { object } options - an options object
-   * @inner
-   * @example
-   * ```js
-   * import Oyster from 'oyster-streamable'
+  /*
+   * @deprecated
+   * @alias Upload
    *
-   * const file = fileInput.files[0]
-   * const upload = new Oyster.Upload(file)
-   *
-   * upload.on('invoice', invoice => {
-   *   console.log(invoice)
-   *   // {address: "<ETH_ADDRESS>", cost: 20}
-   * })
-   * upload.on('finish', filedata => {
-   *   console.log(filedata)
-   *   // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}
-   * })
-   * ```
+   * @param { String } filename - the name of the file being uploaded
+   * @param { Number } size - the size of the file
+   * @param { Object } options - the options for the upload
    */
   constructor(filename, size, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
@@ -113,7 +99,40 @@ export default class Upload extends EventEmitter {
         .catch(this.propagateError.bind(this));
   }
 
-  // File object (browser)
+  /**
+   * @memberof module:oyster-streamable.Upload
+   * @static
+   *
+   * @example <caption>From **File** object (browser)</caption>
+   * ```js
+   * const file = fileInput.files[0];
+   * const upload = Oyster.Upload.fromFile(file, {
+   *   iotaProvider: { provider: '' },
+   *   alpha: '',
+   *   beta: '',
+   *   epochs: 1
+   * });
+   *
+   * upload.on('invoice', invoice => {
+   *   console.log(invoice)
+   *   // {address: "<ETH_ADDRESS>", cost: 20}
+   * });
+   * upload.on('finish', filedata => {
+   *   console.log(filedata)
+   *   // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}
+   * });
+   * ```
+   *
+   * @param {File} file - the file to upload
+   * @param {Object} options - the options for the upload
+   * @param {(Object|IOTA)} options.iotaProvider - an IOTA initialization Object or IOTA instance
+   * @param {String} options.alpha - the endpoint for the alpha broker
+   * @param {String} options.beta - the endpoint for the beta broker
+   * @param {Number} options.epochs - the number of years to store the file
+   * @param {Boolean} [options.autoStart=true] - immediately start the Upload
+   *
+   * @returns {Upload}
+   */
   static fromFile(file, options = {}) {
     const source = { sourceData: file, sourceStream: FileChunkStream };
     const opts = Object.assign(options, source);
@@ -121,7 +140,48 @@ export default class Upload extends EventEmitter {
     return new Upload(file.name, file.size, opts);
   }
 
-  // Uint8Array or node buffer
+  /**
+   * @memberof module:oyster-streamable.Upload
+   * @static
+   *
+   * @example <caption>From **Buffer** object (node)</caption>
+   * ```js
+   * const fs = require('fs');
+   * const path = './path/to/file';
+   * const filename = 'somefile.txt';
+   *
+   * fs.readFile(`${path}/${filename}`, (err, data) => {
+   *   if (err) throw err;
+   *
+   *   const upload = Oyster.Upload.fromData(data, filename, {
+   *     iotaProvider: { provider: '' },
+   *     alpha: '',
+   *     beta: '',
+   *     epochs: 1
+   *   });
+   *
+   *   upload.on('invoice', invoice => {
+   *     console.log(invoice)
+   *     // {address: "<ETH_ADDRESS>", cost: 20}
+   *   });
+   *   upload.on('finish', filedata => {
+   *     console.log(filedata)
+   *     // {handle: "<OYSTER_HANDLE>", metadata: {…}, target: Upload}
+   *   });
+   * });
+   * ```
+   *
+   * @param {Buffer} buffer - the data Buffer to upload
+   * @param {String} filename - the name of the file
+   * @param {Object} options - the options for the upload
+   * @param {(Object|IOTA)} options.iotaProvider - an IOTA initialization Object or IOTA instance
+   * @param {String} options.alpha - the endpoint for the alpha broker
+   * @param {String} options.beta - the endpoint for the beta broker
+   * @param {Number} options.epochs - the number of years to store the file
+   * @param {Boolean} [options.autoStart=true] - immediately start the Upload
+   *
+   * @returns {Upload}
+   */
   static fromData(buffer, filename, options = {}) {
     const source = { sourceData: buffer, sourceStream: BufferSourceStream };
     const opts = Object.assign(options, source);
