@@ -34,10 +34,80 @@ window.Oyster = Oyster.default
 ```
 
 * [oyster-streamable](#module_oyster-streamable)
+    * [.Download](#module_oyster-streamable.Download)
+        * [.toBuffer(handle, options)](#module_oyster-streamable.Download.toBuffer) ⇒ <code>Download</code>
+        * [.toBlob(handle, options)](#module_oyster-streamable.Download.toBlob) ⇒ <code>Download</code>
     * [.Upload](#module_oyster-streamable.Upload)
         * [.fromFile(file, options)](#module_oyster-streamable.Upload.fromFile) ⇒ <code>Upload</code>
         * [.fromData(buffer, filename, options)](#module_oyster-streamable.Upload.fromData) ⇒ <code>Upload</code>
 
+<a name="module_oyster-streamable.Download"></a>
+
+### Oyster.Download
+**Kind**: static class of [<code>oyster-streamable</code>](#module_oyster-streamable)  
+
+* [.Download](#module_oyster-streamable.Download)
+    * [.toBuffer(handle, options)](#module_oyster-streamable.Download.toBuffer) ⇒ <code>Download</code>
+    * [.toBlob(handle, options)](#module_oyster-streamable.Download.toBlob) ⇒ <code>Download</code>
+
+<a name="module_oyster-streamable.Download.toBuffer"></a>
+
+#### Download.toBuffer(handle, options) ⇒ <code>Download</code>
+**Kind**: static method of [<code>Download</code>](#module_oyster-streamable.Download)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| handle | <code>String</code> |  | the handle of the file to download |
+| options | <code>Object</code> |  | the options for the download |
+| options.iotaProviders | <code>Array.&lt;Object&gt;</code> \| <code>Array.&lt;IOTA&gt;</code> |  | an array of IOTA initialization Objects or IOTA instances |
+| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the download |
+
+**Example** *(To **Buffer** object (node))*  
+```js
+const download = Oyster.Download.toBuffer(handle, {
+  iotaProviders: [
+    { provider: '' }
+  ]
+})
+
+download.on('meta', metadata => {
+  console.log(metadata)
+  // {fileName: "oyster.txt", ext: "txt", numberOfChunks: 2}
+})
+download.on('finish', filedata => {
+  console.log(filedata)
+  // {file: Buffer(), metadata: {…}, target: Download}
+})
+```
+<a name="module_oyster-streamable.Download.toBlob"></a>
+
+#### Download.toBlob(handle, options) ⇒ <code>Download</code>
+**Kind**: static method of [<code>Download</code>](#module_oyster-streamable.Download)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| handle | <code>String</code> |  | the handle of the file to download |
+| options | <code>Object</code> |  | the options for the download |
+| options.iotaProviders | <code>Array.&lt;Object&gt;</code> \| <code>Array.&lt;IOTA&gt;</code> |  | an array of IOTA initialization Objects or IOTA instances |
+| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the download |
+
+**Example** *(To **Blob** object (browser))*  
+```js
+const download = Oyster.Download.toBlob(handle, {
+  iotaProviders: [
+    { provider: '' }
+  ]
+})
+
+download.on('meta', metadata => {
+  console.log(metadata)
+  // {fileName: "oyster.txt", ext: "txt", numberOfChunks: 2}
+})
+download.on('finish', filedata => {
+  console.log(filedata)
+  // {file: Blob(), metadata: {…}, target: Download}
+})
+```
 <a name="module_oyster-streamable.Upload"></a>
 
 ### Oyster.Upload
@@ -60,7 +130,7 @@ window.Oyster = Oyster.default
 | options.alpha | <code>String</code> |  | the endpoint for the alpha broker |
 | options.beta | <code>String</code> |  | the endpoint for the beta broker |
 | options.epochs | <code>Number</code> |  | the number of years to store the file |
-| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the Upload |
+| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the upload |
 
 **Example** *(From **File** object (browser))*  
 ```js
@@ -95,7 +165,7 @@ upload.on('finish', filedata => {
 | options.alpha | <code>String</code> |  | the endpoint for the alpha broker |
 | options.beta | <code>String</code> |  | the endpoint for the beta broker |
 | options.epochs | <code>Number</code> |  | the number of years to store the file |
-| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the Upload |
+| [options.autoStart] | <code>Boolean</code> | <code>true</code> | immediately start the upload |
 
 **Example** *(From **Buffer** object (node))*  
 ```js
