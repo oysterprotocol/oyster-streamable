@@ -34,7 +34,7 @@ test("Upload emits the expected events", done => {
       createUploadSession: createUploadSessionStub
     };
     const u = Upload.fromFile(file, opts);
-    expect.assertions(5);
+    expect.assertions(4);
 
     u.on(EVENTS.INVOICE, invoice => {
       expect(invoice).toEqual(invoiceStub);
@@ -52,11 +52,13 @@ test("Upload emits the expected events", done => {
       expect(paymentConfirmation).toHaveProperty("handle"); // This has randomness
     });
 
-    u.on(EVENTS.UPLOAD_PROGRESS, progress => {
-      expect(progress).toEqual({ progress: 0.123 });
-    });
+    // TODO: These have been moved to uploadProgess.js
+    // u.on(EVENTS.UPLOAD_PROGRESS, progress => {
+    //   expect(progress).toEqual({ progress: 0.123 });
+    // });
+    // u.on(EVENTS.FINISH, done);
 
+    u.on(EVENTS.RETRIEVED, done);
     u.on(EVENTS.ERROR, done.fail);
-    u.on(EVENTS.FINISH, done);
   });
 });

@@ -53,22 +53,6 @@ export const EVENTS = Object.freeze({
    */
   CHUNKS_PROGRESS: "chunks-progress",
   RETRIEVED: "retrieved", // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
-  /**
-   * @event module:oyster-streamable.Upload.EVENTS#UPLOAD_PROGRESS
-   * @description Fired when a chunk is attached to the tangle
-   *
-   * @property {Object} progress - a progress object
-   * @property {Number} progress.progress - the percentage of progress for the chunk attachment
-   */
-  UPLOAD_PROGRESS: "upload-progress",
-  /**
-   * @event module:oyster-streamable.Upload.EVENTS#FINISH
-   * @description Fired when the file has been completely attached to the tangle
-   *
-   * @property {String} handle - the handle of the file uploaded
-   * @property {Object} metadata - the metadata object associated with the file
-   */
-  FINISH: "finish",
   ERROR: "error"
 });
 
@@ -248,9 +232,8 @@ export default class Upload extends EventEmitter {
         numberOfChunks: this.numberOfChunks
       });
 
-      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: 0.123 });
+      this.emit(EVENTS.RETRIEVED);
 
-      this.emit(EVENTS.FINISH);
       return;
     }
 
@@ -303,8 +286,6 @@ export default class Upload extends EventEmitter {
                 numberOfChunks: this.numberOfChunks,
                 metadata: this.metadata
               });
-
-              this.pollUploadProgress(this.handle);
             });
           });
 
@@ -316,21 +297,5 @@ export default class Upload extends EventEmitter {
   }
   propagateError(error) {
     this.emit(EVENTS.ERROR, error);
-  }
-
-  pollUploadProgress(handle) {
-    const genHash = Datamap.genesisHash(handle);
-    const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
-
-    pollIotaProgress(datamap, this.iotaProviders, prog => {
-      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-    }).then(() => {
-      this.emit(EVENTS.FINISH, {
-        target: this,
-        handle: this.handle,
-        numberOfChunks: this.numberOfChunks,
-        metadata: this.metadata
-      });
-    });
   }
 }
