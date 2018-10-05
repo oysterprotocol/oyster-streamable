@@ -2,12 +2,38 @@ import { EventEmitter } from "events";
 import Datamap from "datamap-generator";
 
 import { pollIotaProgress } from "./utils/iota";
-import { EVENTS } from "./upload";
 import { validateKeys } from "./util";
 import { getMetadata } from "./utils/iota";
 
 const REQUIRED_OPTS = ["iotaProvider"];
 const DEFAULT_OPTIONS = Object.freeze({});
+
+/**
+ * @static
+ * @memberof module:oyster-streamable.Upload
+ * @alias EVENTS
+ *
+ * @description Events fired during the upload lifecycle
+ */
+export const EVENTS = Object.freeze({
+  /**
+   * @event module:oyster-streamable.Upload.EVENTS#UPLOAD_PROGRESS
+   * @description Fired when a chunk is attached to the tangle
+   *
+   * @property {Object} progress - a progress object
+   * @property {Number} progress.progress - the percentage of progress for the chunk attachment
+   */
+  UPLOAD_PROGRESS: "upload-progress",
+  /**
+   * @event module:oyster-streamable.Upload.EVENTS#FINISH
+   * @description Fired when the file has been completely attached to the tangle
+   *
+   * @property {String} handle - the handle of the file uploaded
+   * @property {Object} metadata - the metadata object associated with the file
+   */
+  FINISH: "finish",
+  ERROR: "error"
+});
 
 export default class UploadProgress extends EventEmitter {
   constructor(handle, options) {

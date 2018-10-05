@@ -52,11 +52,12 @@ test("Upload emits the expected events", done => {
       expect(paymentConfirmation).toHaveProperty("handle"); // This has randomness
     });
 
-    u.on(EVENTS.UPLOAD_PROGRESS, progress => {
-      expect(progress).toEqual({ progress: 0.123 });
-    });
+    // TODO: These have been moved to uploadProgess.js
+    // u.on(EVENTS.UPLOAD_PROGRESS, progress => {
+    //   expect(progress).toEqual({ progress: 0.123 });
+    // });
+    // u.on(EVENTS.FINISH, done);
 
     u.on(EVENTS.ERROR, done.fail);
-    u.on(EVENTS.FINISH, done);
   });
 });
