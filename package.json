@@ -1,6 +1,6 @@
 {
   "name": "oyster-streamable",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Arbitrary size interface for the Oyster network",
   "main": "build/index.js",
   "files": [
