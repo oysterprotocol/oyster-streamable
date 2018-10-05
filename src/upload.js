@@ -303,8 +303,6 @@ export default class Upload extends EventEmitter {
                 numberOfChunks: this.numberOfChunks,
                 metadata: this.metadata
               });
-
-              this.pollUploadProgress(this.handle);
             });
           });
 
@@ -316,22 +314,5 @@ export default class Upload extends EventEmitter {
   }
   propagateError(error) {
     this.emit(EVENTS.ERROR, error);
-  }
-
-  // TODO: This is duplicated from uploadProgress.js. We should keep it DRY.
-  pollUploadProgress(handle) {
-    const genHash = Datamap.genesisHash(handle);
-    const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
-
-    pollIotaProgress(datamap, this.iotaProviders, prog => {
-      this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
-    }).then(() => {
-      this.emit(EVENTS.FINISH, {
-        target: this,
-        handle: this.handle,
-        numberOfChunks: this.numberOfChunks,
-        metadata: this.metadata
-      });
-    });
   }
 }

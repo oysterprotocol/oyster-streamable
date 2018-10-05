@@ -42,7 +42,9 @@ export default class UploadProgress extends EventEmitter {
     const genesisHash = Datamap.genesisHash(this.handle);
     const datamap = Datamap.generate(genesisHash, this.numberOfChunks - 1);
 
-    pollIotaProgress(datamap, this.iotaProviders, prog => {
+    // TODO: Update pollIotaProgess to take an array of iotaProviders
+    // So that the API matches with downloads.
+    pollIotaProgress(datamap, this.iotaProviders[0], prog => {
       this.emit(EVENTS.UPLOAD_PROGRESS, { progress: prog });
     }).then(() => {
       this.emit(EVENTS.FINISH, {
