@@ -318,6 +318,7 @@ export default class Upload extends EventEmitter {
     this.emit(EVENTS.ERROR, error);
   }
 
+  // TODO: This is duplicated from uploadProgress.js. We keep it DRY.
   pollUploadProgress(handle) {
     const genHash = Datamap.genesisHash(handle);
     const datamap = Datamap.generate(genHash, this.numberOfChunks - 1);
