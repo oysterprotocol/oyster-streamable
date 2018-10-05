@@ -13,12 +13,63 @@ const DEFAULT_OPTIONS = Object.freeze({
 });
 const REQUIRED_OPTS = ["iotaProviders"];
 
+/**
+ * @static
+ * @memberof module:oyster-streamable.Download
+ * @alias EVENTS
+ *
+ * @description Events fired during the download lifecycle
+ */
 export const EVENTS = Object.freeze({
+  /**
+   * @event module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
+   * @description Fired when a successful poll is performed while retrieving a file
+   *
+   * @property {Object} progress - a progress object
+   * @property {Number} progress.progress - the percentage of progress for the download
+   */
   DOWNLOAD_PROGRESS: "download-progress",
-  FINISH: "finish"
+  /**
+   * @event module:oyster-streamable.Download.EVENTS#FINISH
+   * @description Fired when the file has been reconstructed and is ready for use
+   *
+   * @property {(File|Buffer)} file - the file as an object as the target type of the download instance
+   * @property {Object} metadata - the metadata object associated with the file
+   */
+  FINISH: "finish",
+  /**
+   * @event module:oyster-streamable.Download.EVENTS#METADATA
+   * @description Fired when the file metadata has been reconstructed and is ready for use
+   *
+   * @property {String} fileName - the name of the file being downloaded
+   * @property {String} ext - the file extension of the file being downloaded
+   * @property {Number} numberOfChunks - the number of chunks that the file is stored in
+   */
+  METADATA: "metadata"
 });
 
+/**
+ * Downloading files
+ */
 export default class Download extends EventEmitter {
+  /**
+   * @constructor Download
+   * @hideconstructor
+   *
+   * @memberof module:oyster-streamable
+   *
+   * @emits module:oyster-streamable.Download.EVENTS#METADATA
+   * @emits module:oyster-streamable.Download.EVENTS#DOWNLOAD_PROGRESS
+   * @emits module:oyster-streamable.Download.EVENTS#FINISH
+   */
+
+  /*
+   * @deprecated
+   * @alias Download
+   *
+   * @param {String} handle
+   * @param {Object} options
+   */
   constructor(handle, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
     validateKeys(opts, REQUIRED_OPTS);
@@ -43,6 +94,36 @@ export default class Download extends EventEmitter {
       .catch(this.propagateError);
   }
 
+  /**
+   * @static
+   * @memberof module:oyster-streamable.Download
+   *
+   * @example <caption>To **Buffer** object (node)</caption>
+   * ```js
+   * const download = Oyster.Download.toBuffer(handle, {
+   *   iotaProviders: [
+   *     { provider: 'https://poll.oysternodes.com:14265/' },
+   *     { provider: 'https://download.oysternodes.com:14265/' }
+   *   ]
+   * })
+   *
+   * download.on('meta', metadata => {
+   *   console.log(metadata)
+   *   // {fileName: "oyster.txt", ext: "txt", numberOfChunks: 2}
+   * })
+   * download.on('finish', filedata => {
+   *   console.log(filedata)
+   *   // {file: Buffer(), metadata: {…}, target: Download}
+   * })
+   * ```
+   *
+   * @param {String} handle - the handle of the file to download
+   * @param {Object} options - the options for the download
+   * @param {(Object[]|IOTA[])} options.iotaProviders - an array of IOTA initialization Objects or IOTA instances
+   * @param {Boolean} [options.autoStart=true] - immediately start the download
+   *
+   * @returns {Download}
+   */
   static toBuffer(handle, options = {}) {
     const target = { targetStream: BufferTargetStream };
     const opts = Object.assign(options, target);
@@ -50,6 +131,36 @@ export default class Download extends EventEmitter {
     return new Download(handle, opts);
   }
 
+  /**
+   * @static
+   * @memberof module:oyster-streamable.Download
+   *
+   * @example <caption>To **Blob** object (browser)</caption>
+   * ```js
+   * const download = Oyster.Download.toBlob(handle, {
+   *   iotaProviders: [
+   *     { provider: 'https://poll.oysternodes.com:14265/' },
+   *     { provider: 'https://download.oysternodes.com:14265/' }
+   *   ]
+   * })
+   *
+   * download.on('meta', metadata => {
+   *   console.log(metadata)
+   *   // {fileName: "oyster.txt", ext: "txt", numberOfChunks: 2}
+   * })
+   * download.on('finish', filedata => {
+   *   console.log(filedata)
+   *   // {file: Blob(), metadata: {…}, target: Download}
+   * })
+   * ```
+   *
+   * @param {String} handle - the handle of the file to download
+   * @param {Object} options - the options for the download
+   * @param {(Object[]|IOTA[])} options.iotaProviders - an array of IOTA initialization Objects or IOTA instances
+   * @param {Boolean} [options.autoStart=true] - immediately start the download
+   *
+   * @returns {Download}
+   */
   static toBlob(handle, options = {}) {
     const target = { targetStream: FilePreviewStream };
     const opts = Object.assign(options, target);

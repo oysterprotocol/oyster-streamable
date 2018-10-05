@@ -110,7 +110,7 @@ const setIntervalAndExecute = (fn, t) => {
   return setInterval(fn, t);
 };
 
-/**
+/*
  * Payment polling
  */
 
