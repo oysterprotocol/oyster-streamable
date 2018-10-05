@@ -232,6 +232,8 @@ export default class Upload extends EventEmitter {
         numberOfChunks: this.numberOfChunks
       });
 
+      this.emit(EVENTS.RETRIEVED);
+
       return;
     }
 
