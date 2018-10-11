@@ -17,7 +17,6 @@
     "build": "babel src --presets babel-preset-env --out-dir build",
     "bundle": "webpack",
     "prepublishOnly": "yarn && yarn build",
-    "pretty": "prettier --write \"src/**/*.js\"",
     "docs": "jsdoc2md -t README.hbs src/**/*.js > README.md",
     "inspect-docs": "jsdoc2md --json src/**/*.js",
     "test": "jest",
@@ -27,6 +26,17 @@
     "hooks": {
       "pre-commit": "yarn pretty && yarn docs"
     }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged; yarn docs;"
+    }
+  },
+  "lint-staged": {
+    "*.{js,json,css,md}": [
+      "npx prettier --write",
+      "git add"
+    ]
   },
   "jest": {
     "testPathIgnorePatterns": [
@@ -47,10 +57,11 @@
     "babel-jest": "^23.0.1",
     "babel-loader": "^7.1.5",
     "babel-preset-env": "^1.7.0",
-    "husky": "^1.0.0-rc.9",
+    "husky": "^1.1.2",
     "jest": "^23.1.0",
     "jsdoc-to-markdown": "^4.0.1",
-    "prettier": "^1.13.5",
+    "lint-staged": "^7.3.0",
+    "prettier": "^1.14.3",
     "regenerator-runtime": "^0.11.1",
     "webpack": "^4.16.5",
     "webpack-bundle-analyzer": "^2.13.1",
