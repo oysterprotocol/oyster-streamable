@@ -29,12 +29,13 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged; yarn docs;"
+      "pre-commit": "lint-staged"
     }
   },
   "lint-staged": {
     "*.{js,json,css,md}": [
       "npx prettier --write",
+      "yarn docs",
       "git add"
     ]
   },
