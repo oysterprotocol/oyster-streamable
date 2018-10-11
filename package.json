@@ -17,7 +17,7 @@
     "build": "babel src --presets babel-preset-env --out-dir build",
     "bundle": "webpack",
     "prepublishOnly": "yarn && yarn build",
-    "docs": "jsdoc2md -t README.hbs src/**/*.js > README.md",
+    "docs": "npx jsdoc2md -t README.hbs src/**/*.js > README.md",
     "inspect-docs": "jsdoc2md --json src/**/*.js",
     "test": "jest",
     "test:watch": "jest --watch --colors"
