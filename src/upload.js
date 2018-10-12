@@ -14,7 +14,7 @@ import {
   confirmPaidPoll
 } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
-import { pollMetadata, pollIotaProgress } from "./utils/iota";
+import { pollMetadata } from "./utils/iota";
 
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
