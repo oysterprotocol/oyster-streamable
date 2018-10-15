@@ -14,18 +14,20 @@ const getSampleAddresses = addresses => {
 
   let sampleAddresses = [];
 
-  const first = addresses.first;
+  const first = addresses[0];
   const last = addresses[addresses.length - 1];
   const sampleCount = NUM_POLLING_ADDRESSES - 2; // Already accounting for first and last.
-  const stepSize = Math.max(1, (addresses.length - 2) / sampleCount);
+  const stepSize = Math.floor(
+    Math.max(1, (addresses.length - 2) / sampleCount)
+  );
 
   if (stepSize === 1) return addresses; // Small optimization.
 
-  sampleAddresses.push(first);
+  first && sampleAddresses.push(first);
   for (let i = stepSize - 1; i < addresses.length; i += stepSize) {
-    sampleAddresses.push(addresses[i]);
+    addresses[i] && sampleAddresses.push(addresses[i]);
   }
-  sampleAddresses.push(last);
+  last && sampleAddresses.push(last);
 
   return sampleAddresses;
 };

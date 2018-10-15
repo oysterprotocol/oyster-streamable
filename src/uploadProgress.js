@@ -60,7 +60,6 @@ export default class UploadProgress extends EventEmitter {
   }
 
   static streamUploadProgress(handle, opts) {
-    console.log("Check upload progress on :", handle);
     return new UploadProgress(handle, opts);
   }
 
