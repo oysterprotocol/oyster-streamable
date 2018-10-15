@@ -2,35 +2,6 @@ import fs from "fs";
 
 import Download, { EVENTS } from "./download";
 
-const TEST_FILE_PATH = `${__dirname}/../test-files/ditto.png`;
-
-const readTestFile = () =>
-  new Promise((resolve, reject) => {
-    fs.readFile(TEST_FILE_PATH, (err, data) => {
-      if (err) return reject(err);
-      const blob = new File(data, "ditto.png");
-      return resolve(blob);
-    });
-  });
-
-const readTestData = () =>
-  new Promise((resolve, reject) => {
-    fs.readFile(TEST_FILE_PATH, (err, data) => {
-      if (err) return reject(err);
-      return resolve(data);
-    });
-  });
-
-const invoiceStub = { cost: 123, ethAddress: "testAddr" };
-const createUploadSessionStub = () =>
-  new Promise((resolve, reject) =>
-    resolve({
-      alphaSessionId: "alphaId",
-      betaSessionId: "betaId",
-      invoice: invoiceStub,
-    })
-  );
-
 const TEST_HANDLE =
   "testfile7f024ff384bbeeecd959bd8dcd9306cf2fae397853a2c2e85866f28cb55187952kCPiaAU";
 
