@@ -6,7 +6,7 @@ import { bytesFromHandle, decryptMetadata } from "../util";
 import { clamp } from "../utils/math";
 
 // TODO: Make these configurable?
-const POLL_INTERVAL = 5000;
+const POLL_INTERVAL = 4500;
 const NUM_POLLING_ADDRESSES = 301;
 
 const getSampleAddresses = addresses => {
@@ -61,7 +61,7 @@ const pollAddresses = (iotaProvider, addresses, progCb) =>
 
               if (diff.length > 0) {
                 const prog = (1 - diff.length / addrCount) * 100;
-                progCb && progCb(clamp(prog), 0, 100);
+                progCb && progCb(clamp(prog, 0, 100));
                 remainingAddresses = diff; // Poll less addresses.
               } else {
                 progCb && progCb(100);
