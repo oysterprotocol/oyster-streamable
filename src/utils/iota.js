@@ -6,7 +6,7 @@ import { bytesFromHandle, decryptMetadata } from "../util";
 import { clamp } from "../utils/math";
 
 // TODO: Make these configurable?
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 5000;
 const NUM_POLLING_ADDRESSES = 301;
 
 const getSampleAddresses = addresses => {
