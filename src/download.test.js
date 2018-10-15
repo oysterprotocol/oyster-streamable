@@ -32,27 +32,28 @@ const createUploadSessionStub = () =>
   );
 
 const TEST_HANDLE =
-  "skinrtfBab22a552f043d87490334ad7aa55e7bbef7dccbad59fc1d8dfe812c61af01f993iZcVrtB";
+  "testfile7f024ff384bbeeecd959bd8dcd9306cf2fae397853a2c2e85866f28cb55187952kCPiaAU";
 
 test("Download.toBuffer emits the expected events", done => {
-  readTestFile().then(file => {
-    const d = Download.toBuffer(TEST_HANDLE, {
-      iotaProviders: [
-        { provider: "https://poll.oysternodes.com:14265/" },
-        { provider: "https://download.oysternodes.com:14265/" },
-      ],
-    });
-    expect.assertions(4);
-
-    d.on(EVENTS.METADATA, invoice => {
-      expect(invoice).toEqual(invoiceStub);
-    });
-
-    d.on(EVENTS.DOWNLOAD_PROGRESS, () => {
-      expect(true).toEqual(true); // Just testing if this event is emitted.
-    });
-
-    d.on(EVENTS.FINISHED, done);
-    d.on(EVENTS.ERROR, done.fail);
+  const d = Download.toBuffer(TEST_HANDLE, {
+    iotaProviders: [
+      { provider: "https://poll.oysternodes.com:14265/" },
+      { provider: "https://download.oysternodes.com:14265/" },
+    ],
   });
+  expect.assertions(2);
+
+  d.on(EVENTS.METADATA, invoice => {
+    expect(invoice).toEqual({
+      ext: "rtf",
+      fileName: "test-file.rtf",
+      numberOfChunks: 1,
+    });
+  });
+
+  d.on(EVENTS.DOWNLOAD_PROGRESS, ({ progress }) => {
+    expect(progress).toEqual(100);
+  });
+
+  d.on(EVENTS.FINISH, () => done());
 });
