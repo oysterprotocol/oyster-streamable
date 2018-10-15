@@ -9,7 +9,7 @@ import { getMetadata } from "./utils/iota";
 import { bytesFromHandle, validateKeys } from "./util";
 
 const DEFAULT_OPTIONS = Object.freeze({
-  autoStart: true
+  autoStart: true,
 });
 const REQUIRED_OPTS = ["iotaProviders"];
 
@@ -45,7 +45,7 @@ export const EVENTS = Object.freeze({
    * @property {String} ext - the file extension of the file being downloaded
    * @property {Number} numberOfChunks - the number of chunks that the file is stored in
    */
-  METADATA: "metadata"
+  METADATA: "metadata",
 });
 
 /**
@@ -172,7 +172,7 @@ export default class Download extends EventEmitter {
     const { targetStream, targetOptions } = this.options;
 
     this.downloadStream = new DownloadStream(this.genesisHash, this.metadata, {
-      iotaProvider: this.iotaProvider
+      iotaProvider: this.iotaProvider,
     });
     this.decryptStream = new DecryptStream(this.key);
     this.targetStream = new targetStream(this.metadata, targetOptions || {});
@@ -184,7 +184,7 @@ export default class Download extends EventEmitter {
         this.emit(EVENTS.FINISH, {
           target: this,
           metadata: this.metadata,
-          result: this.targetStream.result
+          result: this.targetStream.result,
         });
       });
 
@@ -196,6 +196,7 @@ export default class Download extends EventEmitter {
     this.decryptStream.on("error", this.propagateError);
     this.targetStream.on("error", this.propagateError);
   }
+
   propagateError(error) {
     this.emit("error", error);
   }
