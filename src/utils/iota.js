@@ -57,6 +57,7 @@ const pollAddresses = (iotaProvider, addresses, progCb) =>
               const addrsFound = txs.map(({ address }) => address);
               const diff = difference(addresses, addrsFound);
               console.log(diff); // TODO: Delete this log
+              const diff = difference(remainingAddresses, addrsFound);
 
               if (diff.length > 0) {
                 const prog = (1 - diff.length / addrCount) * 100;
