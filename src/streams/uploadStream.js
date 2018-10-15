@@ -144,6 +144,7 @@ export default class UploadStream extends Writable {
 
     console.log(`upload progress: ${this.chunksProcessed} / ${this.numChunks}`);
     // Emit progress
+    // This is max 98% because we still need to attach meta to the tangle;
     const prog = clamp(this.chunksProcessed / this.numChunks, 0, 0.98) * 100;
     this.progressCb(prog);
 
