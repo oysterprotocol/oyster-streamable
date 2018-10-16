@@ -104,7 +104,7 @@ export const pollMetadata = (handle, iotaProviders) => {
         })
         // TODO: Continue only if "File does not exist" error.
         // TODO: Timeout if this takes too long?
-        .catch(console.log); // No-op. Waits for meta to attach.
+        .catch(() => console.log("Waiting for meta...")); // No-op. Waits for meta to attach.
     }, POLL_INTERVAL);
   });
 };
