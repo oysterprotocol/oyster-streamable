@@ -52,6 +52,7 @@ export const EVENTS = Object.freeze({
    * @property {Number} progress.progress - the percentage of progress for the chunk upload
    */
   CHUNKS_PROGRESS: "chunks-progress",
+  UPLOADED: "uploaded",
   RETRIEVED: "retrieved", // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
   ERROR: "error"
 });
@@ -279,6 +280,7 @@ export default class Upload extends EventEmitter {
           .pipe(this.encryptStream)
           .pipe(this.uploadStream)
           .on("finish", () => {
+            this.emit(EVENTS.UPLOADED, { target: this, handle: this.handle });
             pollMetadata(this.handle, this.iotaProviders).then(() => {
               this.emit(EVENTS.RETRIEVED, {
                 target: this,
