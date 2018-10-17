@@ -52,7 +52,29 @@ export const EVENTS = Object.freeze({
    * @property {Number} progress.progress - the percentage of progress for the chunk upload
    */
   CHUNKS_PROGRESS: "chunks-progress",
+  /**
+   * @event module:oyster-streamable.Upload.EVENTS#UPLOADED
+   * @description Fired all chunks have been uploaded to the brokers.
+   *
+   */
   UPLOADED: "uploaded",
+
+  // {
+  //   target: this,
+  //   handle: this.handle,
+  //   numberOfChunks: this.numberOfChunks,
+  //   metadata: this.metadata
+  // }
+  /**
+   * @event module:oyster-streamable.Upload.EVENTS#META_ATTACHED
+   * @description Fired when the meta chunk has been attached. This is needed
+   *              in order to resume polling for upload progress.
+   *
+   * @property {Object} target - the upload object
+   * @property {String} handle - the handle of the uploaded file
+   * @property {Number} numberOfChunks - the number of chunks for the file
+   * @property {Object} metadata - the metadata object
+   */
   META_ATTACHED: "meta-attached", // Same as RETRIEVED
   RETRIEVED: "retrieved", // DEPRECATED
   ERROR: "error"
