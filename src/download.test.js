@@ -1,5 +1,4 @@
 import fs from "fs";
-import nock from "nock";
 
 import Download, { EVENTS } from "./download";
 
@@ -10,22 +9,6 @@ test("Download.toBuffer emits the expected events", done => {
   const mockIotaResponse = {
     data: { ixi: { signatures: { data: ["something"] } } }, // TODO: replace "something"
   };
-
-  nock("https://poll.oysternodes.com:14265")
-    .options("/")
-    .reply(200, {});
-
-  nock("https://poll.oysternodes.com:14265")
-    .post("/")
-    .reply(200, mockIotaResponse);
-
-  nock("https://download.oysternodes.com:14265")
-    .options("/", { headers: { origin: "blah" } })
-    .reply(200, {});
-
-  nock("https://download.oysternodes.com:14265")
-    .post("/")
-    .reply(200, mockIotaResponse);
 
   const d = Download.toBuffer(TEST_HANDLE, {
     iotaProviders: [
