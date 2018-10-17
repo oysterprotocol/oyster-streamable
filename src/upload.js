@@ -53,7 +53,8 @@ export const EVENTS = Object.freeze({
    */
   CHUNKS_PROGRESS: "chunks-progress",
   UPLOADED: "uploaded",
-  RETRIEVED: "retrieved", // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
+  META_ATTACHED: "meta-attached", // Same as RETRIEVED
+  RETRIEVED: "retrieved", // DEPRECATED
   ERROR: "error"
 });
 
@@ -233,7 +234,8 @@ export default class Upload extends EventEmitter {
         numberOfChunks: this.numberOfChunks
       });
 
-      this.emit(EVENTS.RETRIEVED);
+      this.emit(EVENTS.RETRIEVED); // This will be deprecated
+      this.emit(EVENTS.META_ATTACHED);
 
       return;
     }
@@ -282,7 +284,14 @@ export default class Upload extends EventEmitter {
           .on("finish", () => {
             this.emit(EVENTS.UPLOADED, { target: this, handle: this.handle });
             pollMetadata(this.handle, this.iotaProviders).then(() => {
+              // This will be deprecated
               this.emit(EVENTS.RETRIEVED, {
+                target: this,
+                handle: this.handle,
+                numberOfChunks: this.numberOfChunks,
+                metadata: this.metadata
+              });
+              this.emit(EVENTS.META_ATTACHED, {
                 target: this,
                 handle: this.handle,
                 numberOfChunks: this.numberOfChunks,
