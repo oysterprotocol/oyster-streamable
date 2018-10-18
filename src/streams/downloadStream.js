@@ -124,7 +124,7 @@ export default class DownloadStream extends Readable {
           this.isDownloadFinished = true;
         }
 
-        this.emit("progress", (100 * this.downloadedChunks) / this.numChunks);
+        this.emit("progress", 100 * (this.downloadedChunks / this.numChunks));
         this._pushChunk();
       })
       .catch(error => {

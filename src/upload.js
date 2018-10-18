@@ -14,7 +14,7 @@ import {
   confirmPaidPoll
 } from "./utils/backend";
 import { createMetaData } from "./utils/file-processor";
-import { pollMetadata, pollIotaProgress } from "./utils/iota";
+import { pollMetadata } from "./utils/iota";
 
 const CHUNK_BYTE_SIZE = 1024;
 const DEFAULT_OPTIONS = Object.freeze({
@@ -52,7 +52,31 @@ export const EVENTS = Object.freeze({
    * @property {Number} progress.progress - the percentage of progress for the chunk upload
    */
   CHUNKS_PROGRESS: "chunks-progress",
-  RETRIEVED: "retrieved", // Maybe change this to "uploaded", with upload-progress renamed attach-progress or something
+  /**
+   * @event module:oyster-streamable.Upload.EVENTS#UPLOADED
+   * @description Fired all chunks have been uploaded to the brokers.
+   *
+   */
+  UPLOADED: "uploaded",
+
+  // {
+  //   target: this,
+  //   handle: this.handle,
+  //   numberOfChunks: this.numberOfChunks,
+  //   metadata: this.metadata
+  // }
+  /**
+   * @event module:oyster-streamable.Upload.EVENTS#META_ATTACHED
+   * @description Fired when the meta chunk has been attached. This is needed
+   *              in order to resume polling for upload progress.
+   *
+   * @property {Object} target - the upload object
+   * @property {String} handle - the handle of the uploaded file
+   * @property {Number} numberOfChunks - the number of chunks for the file
+   * @property {Object} metadata - the metadata object
+   */
+  META_ATTACHED: "meta-attached", // Same as RETRIEVED
+  RETRIEVED: "retrieved", // DEPRECATED
   ERROR: "error"
 });
 
@@ -232,7 +256,8 @@ export default class Upload extends EventEmitter {
         numberOfChunks: this.numberOfChunks
       });
 
-      this.emit(EVENTS.RETRIEVED);
+      this.emit(EVENTS.RETRIEVED); // This will be deprecated
+      this.emit(EVENTS.META_ATTACHED);
 
       return;
     }
@@ -279,8 +304,16 @@ export default class Upload extends EventEmitter {
           .pipe(this.encryptStream)
           .pipe(this.uploadStream)
           .on("finish", () => {
+            this.emit(EVENTS.UPLOADED, { target: this, handle: this.handle });
             pollMetadata(this.handle, this.iotaProviders).then(() => {
+              // This will be deprecated
               this.emit(EVENTS.RETRIEVED, {
+                target: this,
+                handle: this.handle,
+                numberOfChunks: this.numberOfChunks,
+                metadata: this.metadata
+              });
+              this.emit(EVENTS.META_ATTACHED, {
                 target: this,
                 handle: this.handle,
                 numberOfChunks: this.numberOfChunks,

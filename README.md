@@ -45,6 +45,15 @@ window.Oyster = Oyster.default
         * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
             * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
             * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+            * ["UPLOADED"](#module_oyster-streamable.Upload.EVENTS+event_UPLOADED)
+            * ["META_ATTACHED"](#module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED)
+            * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
+            * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
+        * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
+            * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
+            * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+            * ["UPLOADED"](#module_oyster-streamable.Upload.EVENTS+event_UPLOADED)
+            * ["META_ATTACHED"](#module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED)
             * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
             * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
         * [.fromFile(file, options)](#module_oyster-streamable.Upload.fromFile) ⇒ <code>Upload</code>
@@ -186,6 +195,15 @@ download.on('finish', filedata => {
     * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
         * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
         * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+        * ["UPLOADED"](#module_oyster-streamable.Upload.EVENTS+event_UPLOADED)
+        * ["META_ATTACHED"](#module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED)
+        * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
+        * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
+    * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
+        * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
+        * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+        * ["UPLOADED"](#module_oyster-streamable.Upload.EVENTS+event_UPLOADED)
+        * ["META_ATTACHED"](#module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED)
         * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
         * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
     * [.fromFile(file, options)](#module_oyster-streamable.Upload.fromFile) ⇒ <code>Upload</code>
@@ -201,6 +219,8 @@ Events fired during the upload lifecycle
 * [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
     * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
     * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+    * ["UPLOADED"](#module_oyster-streamable.Upload.EVENTS+event_UPLOADED)
+    * ["META_ATTACHED"](#module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED)
     * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
     * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
 
@@ -230,6 +250,118 @@ Fired when a chunk is uploaded to the broker
 | --- | --- | --- |
 | progress | <code>Object</code> | a progress object |
 | progress.progress | <code>Number</code> | the percentage of progress for the chunk upload |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_UPLOADED"></a>
+
+##### "UPLOADED"
+Fired all chunks have been uploaded to the brokers.
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+<a name="module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED"></a>
+
+##### "META_ATTACHED"
+Fired when the meta chunk has been attached. This is needed
+             in order to resume polling for upload progress.
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| target | <code>Object</code> | the upload object |
+| handle | <code>String</code> | the handle of the uploaded file |
+| numberOfChunks | <code>Number</code> | the number of chunks for the file |
+| metadata | <code>Object</code> | the metadata object |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS"></a>
+
+##### "UPLOAD_PROGRESS"
+Fired when a chunk is attached to the tangle
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| progress | <code>Object</code> | a progress object |
+| progress.progress | <code>Number</code> | the percentage of progress for the chunk attachment |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_FINISH"></a>
+
+##### "FINISH"
+Fired when the file has been completely attached to the tangle
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| handle | <code>String</code> | the handle of the file uploaded |
+| metadata | <code>Object</code> | the metadata object associated with the file |
+
+<a name="module_oyster-streamable.Upload.EVENTS"></a>
+
+#### Upload.EVENTS
+Events fired during the upload lifecycle
+
+**Kind**: static constant of [<code>Upload</code>](#module_oyster-streamable.Upload)  
+
+* [.EVENTS](#module_oyster-streamable.Upload.EVENTS)
+    * ["INVOICE"](#module_oyster-streamable.Upload.EVENTS+event_INVOICE)
+    * ["CHUNKS_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS)
+    * ["UPLOADED"](#module_oyster-streamable.Upload.EVENTS+event_UPLOADED)
+    * ["META_ATTACHED"](#module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED)
+    * ["UPLOAD_PROGRESS"](#module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS)
+    * ["FINISH"](#module_oyster-streamable.Upload.EVENTS+event_FINISH)
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_INVOICE"></a>
+
+##### "INVOICE"
+Fired when an invoice is recieved from the broker node
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| handle | <code>String</code> | the handle of the file uploaded |
+| address | <code>String</code> | an ethereum address to send the pearl to |
+| cost | <code>Number</code> | the cost of the file upload |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_CHUNKS_PROGRESS"></a>
+
+##### "CHUNKS_PROGRESS"
+Fired when a chunk is uploaded to the broker
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| progress | <code>Object</code> | a progress object |
+| progress.progress | <code>Number</code> | the percentage of progress for the chunk upload |
+
+<a name="module_oyster-streamable.Upload.EVENTS+event_UPLOADED"></a>
+
+##### "UPLOADED"
+Fired all chunks have been uploaded to the brokers.
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+<a name="module_oyster-streamable.Upload.EVENTS+event_META_ATTACHED"></a>
+
+##### "META_ATTACHED"
+Fired when the meta chunk has been attached. This is needed
+             in order to resume polling for upload progress.
+
+**Kind**: event emitted by [<code>EVENTS</code>](#module_oyster-streamable.Upload.EVENTS)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| target | <code>Object</code> | the upload object |
+| handle | <code>String</code> | the handle of the uploaded file |
+| numberOfChunks | <code>Number</code> | the number of chunks for the file |
+| metadata | <code>Object</code> | the metadata object |
 
 <a name="module_oyster-streamable.Upload.EVENTS+event_UPLOAD_PROGRESS"></a>
 

@@ -1,114 +1,83 @@
 import Datamap from "datamap-generator";
+import difference from "lodash/difference";
 
 import { queryGeneratedSignatures } from "./backend";
 import { bytesFromHandle, decryptMetadata } from "../util";
 import { clamp } from "../utils/math";
 
-const selectPollingIndexes = (addresses, numPollingAddresses, bundleSize) => {
-  // What this if is checking for is basically medium-sized uploads
-  // which would have been better off with the old random index selection.
-  // For those uploads, pick indexes the old way.
-  if (
-    addresses.length <
-    ((bundleSize + bundleSize / 2) / 2) * numPollingAddresses
-  ) {
-    let indexArray = [0];
-    while (addresses.length - 1 > indexArray[indexArray.length - 1]) {
-      indexArray = indexArray.concat(
-        Math.min(
-          ...[
-            indexArray[indexArray.length - 1] +
-              Math.floor(Math.random() * (bundleSize / 2)) +
-              bundleSize / 2,
-            addresses.length - 1
-          ]
-        )
-      );
-    }
-    if (indexArray.length === 2) {
-      //make sure there's always at least 3 addresses
-      indexArray.splice(1, 0, Math.floor(addresses.length / 2));
-    }
-    return indexArray;
-  } else {
-    const offset = addresses.length / (numPollingAddresses - 1);
+// TODO: Make these configurable?
+const POLL_INTERVAL = 4500;
+const NUM_POLLING_ADDRESSES = 301;
 
-    let indexes = [];
-    for (let i = 0; i <= numPollingAddresses - 2; i++) {
-      indexes.push(Math.floor(i * offset));
-    }
-    indexes.push(addresses.length - 1);
+const getSampleAddresses = addresses => {
+  if (addresses.length <= NUM_POLLING_ADDRESSES) return addresses;
 
-    return indexes;
+  let sampleAddresses = [];
+
+  const first = addresses[0];
+  const last = addresses[addresses.length - 1];
+  const sampleCount = NUM_POLLING_ADDRESSES - 2; // Already accounting for first and last.
+  const stepSize = Math.floor(
+    Math.max(1, (addresses.length - 2) / sampleCount)
+  );
+
+  if (stepSize === 1) return addresses; // Small optimization.
+
+  first && sampleAddresses.push(first);
+  for (let i = stepSize - 1; i < addresses.length; i += stepSize) {
+    addresses[i] && sampleAddresses.push(addresses[i]);
   }
+  last && sampleAddresses.push(last);
+
+  return sampleAddresses;
 };
 
-/*
- * IOTA Polling (Copied from webinterface)
- */
-
-const skinnyQueryTransactions = (iotaProvider, addresses) =>
-  iotaProvider &&
-  iotaProvider.api &&
-  iotaProvider.api.findTransactions &&
+const pollAddresses = (iotaProvider, addresses, progCb) =>
   new Promise((resolve, reject) => {
-    iotaProvider.api.findTransactions(
-      { addresses },
-      (error, transactionHashes) => {
-        if (error) {
-          console.log("IOTA ERROR: ", error);
-        }
-        resolve(transactionHashes);
-      }
-    );
-  });
+    const addrCount = addresses.length;
+    let remainingAddresses = addresses; // Mutate this.
 
-const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
-  return new Promise((resolve, reject) => {
-    let promises = [];
-
-    promises.push(
-      new Promise((resolve, reject) => {
-        skinnyQueryTransactions(itoaProvider, [addresses[indexes[0]]]).then(
-          transactions => {
-            resolve({ removeIndex: transactions.length > 0 });
+    const pollInterval = setIntervalAndExecute(() => {
+      iotaProvider.api.findTransactions(
+        { addresses: remainingAddresses },
+        (error, transactionHashes) => {
+          if (error) {
+            window.clearInterval(pollInterval);
+            return reject(error);
           }
-        );
-      })
-    );
 
-    if (indexes.length > 1) {
-      promises.push(
-        new Promise((resolve, reject) => {
-          skinnyQueryTransactions(itoaProvider, [
-            addresses[indexes[indexes.length - 1]]
-          ]).then(transactions => {
-            resolve({ removeIndex: transactions.length > 0 });
-          });
-        })
+          iotaProvider.api.getTransactionsObjects(
+            transactionHashes,
+            (err, txs) => {
+              if (err) {
+                window.clearInterval(pollInterval);
+                return reject(error);
+              }
+
+              const addrsFound = txs.map(({ address }) => address);
+              const diff = difference(remainingAddresses, addrsFound);
+
+              if (diff.length > 0) {
+                const prog = (1 - diff.length / addrCount) * 100;
+                progCb && progCb(clamp(prog, 0, 100));
+                remainingAddresses = diff; // Poll less addresses.
+              } else {
+                progCb && progCb(100);
+                window.clearInterval(pollInterval);
+                return resolve();
+              }
+            }
+          );
+        }
       );
-    }
+    }, POLL_INTERVAL);
 
-    return Promise.all(promises).then(indexResults => {
-      const [front, back] = indexResults;
-
-      if (front.removeIndex) indexes.shift();
-      if (back && back.removeIndex) indexes.pop();
-
-      return resolve(indexes);
-    });
+    return pollInterval; // Return interval so caller can cancel.
   });
-};
 
 /*
  * Public
  */
-
-// TODO: Make these configurable?
-const MIN_PROG = 0.0;
-const POLL_INTERVAL = 2000;
-const BUNDLE_SIZE = 100;
-const NUM_POLLING_ADDRESSES = 301;
 
 // This is copied and pasted from backend.js
 const setIntervalAndExecute = (fn, t) => {
@@ -116,38 +85,12 @@ const setIntervalAndExecute = (fn, t) => {
   return setInterval(fn, t);
 };
 
-export const pollIotaProgress = (datamap, iotaProvider, progCb) =>
-  new Promise((resolve, reject) => {
-    let addresses = Object.values(datamap);
-    let indexes = selectPollingIndexes(
-      addresses,
-      NUM_POLLING_ADDRESSES,
-      BUNDLE_SIZE
-    );
-    let indexesLen = indexes.length;
+export const pollIotaProgress = (datamap, iotaProvider, progCb) => {
+  const addresses = Object.values(datamap);
+  const sampleAddresses = getSampleAddresses(addresses);
 
-    const poll = setIntervalAndExecute(() => {
-      checkUploadPercentage(iotaProvider, addresses, indexes)
-        .then(idxs => {
-          // Uh oh, race condition.
-          indexes = idxs;
-
-          // Emit progress.
-          const prog = clamp(1 - idxs.length / indexesLen, MIN_PROG, 1.0) * 100;
-          progCb(prog);
-
-          // Include a small epsilon for floating point errors.
-          if (prog >= 99.0) {
-            clearInterval(poll);
-            return resolve();
-          }
-        })
-        .catch(err => {
-          clearInterval(poll);
-          return reject(err);
-        });
-    }, POLL_INTERVAL);
-  });
+  return pollAddresses(iotaProvider, sampleAddresses, progCb);
+};
 
 export const pollMetadata = (handle, iotaProviders) => {
   return new Promise((resolve, reject) => {
@@ -159,7 +102,7 @@ export const pollMetadata = (handle, iotaProviders) => {
         })
         // TODO: Continue only if "File does not exist" error.
         // TODO: Timeout if this takes too long?
-        .catch(console.log); // No-op. Waits for meta to attach.
+        .catch(() => console.log("Waiting for meta...")); // No-op. Waits for meta to attach.
     }, POLL_INTERVAL);
   });
 };
