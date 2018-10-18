@@ -4,7 +4,7 @@ import { API, IOTA_API } from "../config";
 const CURRENT_VERSION = 1;
 const SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH;
 
-const axiosInstance = axios.create({ timeout: 60000 });
+axios.defaults.timeout = 60000;
 
 export function queryGeneratedSignatures(
   iotaProvider,
@@ -18,17 +18,18 @@ export function queryGeneratedSignatures(
       version: CURRENT_VERSION,
       hash,
       count,
-      binary
+      binary,
     };
 
     const opts = {
       responseType: binary ? "arraybuffer" : "json",
-      headers: { "X-IOTA-API-Version": "1" }
+      headers: { "X-IOTA-API-Version": "1" },
     };
 
-    axiosInstance
+    axios
       .post(iotaProvider.provider, data, opts)
       .then(response => {
+        console.log("xxxxxxxxxxxxx: ", response.data);
         if (response.status !== 200) {
           throw `Request failed (${response.status}) ${response.statusText}`;
         }
@@ -36,16 +37,17 @@ export function queryGeneratedSignatures(
         if (response.headers["content-type"] === "application/octet-stream") {
           resolve({
             isBinary: true,
-            data: response.data
+            data: response.data,
           });
         } else {
           resolve({
             isBinary: false,
-            data: response.data.ixi.signatures || []
+            data: response.data.ixi.signatures || [],
           });
         }
       })
       .catch(error => {
+        console.log("mmmmmmmmmmmmmmmmm: ", error);
         reject(error);
       });
   });
@@ -60,13 +62,13 @@ export function createUploadSession(
   epochs
 ) {
   return new Promise((resolve, reject) => {
-    axiosInstance
+    axios
       .post(`${alpha}${API.V2_UPLOAD_SESSIONS_PATH}`, {
         fileSizeBytes: filesize,
         numChunks,
         genesisHash,
         betaIp: beta,
-        storageLengthInYears: epochs
+        storageLengthInYears: epochs,
       })
       .then(({ data }) => {
         const { id: alphaSessionId, betaSessionId } = data;
@@ -87,7 +89,7 @@ export function sendToBroker(broker, sessId, chunks) {
 
 export function sendChunksToBroker(brokerUrl, chunks) {
   return new Promise((resolve, reject) => {
-    axiosInstance
+    axios
       .put(brokerUrl, { chunks })
       .then(response => resolve(response))
       .catch(error => {
@@ -102,7 +104,7 @@ const POLL_INTERVAL = 4000;
 const PAYMENT_STATUS = Object.freeze({
   INVOICED: "invoiced",
   PENDING: "pending",
-  CONFIRMED: "confirmed"
+  CONFIRMED: "confirmed",
 });
 
 const setIntervalAndExecute = (fn, t) => {
@@ -117,7 +119,7 @@ const setIntervalAndExecute = (fn, t) => {
 const pollPaymentStatus = (host, sessId, statusFoundFn) => {
   return new Promise((resolve, reject) => {
     const poll = setIntervalAndExecute(() => {
-      axiosInstance
+      axios
         .get(`${host}${API.V2_UPLOAD_SESSIONS_PATH}/${sessId}`)
         .then(response => {
           const status = response.data.paymentStatus;
