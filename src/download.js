@@ -85,7 +85,6 @@ export default class Download extends EventEmitter {
 
     getMetadata(handle, opts.iotaProviders)
       .then(({ metadata, provider }) => {
-        console.log("what is going onnnnnnnnnnn: ", metadata);
         this.iotaProvider = provider;
         this.metadata = metadata;
         this.emit("metadata", metadata);
@@ -177,13 +176,11 @@ export default class Download extends EventEmitter {
     });
     this.decryptStream = new DecryptStream(this.key);
     this.targetStream = new targetStream(this.metadata, targetOptions || {});
-    console.log("hurrrrrrrrrrrrrrrrrrrr: ", this.targetStream);
 
     this.downloadStream
       .pipe(this.decryptStream)
       .pipe(this.targetStream)
       .on("finish", () => {
-        console.log("finishedddddddddddddddddddd");
         this.emit(EVENTS.FINISH, {
           target: this,
           metadata: this.metadata,

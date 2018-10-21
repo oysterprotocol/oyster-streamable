@@ -192,15 +192,9 @@ export const getMetadata = (handle, iotaProviders) => {
           signature
         );
 
-        console.log("getmetadata responseeeeeeeeeeeeee: ", {
-          provider,
-          metadata,
-          version,
-        });
         resolve({ provider, metadata, version });
       })
       .catch(e => {
-        console.log("getmetadata errorrrrrrrrrrrrr: ", e);
         reject(e);
       });
   });
