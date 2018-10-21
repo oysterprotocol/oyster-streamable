@@ -18,12 +18,12 @@ export function queryGeneratedSignatures(
       version: CURRENT_VERSION,
       hash,
       count,
-      binary,
+      binary
     };
 
     const opts = {
       responseType: binary ? "arraybuffer" : "json",
-      headers: { "X-IOTA-API-Version": "1" },
+      headers: { "X-IOTA-API-Version": "1" }
     };
 
     axios
@@ -36,12 +36,12 @@ export function queryGeneratedSignatures(
         if (response.headers["content-type"] === "application/octet-stream") {
           resolve({
             isBinary: true,
-            data: response.data,
+            data: response.data
           });
         } else {
           resolve({
             isBinary: false,
-            data: response.data.ixi.signatures || [],
+            data: response.data.ixi.signatures || []
           });
         }
       })
@@ -64,7 +64,7 @@ export function createUploadSession(
         numChunks,
         genesisHash,
         betaIp: beta,
-        storageLengthInYears: epochs,
+        storageLengthInYears: epochs
       })
       .then(({ data }) => {
         const { id: alphaSessionId, betaSessionId } = data;
@@ -94,7 +94,7 @@ const POLL_INTERVAL = 4000;
 const PAYMENT_STATUS = Object.freeze({
   INVOICED: "invoiced",
   PENDING: "pending",
-  CONFIRMED: "confirmed",
+  CONFIRMED: "confirmed"
 });
 
 const setIntervalAndExecute = (fn, t) => {
