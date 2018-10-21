@@ -54,7 +54,7 @@ export function encrypt(key, iv, binaryString) {
   cipher.start({
     iv: iv,
     additionalData: "binary-encoded string",
-    tagLength: TAG_BIT_LENGTH,
+    tagLength: TAG_BIT_LENGTH
   });
 
   cipher.update(binaryString);
@@ -99,7 +99,7 @@ export function decrypt(key, byteBuffer) {
     iv: iv,
     additionalData: "binary-encoded string",
     tagLength: TAG_BIT_LENGTH,
-    tag,
+    tag
   });
   decipher.update(new Forge.util.ByteBuffer(msg, "binary"));
 

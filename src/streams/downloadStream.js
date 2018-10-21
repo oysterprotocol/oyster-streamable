@@ -10,7 +10,7 @@ const DEFAULT_OPTIONS = Object.freeze({
   binaryMode: false,
   // WIP. Must be passed for now
   iota: null,
-  objectMode: true,
+  objectMode: true
 });
 
 function notNull(item) {

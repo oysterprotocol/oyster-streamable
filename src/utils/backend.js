@@ -45,9 +45,7 @@ export function queryGeneratedSignatures(
           });
         }
       })
-      .catch(error => {
-        reject(error);
-      });
+      .catch(reject);
   });
 }
 
@@ -73,10 +71,7 @@ export function createUploadSession(
         const { invoice: invoice } = data;
         resolve({ alphaSessionId, betaSessionId, invoice });
       })
-      .catch(error => {
-        console.log("UPLOAD SESSION ERROR: ", error);
-        reject(error);
-      });
+      .catch(reject);
   });
 }
 
@@ -90,10 +85,7 @@ export function sendChunksToBroker(brokerUrl, chunks) {
     axios
       .put(brokerUrl, { chunks })
       .then(response => resolve(response))
-      .catch(error => {
-        console.log("ERROR SENDING CHUNK TO BROKER:", error);
-        reject(error);
-      });
+      .catch(reject);
   });
 }
 
