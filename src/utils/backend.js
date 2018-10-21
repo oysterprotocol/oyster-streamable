@@ -29,7 +29,6 @@ export function queryGeneratedSignatures(
     axios
       .post(iotaProvider.provider, data, opts)
       .then(response => {
-        console.log("xxxxxxxxxxxxx: ", response.data);
         if (response.status !== 200) {
           throw `Request failed (${response.status}) ${response.statusText}`;
         }
@@ -47,7 +46,6 @@ export function queryGeneratedSignatures(
         }
       })
       .catch(error => {
-        console.log("mmmmmmmmmmmmmmmmm: ", error);
         reject(error);
       });
   });

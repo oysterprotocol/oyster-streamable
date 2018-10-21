@@ -10,7 +10,7 @@ const DEFAULT_OPTIONS = Object.freeze({
   binaryMode: false,
   // WIP. Must be passed for now
   iota: null,
-  objectMode: true
+  objectMode: true,
 });
 
 function notNull(item) {
@@ -86,6 +86,7 @@ export default class DownloadStream extends Readable {
       this.numChunks - this.chunkOffset,
       this.options.chunksPerBatch
     );
+    console.log("huhhhhhhhhhhhhhhh : ", limit);
 
     if (limit === 0) {
       return;
@@ -99,8 +100,10 @@ export default class DownloadStream extends Readable {
     const iotaProvider = this.options.iotaProvider;
     const binaryMode = this.options.binaryMode;
 
+    console.log("beforeeeeeeeeeeeeeeee");
     queryGeneratedSignatures(iotaProvider, hash, limit, binaryMode)
       .then(result => {
+        console.log("afterrrrrrrrrrrrrr: ", result);
         this.ongoingDownloads--;
 
         // Process result
@@ -108,6 +111,11 @@ export default class DownloadStream extends Readable {
           this._processBinaryChunk(result.data, batchId);
         } else {
           const signatures = result.data.filter(notNull);
+          console.log("yooooooooooooo this is it: ", signatures);
+          console.log(
+            "flossinnnnnnnnnn",
+            signatures && signatures.length === limit
+          );
           if (signatures && signatures.length === limit) {
             this.batches[batchId] = signatures;
             this.downloadedChunks += signatures.length;
@@ -128,10 +136,10 @@ export default class DownloadStream extends Readable {
         this._pushChunk();
       })
       .catch(error => {
+        console.log("is this ittttttttttttt: ", error);
         this.ongoingDownloads--;
         this.emit("error", error);
-      })
-      .catch(error => {});
+      });
   }
   _processBinaryChunk(buffer, batchId) {
     const batch = [];
