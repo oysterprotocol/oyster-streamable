@@ -27,7 +27,7 @@ const createUploadSessionStub = () =>
     resolve({
       alphaSessionId: "alphaId",
       betaSessionId: "betaId",
-      invoice: invoiceStub
+      invoice: invoiceStub,
     })
   );
 
@@ -39,7 +39,7 @@ test("Upload.fromFile emits the expected events", done => {
       epochs: 1,
       iotaProvider: "http://fake-iota.com",
       testEnv: true,
-      createUploadSession: createUploadSessionStub
+      createUploadSession: createUploadSessionStub,
     };
     const u = Upload.fromFile(file, opts);
     expect.assertions(4);
@@ -55,7 +55,7 @@ test("Upload.fromFile emits the expected events", done => {
     u.on(EVENTS.PAYMENT_CONFIRMED, paymentConfirmation => {
       expect(paymentConfirmation).toMatchObject({
         filename: "ditto.png",
-        numberOfChunks: 17
+        numberOfChunks: 17,
       });
       expect(paymentConfirmation).toHaveProperty("handle"); // This has randomness
     });
@@ -79,7 +79,7 @@ test("Upload.fromData emits the expected events", done => {
       epochs: 1,
       iotaProvider: "http://fake-iota.com",
       testEnv: true,
-      createUploadSession: createUploadSessionStub
+      createUploadSession: createUploadSessionStub,
     };
     const u = Upload.fromData(data, "foobar.png", opts);
     expect.assertions(4);
@@ -95,16 +95,10 @@ test("Upload.fromData emits the expected events", done => {
     u.on(EVENTS.PAYMENT_CONFIRMED, paymentConfirmation => {
       expect(paymentConfirmation).toMatchObject({
         filename: "foobar.png",
-        numberOfChunks: 7
+        numberOfChunks: 7,
       });
       expect(paymentConfirmation).toHaveProperty("handle"); // This has randomness
     });
-
-    // TODO: These have been moved to uploadProgess.js
-    // u.on(EVENTS.UPLOAD_PROGRESS, progress => {
-    //   expect(progress).toEqual({ progress: 0.123 });
-    // });
-    // u.on(EVENTS.FINISH, done);
 
     u.on(EVENTS.RETRIEVED, done);
     u.on(EVENTS.ERROR, done.fail);

@@ -20,7 +20,7 @@ const selectPollingIndexes = (addresses, numPollingAddresses, bundleSize) => {
             indexArray[indexArray.length - 1] +
               Math.floor(Math.random() * (bundleSize / 2)) +
               bundleSize / 2,
-            addresses.length - 1
+            addresses.length - 1,
           ]
         )
       );
@@ -81,7 +81,7 @@ const checkUploadPercentage = (itoaProvider, addresses, indexes) => {
       promises.push(
         new Promise((resolve, reject) => {
           skinnyQueryTransactions(itoaProvider, [
-            addresses[indexes[indexes.length - 1]]
+            addresses[indexes[indexes.length - 1]],
           ]).then(transactions => {
             resolve({ removeIndex: transactions.length > 0 });
           });
@@ -194,8 +194,6 @@ export const getMetadata = (handle, iotaProviders) => {
 
         resolve({ provider, metadata, version });
       })
-      .catch(e => {
-        reject(e);
-      });
+      .catch(reject);
   });
 };
