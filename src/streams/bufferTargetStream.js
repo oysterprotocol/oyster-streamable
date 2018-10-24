@@ -12,7 +12,7 @@ export default class BufferTargetStream extends Writable {
     this.chunks = [];
     this.totalLength = 0;
   }
-  _write(data, encoding, callback) {
+  _write(data, _encoding, callback) {
     this.totalLength += data.length;
     this.chunks.push(data);
     callback();
