@@ -29,10 +29,10 @@ test("_write pushes data into chunks", () => {
 
 test("_write adds data length to total length", () => {
   const bufferTargetStream = new BufferTargetStream();
-  const data = ["foo", "bar"];
+  const data = Buffer.from("foo");
   bufferTargetStream._write(data, "utf-8", () => {});
 
-  expect(bufferTargetStream.totalLength).toEqual(2);
+  expect(bufferTargetStream.totalLength).toEqual(3);
 });
 
 test("_write invokes the callback function", () => {
@@ -41,4 +41,24 @@ test("_write invokes the callback function", () => {
   bufferTargetStream._write([], "utf-8", callback);
 
   expect(callback).toHaveBeenCalled();
+});
+
+test("_write adds data length to total length", () => {
+  const bufferTargetStream = new BufferTargetStream();
+  const data = Buffer.from("foo");
+  bufferTargetStream._write(data, "utf-8", () => {});
+
+  expect(bufferTargetStream.totalLength).toEqual(3);
+});
+
+test("_final sets the result to a buffer", () => {
+  const bufferTargetStream = new BufferTargetStream();
+  const data = Buffer.from("foo");
+
+  bufferTargetStream.chunks = [data];
+  bufferTargetStream.totalLength = 2;
+  bufferTargetStream._final(() => {});
+
+  const expectedResult = new Buffer.concat([data], 2);
+  expect(bufferTargetStream.result).toEqual(expectedResult);
 });
