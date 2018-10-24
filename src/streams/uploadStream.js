@@ -131,17 +131,18 @@ export default class UploadStream extends Writable {
 
     upload
       .then(result => {
-        this._afterUpload();
+        this._afterUpload(batch.chunks.length);
       })
       .catch(error => {
         this._uploadError(error, batch);
       });
   }
 
-  _afterUpload() {
+  _afterUpload(batchSize) {
     this.ongoingUploads--;
-    this.chunksProcessed++;
+    this.chunksProcessed += batchSize;
 
+    console.log(`upload progress: ${this.chunksProcessed} / ${this.numChunks}`);
     // Emit progress
     const prog = clamp(this.chunksProcessed / this.numChunks, 0, 1) * 100;
     this.progressCb(prog);

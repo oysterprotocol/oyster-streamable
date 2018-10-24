@@ -66,7 +66,7 @@ test("Upload.fromFile emits the expected events", done => {
     // });
     // u.on(EVENTS.FINISH, done);
 
-    u.on(EVENTS.RETRIEVED, done);
+    u.on(EVENTS.META_ATTACHED, done);
     u.on(EVENTS.ERROR, done.fail);
   });
 });
