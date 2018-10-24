@@ -2,7 +2,7 @@ import { Writable } from "readable-stream";
 
 const DEFAULT_OPTIONS = Object.freeze({});
 
-export default class FilePreviewStream extends Writable {
+export default class BufferTargetStream extends Writable {
   constructor(metadata, options) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
 

@@ -130,8 +130,7 @@ export default class DownloadStream extends Readable {
       .catch(error => {
         this.ongoingDownloads--;
         this.emit("error", error);
-      })
-      .catch(error => {});
+      });
   }
   _processBinaryChunk(buffer, batchId) {
     const batch = [];

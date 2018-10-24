@@ -196,6 +196,7 @@ export default class Download extends EventEmitter {
     this.decryptStream.on("error", this.propagateError);
     this.targetStream.on("error", this.propagateError);
   }
+
   propagateError(error) {
     this.emit("error", error);
   }

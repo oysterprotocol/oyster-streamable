@@ -4,7 +4,7 @@ import { API, IOTA_API } from "../config";
 const CURRENT_VERSION = 1;
 const SESSIONS_PATH = API.V2_UPLOAD_SESSIONS_PATH;
 
-const axiosInstance = axios.create({ timeout: 60000 });
+axios.defaults.timeout = 60000;
 
 export function queryGeneratedSignatures(
   iotaProvider,
@@ -26,7 +26,7 @@ export function queryGeneratedSignatures(
       headers: { "X-IOTA-API-Version": "1" }
     };
 
-    axiosInstance
+    axios
       .post(iotaProvider.provider, data, opts)
       .then(response => {
         if (response.status !== 200) {
@@ -45,9 +45,7 @@ export function queryGeneratedSignatures(
           });
         }
       })
-      .catch(error => {
-        reject(error);
-      });
+      .catch(reject);
   });
 }
 
@@ -60,7 +58,7 @@ export function createUploadSession(
   epochs
 ) {
   return new Promise((resolve, reject) => {
-    axiosInstance
+    axios
       .post(`${alpha}${API.V2_UPLOAD_SESSIONS_PATH}`, {
         fileSizeBytes: filesize,
         numChunks,
@@ -73,10 +71,7 @@ export function createUploadSession(
         const { invoice: invoice } = data;
         resolve({ alphaSessionId, betaSessionId, invoice });
       })
-      .catch(error => {
-        console.log("UPLOAD SESSION ERROR: ", error);
-        reject(error);
-      });
+      .catch(reject);
   });
 }
 
@@ -87,13 +82,10 @@ export function sendToBroker(broker, sessId, chunks) {
 
 export function sendChunksToBroker(brokerUrl, chunks) {
   return new Promise((resolve, reject) => {
-    axiosInstance
+    axios
       .put(brokerUrl, { chunks })
       .then(response => resolve(response))
-      .catch(error => {
-        console.log("ERROR SENDING CHUNK TO BROKER:", error);
-        reject(error);
-      });
+      .catch(reject);
   });
 }
 
@@ -117,7 +109,7 @@ const setIntervalAndExecute = (fn, t) => {
 const pollPaymentStatus = (host, sessId, statusFoundFn) => {
   return new Promise((resolve, reject) => {
     const poll = setIntervalAndExecute(() => {
-      axiosInstance
+      axios
         .get(`${host}${API.V2_UPLOAD_SESSIONS_PATH}/${sessId}`)
         .then(response => {
           const status = response.data.paymentStatus;
