@@ -1,6 +1,3 @@
-import fs from "fs";
-import axios from "axios";
-import MockAdapter from "axios-mock-adapter";
 import { Writable } from "readable-stream";
 
 import BufferTargetStream from "./bufferTargetStream";
@@ -21,7 +18,7 @@ test("constructor", () => {
 
 test("_write pushes data into chunks", () => {
   const bufferTargetStream = new BufferTargetStream();
-  const data = ["foo", "bar"];
+  const data = Buffer.from("foo");
   bufferTargetStream._write(data, "utf-8", () => {});
 
   expect(bufferTargetStream.chunks).toEqual([data]);
