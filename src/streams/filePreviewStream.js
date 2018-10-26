@@ -13,7 +13,7 @@ export default class FilePreviewStream extends Writable {
     this.fileChunks = [];
     this.file = null;
   }
-  _write(data, encoding, callback) {
+  _write(data, _encoding, callback) {
     this.fileChunks.push(data);
     callback();
   }
