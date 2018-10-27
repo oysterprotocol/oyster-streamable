@@ -17,7 +17,7 @@ export default class EncryptStream extends Transform {
     this.key = bytesFromHandle(handle);
     this.genesisHash = Datamap.genesisHash(handle);
   }
-  _transform(chunk, encoding, callback) {
+  _transform(chunk, _encoding, callback) {
     const key = this.key;
     const iv = deriveNonce(this.key, chunk.idx);
 
