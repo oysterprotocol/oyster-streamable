@@ -1,11 +1,9 @@
-export function createMetaData({ fileName, numberOfChunks, alpha, beta }) {
+export function createMetaData({ fileName, numberOfChunks }) {
   const fileExtension = fileName.split(".").pop();
 
   const meta = {
-    alpha,
-    beta,
-    ext: fileExtension,
     fileName: fileName.substr(0, 500),
+    ext: fileExtension,
     numberOfChunks
   };
 
