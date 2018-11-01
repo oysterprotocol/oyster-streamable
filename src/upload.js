@@ -127,7 +127,8 @@ export default class Upload extends EventEmitter {
     this.handle = createHandle(filename);
     this.metadata = createMetaData({
       fileName: filename,
-      numberOfChunks: chunkCount
+      numberOfChunks: chunkCount,
+      custom: opts.custom
     });
     this.genesisHash = genesisHash(this.handle);
     this.key = bytesFromHandle(this.handle);
