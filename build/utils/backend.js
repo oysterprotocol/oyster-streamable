@@ -149,6 +149,7 @@ function signTreasures(
     var payload = {
       signedTreasure: alphaTreasure
     };
+    debugger;
     return setSignedTreasures(
       alphaData.broker,
       alphaData.sessionID,
@@ -164,6 +165,9 @@ function signTreasures(
     var _payload = {
       signedTreasure: betaTreasure
     };
+
+    debugger;
+
     return setSignedTreasures(
       betaData.broker,
       betaData.sessionID,
@@ -171,6 +175,8 @@ function signTreasures(
       _payload
     );
   }
+
+  debugger;
 
   // I guess this gets called if both brokers are in dummy mode?
   return new Promise(function(resolve) {

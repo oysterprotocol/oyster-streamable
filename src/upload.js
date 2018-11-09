@@ -336,6 +336,7 @@ export default class Upload extends EventEmitter {
               this.unsignedTreasurePath,
               this.signedTreasurePath
             ).then(() => {
+              debugger;
               pollMetadata(this.handle, this.iotaProviders).then(() => {
                 // This will be deprecated
                 this.emit(EVENTS.RETRIEVED, {
