@@ -124,43 +124,52 @@ export function signTreasures(
     })
   ]);
 
+  let unsigned = unsignedTreasures.then(results => {
+    debugger;
+    if (results[0].available) {
+      let alphaTreasure = [];
+      for (let i = 0; i < results[0].unsignedTreasure.length; i++) {
+        alphaTreasure.push("SOMETREASURE");
+      }
+      let payload = {
+        signedTreasure: alphaTreasure
+      };
+      debugger;
+      return setSignedTreasures(
+        alphaData.broker,
+        alphaData.sessionID,
+        signedTreasurePath,
+        payload
+      ).then(() => {
+        resolve();
+      });
+    }
+    if (results[1].available) {
+      let betaTreasure = [];
+      for (let i = 0; i < results[1].unsignedTreasure.length; i++) {
+        betaTreasure.push("SOMETREASURE");
+      }
+      let payload = {
+        signedTreasure: betaTreasure
+      };
+
+      debugger;
+
+      return setSignedTreasures(
+        betaData.broker,
+        betaData.sessionID,
+        signedTreasurePath,
+        payload
+      ).then(() => {
+        resolve();
+      });
+    }
+
+    resolve(unsigned);
+  });
+
   // make some calls to do some treasure signing logic
   // this is all just dummy data
-
-  // if (alphaUnsignedTreasures.available) {
-  //   let alphaTreasure = [];
-  //   for (let i = 0; i < alphaUnsignedTreasures.unsignedTreasure.length; i++) {
-  //     alphaTreasure.push("SOMETREASURE");
-  //   }
-  //   let payload = {
-  //     signedTreasure: alphaTreasure
-  //   };
-  //   debugger;
-  //   return setSignedTreasures(
-  //     alphaData.broker,
-  //     alphaData.sessionID,
-  //     signedTreasurePath,
-  //     payload
-  //   );
-  // }
-  // if (betaUnsignedTreasures.available) {
-  //   let betaTreasure = [];
-  //   for (let i = 0; i < betaUnsignedTreasures.unsignedTreasure.length; i++) {
-  //     betaTreasure.push("SOMETREASURE");
-  //   }
-  //   let payload = {
-  //     signedTreasure: betaTreasure
-  //   };
-  //
-  //   debugger;
-  //
-  //   return setSignedTreasures(
-  //     betaData.broker,
-  //     betaData.sessionID,
-  //     signedTreasurePath,
-  //     payload
-  //   );
-  // }
 
   debugger;
 
