@@ -89,6 +89,70 @@ export function sendChunksToBroker(brokerUrl, chunks) {
   });
 }
 
+export function signTreasures(alphaData, betaData, handle,
+                              unsignedTreasurePath, signedTreasurePath) {
+  let alphaUnsignedTreasures = getUnsignedTreasure(alphaData.broker,
+    alphaData.sessionID, unsignedTreasurePath);
+  let betaUnsignedTreasures = getUnsignedTreasure(betaData.broker,
+    betaData.sessionID, unsignedTreasurePath);
+
+
+
+  // make some calls to do some treasure signing logic
+  // this is all just dummy data
+
+
+
+  if (alphaUnsignedTreasures.available) {
+    let alphaTreasure = [];
+    for (let i = 0; i < alphaUnsignedTreasures.unsignedTreasure.length; i++) {
+      alphaTreasure.push("SOMETREASURE")
+    }
+    let payload = {
+      signedTreasure: alphaTreasure
+    };
+    return setSignedTreasures(alphaData.broker, alphaData.sessionID,
+      signedTreasurePath, payload);
+  }
+  if (betaUnsignedTreasures.available) {
+    let betaTreasure = [];
+    for (let i = 0; i < betaUnsignedTreasures.unsignedTreasure.length; i++) {
+      betaTreasure.push("SOMETREASURE")
+    }
+    let payload = {
+      signedTreasure: betaTreasure
+    };
+    return setSignedTreasures(betaData.broker, betaData.sessionID,
+      signedTreasurePath, payload);
+  }
+
+  // I guess this gets called if both brokers are in dummy mode?
+  return new Promise((resolve) => {
+    resolve()
+  })
+}
+
+export function getUnsignedTreasure(broker, sessId, unsignedTreasurePath) {
+  const endpoint = `${broker}${unsignedTreasurePath}/${sessId}`;
+  return new Promise((resolve, reject) => {
+    axios
+      .get(endpoint)
+      .then(response => resolve(response))
+      .catch(reject);
+  });
+}
+
+export function setSignedTreasures(broker, sessId, signedTreasurePath,
+                                   signedTreasures) {
+  const endpoint = `${broker}${signedTreasurePath}/${sessId}`;
+  return new Promise((resolve, reject) => {
+    axios
+      .put(endpoint, { signedTreasures })
+      .then(response => resolve(response))
+      .catch(reject);
+  });
+}
+
 // TODO: Make these configurable?
 const POLL_INTERVAL = 4000;
 const PAYMENT_STATUS = Object.freeze({
@@ -141,3 +205,4 @@ export const confirmPaidPoll = (host, sessId) =>
     sessId,
     status => status === PAYMENT_STATUS.CONFIRMED
   );
+

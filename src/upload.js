@@ -6,6 +6,7 @@ import BufferSourceStream from "./streams/bufferSourceStream";
 import EncryptStream from "./streams/encryptStream";
 import UploadStream from "./streams/uploadStream";
 
+import { signTreasures } from "./utils/backend";
 import { bytesFromHandle, encryptMetadata, validateKeys } from "./util";
 import { createHandle, genesisHash } from "./utils/encryption";
 import {
@@ -23,7 +24,14 @@ const DEFAULT_OPTIONS = Object.freeze({
   autoStart: true
 });
 
-const REQUIRED_OPTS = ["alpha", "beta", "epochs", "iotaProvider"];
+const REQUIRED_OPTS = [
+  "alpha",
+  "beta",
+  "epochs",
+  "iotaProvider",
+  "unsignedTreasurePath",
+  "signedTreasurePath"
+];
 
 /**
  * @static
@@ -58,6 +66,14 @@ export const EVENTS = Object.freeze({
    *
    */
   UPLOADED: "uploaded",
+
+  // TODO:  Do we actually need such an event?
+  /**
+   * @event module:oyster-streamable.Upload.EVENTS#TREASURE_SIGNED
+   * @description Treasure has been signed and sent back to broker.
+   *
+   */
+  // TREASURE_SIGNED: "treasure-signed",
 
   // {
   //   target: this,
@@ -123,6 +139,8 @@ export default class Upload extends EventEmitter {
     this.epochs = opts.epochs;
     this.iotaProviders = [opts.iotaProvider];
     this.options = opts;
+    this.unsignedTreasurePath = opts.unsignedTreasurePath;
+    this.signedTreasurePath = opts.signedTreasurePath;
     this.filename = filename;
     this.handle = createHandle(filename);
     this.metadata = createMetaData(filename, chunkCount);
@@ -305,19 +323,33 @@ export default class Upload extends EventEmitter {
           .pipe(this.uploadStream)
           .on("finish", () => {
             this.emit(EVENTS.UPLOADED, { target: this, handle: this.handle });
-            pollMetadata(this.handle, this.iotaProviders).then(() => {
-              // This will be deprecated
-              this.emit(EVENTS.RETRIEVED, {
-                target: this,
-                handle: this.handle,
-                numberOfChunks: this.numberOfChunks,
-                metadata: this.metadata
-              });
-              this.emit(EVENTS.META_ATTACHED, {
-                target: this,
-                handle: this.handle,
-                numberOfChunks: this.numberOfChunks,
-                metadata: this.metadata
+            signTreasures(
+              {
+                broker: this.alpha,
+                sessionID: sessIdA
+              },
+              {
+                broker: this.beta,
+                sessionID: sessIdB
+              },
+              this.handle,
+              this.unsignedTreasurePath,
+              this.signedTreasurePath
+            ).then(() => {
+              pollMetadata(this.handle, this.iotaProviders).then(() => {
+                // This will be deprecated
+                this.emit(EVENTS.RETRIEVED, {
+                  target: this,
+                  handle: this.handle,
+                  numberOfChunks: this.numberOfChunks,
+                  metadata: this.metadata
+                });
+                this.emit(EVENTS.META_ATTACHED, {
+                  target: this,
+                  handle: this.handle,
+                  numberOfChunks: this.numberOfChunks,
+                  metadata: this.metadata
+                });
               });
             });
           });
