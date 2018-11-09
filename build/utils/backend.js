@@ -127,54 +127,75 @@ function signTreasures(
   unsignedTreasurePath,
   signedTreasurePath
 ) {
-  var alphaUnsignedTreasures = getUnsignedTreasure(
-    alphaData.broker,
-    alphaData.sessionID,
-    unsignedTreasurePath
-  );
-  var betaUnsignedTreasures = getUnsignedTreasure(
-    betaData.broker,
-    betaData.sessionID,
-    unsignedTreasurePath
-  );
+  // let alphaUnsignedTreasures = getUnsignedTreasure(
+  //   alphaData.broker,
+  //   alphaData.sessionID,
+  //   unsignedTreasurePath
+  // );
+  // let betaUnsignedTreasures = getUnsignedTreasure(
+  //   betaData.broker,
+  //   betaData.sessionID,
+  //   unsignedTreasurePath
+  // );
+
+  var unsignedTreasures = Promise.all([
+    new Promise(function(resolve, reject) {
+      getUnsignedTreasure(
+        alphaData.broker,
+        alphaData.sessionID,
+        unsignedTreasurePath
+      ).then(function(unsignedTreasures) {
+        return resolve(unsignedTreasures);
+      }, reject);
+    }),
+    new Promise(function(resolve, reject) {
+      getUnsignedTreasure(
+        betaData.broker,
+        betaData.sessionID,
+        unsignedTreasurePath
+      ).then(function(unsignedTreasures) {
+        return resolve(unsignedTreasures);
+      }, reject);
+    })
+  ]);
 
   // make some calls to do some treasure signing logic
   // this is all just dummy data
 
-  if (alphaUnsignedTreasures.available) {
-    var alphaTreasure = [];
-    for (var i = 0; i < alphaUnsignedTreasures.unsignedTreasure.length; i++) {
-      alphaTreasure.push("SOMETREASURE");
-    }
-    var payload = {
-      signedTreasure: alphaTreasure
-    };
-    debugger;
-    return setSignedTreasures(
-      alphaData.broker,
-      alphaData.sessionID,
-      signedTreasurePath,
-      payload
-    );
-  }
-  if (betaUnsignedTreasures.available) {
-    var betaTreasure = [];
-    for (var _i = 0; _i < betaUnsignedTreasures.unsignedTreasure.length; _i++) {
-      betaTreasure.push("SOMETREASURE");
-    }
-    var _payload = {
-      signedTreasure: betaTreasure
-    };
-
-    debugger;
-
-    return setSignedTreasures(
-      betaData.broker,
-      betaData.sessionID,
-      signedTreasurePath,
-      _payload
-    );
-  }
+  // if (alphaUnsignedTreasures.available) {
+  //   let alphaTreasure = [];
+  //   for (let i = 0; i < alphaUnsignedTreasures.unsignedTreasure.length; i++) {
+  //     alphaTreasure.push("SOMETREASURE");
+  //   }
+  //   let payload = {
+  //     signedTreasure: alphaTreasure
+  //   };
+  //   debugger;
+  //   return setSignedTreasures(
+  //     alphaData.broker,
+  //     alphaData.sessionID,
+  //     signedTreasurePath,
+  //     payload
+  //   );
+  // }
+  // if (betaUnsignedTreasures.available) {
+  //   let betaTreasure = [];
+  //   for (let i = 0; i < betaUnsignedTreasures.unsignedTreasure.length; i++) {
+  //     betaTreasure.push("SOMETREASURE");
+  //   }
+  //   let payload = {
+  //     signedTreasure: betaTreasure
+  //   };
+  //
+  //   debugger;
+  //
+  //   return setSignedTreasures(
+  //     betaData.broker,
+  //     betaData.sessionID,
+  //     signedTreasurePath,
+  //     payload
+  //   );
+  // }
 
   debugger;
 
