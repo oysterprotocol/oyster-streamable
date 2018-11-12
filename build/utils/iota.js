@@ -19,6 +19,8 @@ var _util = require("../util");
 
 var _math = require("../utils/math");
 
+var _datamap = require("../utils/datamap");
+
 function _interopRequireDefault(obj) {
   return obj && obj.__esModule ? obj : { default: obj };
 }
@@ -133,7 +135,7 @@ var pollMetadata = (exports.pollMetadata = function pollMetadata(
         // TODO: Continue only if "File does not exist" error.
         // TODO: Timeout if this takes too long?
         .catch(function() {
-          return console.log("Waiting for meta...");
+          console.log("Waiting for meta...");
         }); // No-op. Waits for meta to attach.
     }, POLL_INTERVAL);
   });
@@ -144,13 +146,15 @@ var getMetadata = (exports.getMetadata = function getMetadata(
   iotaProviders
 ) {
   return new Promise(function(resolve, reject) {
-    var genesisHash = _datamapGenerator2.default.genesisHash(handle);
+    var treasureHash = _datamapGenerator2.default.genesisHash(handle);
+    var genesisHash = _datamapGenerator2.default.genesisHash(treasureHash);
+
     var queries = Promise.all(
       iotaProviders.map(function(provider) {
         return new Promise(function(resolve, reject) {
           (0, _backend.queryGeneratedSignatures)(provider, genesisHash, 1).then(
             function(signatures) {
-              return resolve({ provider: provider, signatures: signatures });
+              resolve({ provider: provider, signatures: signatures });
             },
             reject
           );

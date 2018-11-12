@@ -388,11 +388,10 @@ var Upload = (function(_EventEmitter) {
                     _this2.handle,
                     _this2.unsignedTreasurePath,
                     _this2.signedTreasurePath
-                  ).then(function(result) {
-                    (0, _iota.pollMetadata)(
-                      _this2.handle,
-                      _this2.iotaProviders
-                    ).then(function() {
+                  ).then(function(result) {});
+
+                  (0, _iota.pollMetadata)(_this2.handle, _this2.iotaProviders)
+                    .then(function() {
                       // This will be deprecated
                       _this2.emit(EVENTS.RETRIEVED, {
                         target: _this2,
@@ -406,8 +405,10 @@ var Upload = (function(_EventEmitter) {
                         numberOfChunks: _this2.numberOfChunks,
                         metadata: _this2.metadata
                       });
+                    })
+                    .catch(function(result) {
+                      debugger;
                     });
-                  });
                 });
 
               _this2.sourceStream.on("error", _this2.propagateError);

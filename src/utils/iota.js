@@ -5,6 +5,8 @@ import { queryGeneratedSignatures } from "./backend";
 import { bytesFromHandle, decryptMetadata } from "../util";
 import { clamp } from "../utils/math";
 
+import { generate } from "../utils/datamap";
+
 // TODO: Make these configurable?
 const POLL_INTERVAL = 4500;
 const NUM_POLLING_ADDRESSES = 301;
@@ -102,20 +104,26 @@ export const pollMetadata = (handle, iotaProviders) => {
         })
         // TODO: Continue only if "File does not exist" error.
         // TODO: Timeout if this takes too long?
-        .catch(() => console.log("Waiting for meta...")); // No-op. Waits for meta to attach.
+        .catch(() => {
+          console.log("Waiting for meta...");
+        }); // No-op. Waits for meta to attach.
     }, POLL_INTERVAL);
   });
 };
 
 export const getMetadata = (handle, iotaProviders) => {
   return new Promise((resolve, reject) => {
-    const genesisHash = Datamap.genesisHash(handle);
+    const treasureHash = Datamap.genesisHash(handle);
+    const genesisHash = Datamap.genesisHash(treasureHash);
+
     const queries = Promise.all(
       iotaProviders.map(
         provider =>
           new Promise((resolve, reject) => {
             queryGeneratedSignatures(provider, genesisHash, 1).then(
-              signatures => resolve({ provider, signatures }),
+              signatures => {
+                resolve({ provider, signatures });
+              },
               reject
             );
           })

@@ -25,7 +25,7 @@ export default class UploadStream extends Writable {
     options
   ) {
     const opts = Object.assign({}, DEFAULT_OPTIONS, options);
-    const metachunk = { idx: 0, data: metadataTrytes, hash: genesisHash };
+    const metachunk = { idx: 1, data: metadataTrytes, hash: genesisHash };
 
     super(opts);
     this.options = opts;

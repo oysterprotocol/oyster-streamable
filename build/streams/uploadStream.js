@@ -91,7 +91,7 @@ var UploadStream = (function(_Writable) {
     _classCallCheck(this, UploadStream);
 
     var opts = Object.assign({}, DEFAULT_OPTIONS, options);
-    var metachunk = { idx: 0, data: metadataTrytes, hash: genesisHash };
+    var metachunk = { idx: 1, data: metadataTrytes, hash: genesisHash };
 
     var _this = _possibleConstructorReturn(
       this,

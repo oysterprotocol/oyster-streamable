@@ -67,7 +67,7 @@ var CHUNK_ORDER_DESC = 2;
 
 var DEFAULT_OPTIONS = Object.freeze({
   // Chunk offset to account for metadata
-  chunkIdOffset: 1,
+  chunkIdOffset: 2,
   // Options for the stream. OM must be true
   objectMode: true,
   highWaterMark: 64

@@ -6,7 +6,7 @@ const CHUNK_ORDER_DESC = 2;
 
 const DEFAULT_OPTIONS = Object.freeze({
   // Chunk offset to account for metadata
-  chunkIdOffset: 1,
+  chunkIdOffset: 2,
   readSize: BYTES_PER_CHUNK * 16,
   // Options for the stream. OM must be true
   objectMode: true,

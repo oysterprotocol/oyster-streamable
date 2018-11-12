@@ -335,8 +335,10 @@ export default class Upload extends EventEmitter {
               this.handle,
               this.unsignedTreasurePath,
               this.signedTreasurePath
-            ).then(result => {
-              pollMetadata(this.handle, this.iotaProviders).then(() => {
+            ).then(result => {});
+
+            pollMetadata(this.handle, this.iotaProviders)
+              .then(() => {
                 // This will be deprecated
                 this.emit(EVENTS.RETRIEVED, {
                   target: this,
@@ -350,8 +352,10 @@ export default class Upload extends EventEmitter {
                   numberOfChunks: this.numberOfChunks,
                   metadata: this.metadata
                 });
+              })
+              .catch(result => {
+                debugger;
               });
-            });
           });
 
         this.sourceStream.on("error", this.propagateError);
