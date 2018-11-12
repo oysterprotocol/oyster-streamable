@@ -159,59 +159,58 @@ function signTreasures(
     })
   ]);
 
-  var unsigned = unsignedTreasures.then(function(results) {
-    debugger;
-    if (results[0].available) {
+  return unsignedTreasures.then(function(results) {
+    if (results[0].data.available) {
       var alphaTreasure = [];
-      for (var i = 0; i < results[0].unsignedTreasure.length; i++) {
-        alphaTreasure.push("SOMETREASURE");
+      for (var i = 0; i < results[0].data.unsignedTreasure.length; i++) {
+        alphaTreasure.push({
+          treasurePayload: "HEY",
+          id: results[0].data.unsignedTreasure[i].id,
+          idx: results[0].data.unsignedTreasure[i].idx
+        });
       }
       var payload = {
         signedTreasure: alphaTreasure
       };
-      debugger;
-      return setSignedTreasures(
-        alphaData.broker,
-        alphaData.sessionID,
-        signedTreasurePath,
-        payload
-      ).then(function() {
-        resolve();
+      return new Promise(function(resolve, reject) {
+        setSignedTreasures(
+          alphaData.broker,
+          alphaData.sessionID,
+          signedTreasurePath,
+          payload
+        ).then(function() {
+          resolve();
+        });
       });
     }
-    if (results[1].available) {
+    if (results[1].data.available) {
       var betaTreasure = [];
-      for (var _i = 0; _i < results[1].unsignedTreasure.length; _i++) {
-        betaTreasure.push("SOMETREASURE");
+      for (var _i = 0; _i < results[1].data.unsignedTreasure.length; _i++) {
+        betaTreasure.push({
+          treasurePayload: "HEY",
+          id: results[1].data.unsignedTreasure[_i].id,
+          idx: results[1].data.unsignedTreasure[_i].idx
+        });
       }
       var _payload = {
         signedTreasure: betaTreasure
       };
 
-      debugger;
-
-      return setSignedTreasures(
-        betaData.broker,
-        betaData.sessionID,
-        signedTreasurePath,
-        _payload
-      ).then(function() {
-        resolve();
+      return new Promise(function(resolve, reject) {
+        setSignedTreasures(
+          betaData.broker,
+          betaData.sessionID,
+          signedTreasurePath,
+          _payload
+        ).then(function() {
+          resolve();
+        });
       });
     }
-
-    resolve(unsigned);
   });
 
   // make some calls to do some treasure signing logic
   // this is all just dummy data
-
-  debugger;
-
-  // I guess this gets called if both brokers are in dummy mode?
-  return new Promise(function(resolve) {
-    resolve();
-  });
 }
 
 function getUnsignedTreasure(broker, sessId, unsignedTreasurePath) {
@@ -235,7 +234,7 @@ function setSignedTreasures(
   var endpoint = "" + broker + signedTreasurePath + "/" + sessId;
   return new Promise(function(resolve, reject) {
     _axios2.default
-      .put(endpoint, { signedTreasures: signedTreasures })
+      .put(endpoint, signedTreasures)
       .then(function(response) {
         return resolve(response);
       })

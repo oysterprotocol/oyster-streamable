@@ -388,8 +388,7 @@ var Upload = (function(_EventEmitter) {
                     _this2.handle,
                     _this2.unsignedTreasurePath,
                     _this2.signedTreasurePath
-                  ).then(function() {
-                    debugger;
+                  ).then(function(result) {
                     (0, _iota.pollMetadata)(
                       _this2.handle,
                       _this2.iotaProviders
