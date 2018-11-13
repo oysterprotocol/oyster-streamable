@@ -335,25 +335,25 @@ export default class Upload extends EventEmitter {
               this.handle,
               this.unsignedTreasurePath,
               this.signedTreasurePath
-            ).then(result => {});
-
-            pollMetadata(this.handle, this.iotaProviders)
-              .then(() => {
-                // This will be deprecated
-                this.emit(EVENTS.RETRIEVED, {
-                  target: this,
-                  handle: this.handle,
-                  numberOfChunks: this.numberOfChunks,
-                  metadata: this.metadata
-                });
-                this.emit(EVENTS.META_ATTACHED, {
-                  target: this,
-                  handle: this.handle,
-                  numberOfChunks: this.numberOfChunks,
-                  metadata: this.metadata
-                });
-              })
-              .catch(result => {});
+            ).then(() => {
+              pollMetadata(this.handle, this.iotaProviders)
+                .then(() => {
+                  // This will be deprecated
+                  this.emit(EVENTS.RETRIEVED, {
+                    target: this,
+                    handle: this.handle,
+                    numberOfChunks: this.numberOfChunks,
+                    metadata: this.metadata
+                  });
+                  this.emit(EVENTS.META_ATTACHED, {
+                    target: this,
+                    handle: this.handle,
+                    numberOfChunks: this.numberOfChunks,
+                    metadata: this.metadata
+                  });
+                })
+                .catch(result => {});
+            });
           });
 
         this.sourceStream.on("error", this.propagateError);

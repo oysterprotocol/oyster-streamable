@@ -388,25 +388,25 @@ var Upload = (function(_EventEmitter) {
                     _this2.handle,
                     _this2.unsignedTreasurePath,
                     _this2.signedTreasurePath
-                  ).then(function(result) {});
-
-                  (0, _iota.pollMetadata)(_this2.handle, _this2.iotaProviders)
-                    .then(function() {
-                      // This will be deprecated
-                      _this2.emit(EVENTS.RETRIEVED, {
-                        target: _this2,
-                        handle: _this2.handle,
-                        numberOfChunks: _this2.numberOfChunks,
-                        metadata: _this2.metadata
-                      });
-                      _this2.emit(EVENTS.META_ATTACHED, {
-                        target: _this2,
-                        handle: _this2.handle,
-                        numberOfChunks: _this2.numberOfChunks,
-                        metadata: _this2.metadata
-                      });
-                    })
-                    .catch(function(result) {});
+                  ).then(function() {
+                    (0, _iota.pollMetadata)(_this2.handle, _this2.iotaProviders)
+                      .then(function() {
+                        // This will be deprecated
+                        _this2.emit(EVENTS.RETRIEVED, {
+                          target: _this2,
+                          handle: _this2.handle,
+                          numberOfChunks: _this2.numberOfChunks,
+                          metadata: _this2.metadata
+                        });
+                        _this2.emit(EVENTS.META_ATTACHED, {
+                          target: _this2,
+                          handle: _this2.handle,
+                          numberOfChunks: _this2.numberOfChunks,
+                          metadata: _this2.metadata
+                        });
+                      })
+                      .catch(function(result) {});
+                  });
                 });
 
               _this2.sourceStream.on("error", _this2.propagateError);

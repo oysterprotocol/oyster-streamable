@@ -11,6 +11,7 @@ exports.sendChunksToBroker = sendChunksToBroker;
 exports.signTreasures = signTreasures;
 exports.getUnsignedTreasure = getUnsignedTreasure;
 exports.setSignedTreasures = setSignedTreasures;
+exports.makeTreasurePayload = makeTreasurePayload;
 
 var _axios = require("axios");
 
@@ -127,16 +128,9 @@ function signTreasures(
   unsignedTreasurePath,
   signedTreasurePath
 ) {
-  // let alphaUnsignedTreasures = getUnsignedTreasure(
-  //   alphaData.broker,
-  //   alphaData.sessionID,
-  //   unsignedTreasurePath
-  // );
-  // let betaUnsignedTreasures = getUnsignedTreasure(
-  //   betaData.broker,
-  //   betaData.sessionID,
-  //   unsignedTreasurePath
-  // );
+  var payload = {};
+  var treasureBroker = "";
+  var treasureSessionID = "";
 
   var unsignedTreasures = Promise.all([
     new Promise(function(resolve, reject) {
@@ -161,56 +155,32 @@ function signTreasures(
 
   return unsignedTreasures.then(function(results) {
     if (results[0].data.available) {
-      var alphaTreasure = [];
-      for (var i = 0; i < results[0].data.unsignedTreasure.length; i++) {
-        alphaTreasure.push({
-          treasurePayload: "HEY",
-          id: results[0].data.unsignedTreasure[i].id,
-          idx: results[0].data.unsignedTreasure[i].idx
-        });
-      }
-      var payload = {
-        signedTreasure: alphaTreasure
-      };
+      treasureBroker = alphaData.broker;
+      treasureSessionID = alphaData.sessionID;
+      payload = makeTreasurePayload(results[0].data.unsignedTreasure);
+    } else if (results[1].data.available) {
+      treasureBroker = betaData.broker;
+      treasureSessionID = betaData.sessionID;
+      payload = makeTreasurePayload(results[1].data.unsignedTreasure);
+    }
+
+    if (treasureSessionID !== "") {
       return new Promise(function(resolve, reject) {
         setSignedTreasures(
-          alphaData.broker,
-          alphaData.sessionID,
+          treasureBroker,
+          treasureSessionID,
           signedTreasurePath,
           payload
         ).then(function() {
           resolve();
         });
       });
-    }
-    if (results[1].data.available) {
-      var betaTreasure = [];
-      for (var _i = 0; _i < results[1].data.unsignedTreasure.length; _i++) {
-        betaTreasure.push({
-          treasurePayload: "HEY",
-          id: results[1].data.unsignedTreasure[_i].id,
-          idx: results[1].data.unsignedTreasure[_i].idx
-        });
-      }
-      var _payload = {
-        signedTreasure: betaTreasure
-      };
-
+    } else {
       return new Promise(function(resolve, reject) {
-        setSignedTreasures(
-          betaData.broker,
-          betaData.sessionID,
-          signedTreasurePath,
-          _payload
-        ).then(function() {
-          resolve();
-        });
+        resolve();
       });
     }
   });
-
-  // make some calls to do some treasure signing logic
-  // this is all just dummy data
 }
 
 function getUnsignedTreasure(broker, sessId, unsignedTreasurePath) {
@@ -240,6 +210,22 @@ function setSignedTreasures(
       })
       .catch(reject);
   });
+}
+
+function makeTreasurePayload(unsignedTreasures) {
+  // TODO:  some actual signing logic, just making a dummy treasure for now
+
+  var treasure = [];
+  for (var i = 0; i < unsignedTreasures.length; i++) {
+    treasure.push({
+      treasurePayload: "DUMMYTREASURE",
+      id: unsignedTreasures[i].id,
+      idx: unsignedTreasures[i].idx
+    });
+  }
+  return {
+    signedTreasure: treasure
+  };
 }
 
 // TODO: Make these configurable?
