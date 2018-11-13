@@ -61,5 +61,4 @@ typings/
 .next
 
 # Build artifacts
-build/
 dist/

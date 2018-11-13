@@ -5,7 +5,7 @@ import { queryGeneratedSignatures } from "./backend";
 import { bytesFromHandle, decryptMetadata } from "../util";
 import { clamp } from "../utils/math";
 
-import { generate } from "../utils/datamap";
+import { getNextHash } from "../utils/datamap";
 
 // TODO: Make these configurable?
 const POLL_INTERVAL = 4500;
@@ -113,19 +113,16 @@ export const pollMetadata = (handle, iotaProviders) => {
 
 export const getMetadata = (handle, iotaProviders) => {
   return new Promise((resolve, reject) => {
-    const treasureHash = Datamap.genesisHash(handle);
-    const genesisHash = Datamap.genesisHash(treasureHash);
+    const genesisHash = Datamap.genesisHash(handle);
+    const metaHash = getNextHash(genesisHash);
 
     const queries = Promise.all(
       iotaProviders.map(
         provider =>
           new Promise((resolve, reject) => {
-            queryGeneratedSignatures(provider, genesisHash, 1).then(
-              signatures => {
-                resolve({ provider, signatures });
-              },
-              reject
-            );
+            queryGeneratedSignatures(provider, metaHash, 1).then(signatures => {
+              resolve({ provider, signatures });
+            }, reject);
           })
       )
     );

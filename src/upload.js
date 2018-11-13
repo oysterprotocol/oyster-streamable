@@ -353,9 +353,7 @@ export default class Upload extends EventEmitter {
                   metadata: this.metadata
                 });
               })
-              .catch(result => {
-                debugger;
-              });
+              .catch(result => {});
           });
 
         this.sourceStream.on("error", this.propagateError);

@@ -46,12 +46,39 @@ var _slicedToArray = (function() {
 
 exports.generate = generate;
 exports.offsetHash = offsetHash;
+exports.getNextHash = getNextHash;
 
 var _encryption = require("./encryption");
+
+var encryption = _interopRequireWildcard(_encryption);
 
 var _util = require("../util");
 
 var _config = require("../config");
+
+var _util2 = require("node-forge/lib/util");
+
+var _util3 = _interopRequireDefault(_util2);
+
+function _interopRequireDefault(obj) {
+  return obj && obj.__esModule ? obj : { default: obj };
+}
+
+function _interopRequireWildcard(obj) {
+  if (obj && obj.__esModule) {
+    return obj;
+  } else {
+    var newObj = {};
+    if (obj != null) {
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key))
+          newObj[key] = obj[key];
+      }
+    }
+    newObj.default = obj;
+    return newObj;
+  }
+}
 
 function generate(handle, size) {
   var offsets = 1; // Meta chunk
@@ -72,15 +99,15 @@ function generate(handle, size) {
           dataM = _ref2[0],
           hash = _ref2[1];
 
-        var _hashChain = (0, _encryption.hashChain)(hash),
-          _hashChain2 = _slicedToArray(_hashChain, 2),
-          obfuscatedHash = _hashChain2[0],
-          nextHash = _hashChain2[1];
+        var _encryption$hashChain = encryption.hashChain(hash),
+          _encryption$hashChain2 = _slicedToArray(_encryption$hashChain, 2),
+          obfuscatedHash = _encryption$hashChain2[0],
+          nextHash = _encryption$hashChain2[1];
 
         dataM[i] = _util.iota.utils.toTrytes(obfuscatedHash).substr(0, 81);
         return [dataM, nextHash];
       },
-      [{}, (0, _encryption.genesisHash)(handle)]
+      [{}, encryption.genesisHash(handle)]
     ),
     _keys$reduce2 = _slicedToArray(_keys$reduce, 1),
     dataMap = _keys$reduce2[0];
@@ -93,13 +120,18 @@ function offsetHash(hash, offset) {
   var obfuscatedHash = void 0;
 
   do {
-    var _hashChain3 = (0, _encryption.hashChain)(nextHash);
+    var _encryption$hashChain3 = encryption.hashChain(nextHash);
 
-    var _hashChain4 = _slicedToArray(_hashChain3, 2);
+    var _encryption$hashChain4 = _slicedToArray(_encryption$hashChain3, 2);
 
-    obfuscatedHash = _hashChain4[0];
-    nextHash = _hashChain4[1];
+    obfuscatedHash = _encryption$hashChain4[0];
+    nextHash = _encryption$hashChain4[1];
   } while (--offset > 0);
 
   return _util.iota.utils.toTrytes(obfuscatedHash).substr(0, 81);
+}
+
+function getNextHash(hash) {
+  var hashChain = encryption.hashChain(_util3.default.hexToBytes(hash));
+  return _util3.default.bytesToHex(hashChain[1]);
 }

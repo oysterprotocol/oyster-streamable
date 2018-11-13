@@ -146,13 +146,13 @@ var getMetadata = (exports.getMetadata = function getMetadata(
   iotaProviders
 ) {
   return new Promise(function(resolve, reject) {
-    var treasureHash = _datamapGenerator2.default.genesisHash(handle);
-    var genesisHash = _datamapGenerator2.default.genesisHash(treasureHash);
+    var genesisHash = _datamapGenerator2.default.genesisHash(handle);
+    var metaHash = (0, _datamap.getNextHash)(genesisHash);
 
     var queries = Promise.all(
       iotaProviders.map(function(provider) {
         return new Promise(function(resolve, reject) {
-          (0, _backend.queryGeneratedSignatures)(provider, genesisHash, 1).then(
+          (0, _backend.queryGeneratedSignatures)(provider, metaHash, 1).then(
             function(signatures) {
               resolve({ provider: provider, signatures: signatures });
             },

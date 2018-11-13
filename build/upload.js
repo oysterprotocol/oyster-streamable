@@ -406,9 +406,7 @@ var Upload = (function(_EventEmitter) {
                         metadata: _this2.metadata
                       });
                     })
-                    .catch(function(result) {
-                      debugger;
-                    });
+                    .catch(function(result) {});
                 });
 
               _this2.sourceStream.on("error", _this2.propagateError);
