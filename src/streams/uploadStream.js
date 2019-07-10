@@ -29,7 +29,6 @@ export default class UploadStream extends Writable {
 
     super(opts);
     this.options = opts;
-    this.metachunk = metachunk;
     this.genesisHash = genesisHash;
     this.numChunks = numChunks;
     this.alpha = alpha;
@@ -37,7 +36,7 @@ export default class UploadStream extends Writable {
     this.sessIdA = sessIdA;
     this.sessIdB = sessIdB;
     this.chunkBufferLow = [metachunk];
-    this.chunkBufferHigh = [];
+    this.chunkBufferHigh = [metachunk];
     this.batchBuffer = [];
     this.ongoingUploads = 0;
     this.chunksProcessed = 0;
@@ -80,9 +79,6 @@ export default class UploadStream extends Writable {
 
   _final(callback) {
     this.finishCallback = callback;
-
-    // Appends metachunk to beta.
-    this.chunkBufferHigh.push(this.metachunk);
 
     if (this.chunkBufferLow.length > 0) {
       this.batchBuffer.push({
